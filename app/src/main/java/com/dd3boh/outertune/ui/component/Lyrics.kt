@@ -28,6 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -90,16 +92,16 @@ fun Lyrics(
     }
 
     var currentLineIndex by remember {
-        mutableStateOf(-1)
+        mutableIntStateOf(-1)
     }
     // Because LaunchedEffect has delay, which leads to inconsistent with current line color and scroll animation,
     // we use deferredCurrentLineIndex when user is scrolling
     var deferredCurrentLineIndex by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
 
     var lastPreviewTime by rememberSaveable {
-        mutableStateOf(0L)
+        mutableLongStateOf(0L)
     }
     var isSeeking by remember {
         mutableStateOf(false)
