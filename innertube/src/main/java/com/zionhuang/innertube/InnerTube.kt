@@ -398,6 +398,19 @@ class InnerTube {
         )
     }
 
+    suspend fun createPlaylist(
+        client: YouTubeClient,
+        title: String,
+    ) = httpClient.post("playlist/create") {
+        ytClient(client, true)
+        setBody(
+            CreatePlaylistBody(
+                context = client.toContext(locale, visitorData),
+                title = title
+            )
+        )
+    }
+
     suspend fun renamePlaylist(
         client: YouTubeClient,
         playlistId: String,
