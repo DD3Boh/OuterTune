@@ -383,6 +383,13 @@ object YouTube {
             }
     }
 
+    suspend fun likeVideo(videoId: String, like: Boolean) = runCatching {
+        if (like)
+            innerTube.likeVideo(WEB_REMIX, videoId)
+        else
+            innerTube.unlikeVideo(WEB_REMIX, videoId)
+    }
+
     suspend fun player(videoId: String, playlistId: String? = null): Result<PlayerResponse> = runCatching {
         val playerResponse = innerTube.player(ANDROID_MUSIC, videoId, playlistId).body<PlayerResponse>()
         if (playerResponse.playabilityStatus.status == "OK") {

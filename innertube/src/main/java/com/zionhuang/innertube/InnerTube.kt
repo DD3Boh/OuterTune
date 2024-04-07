@@ -242,4 +242,30 @@ class InnerTube {
         ytClient(client, setLogin = true)
         setBody(AccountMenuBody(client.toContext(locale, visitorData)))
     }
+
+    suspend fun likeVideo(
+        client: YouTubeClient,
+        videoId: String,
+    ) = httpClient.post("like/like") {
+        ytClient(client, setLogin = true)
+        setBody(
+            LikeBody(
+                context = client.toContext(locale, visitorData),
+                target = LikeBody.Target(videoId)
+            )
+        )
+    }
+
+    suspend fun unlikeVideo(
+        client: YouTubeClient,
+        videoId: String,
+    ) = httpClient.post("like/removelike") {
+        ytClient(client, setLogin = true)
+        setBody(
+            LikeBody(
+                context = client.toContext(locale, visitorData),
+                target = LikeBody.Target(videoId)
+            )
+        )
+    }
 }
