@@ -31,5 +31,9 @@ data class SongEntity(
         inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary
     )
 
+    fun setLiked() = copy(
+        liked = true,
+    )
+
     fun toggleLibrary() = copy(inLibrary = if (inLibrary == null) LocalDateTime.now() else null)
 }
