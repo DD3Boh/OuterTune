@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.AlbumItem
+import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.PlaylistItem
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +16,7 @@ import javax.inject.Inject
 class AccountViewModel @Inject constructor() : ViewModel() {
     val playlists = MutableStateFlow<List<PlaylistItem>?>(null)
     val albums = MutableStateFlow<List<AlbumItem>?>(null)
+    val artists = MutableStateFlow<List<ArtistItem>?>(null)
 
     init {
         viewModelScope.launch {
@@ -25,6 +27,11 @@ class AccountViewModel @Inject constructor() : ViewModel() {
             }
             YouTube.libraryAlbums().onSuccess {
                 albums.value = it
+            }.onFailure {
+                reportException(it)
+            }
+            YouTube.libraryArtistsSubscriptions().onSuccess {
+                artists.value = it
             }.onFailure {
                 reportException(it)
             }

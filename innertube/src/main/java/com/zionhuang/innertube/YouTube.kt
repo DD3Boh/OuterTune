@@ -7,6 +7,8 @@ import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.BrowseEndpoint
 import com.zionhuang.innertube.models.GridRenderer
 import com.zionhuang.innertube.models.MusicCarouselShelfRenderer
+import com.zionhuang.innertube.models.MusicResponsiveListItemRenderer
+import com.zionhuang.innertube.models.MusicShelfRenderer
 import com.zionhuang.innertube.models.PlaylistItem
 import com.zionhuang.innertube.models.SearchSuggestions
 import com.zionhuang.innertube.models.SongItem
@@ -368,6 +370,19 @@ object YouTube {
             .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
             .mapNotNull {
                 ArtistItemsPage.fromMusicTwoRowItemRenderer(it) as? AlbumItem
+            }
+    }
+
+    suspend fun libraryArtistsSubscriptions(): Result<List<ArtistItem>> = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            browseId = "FEmusic_library_corpus_artists",
+            setLogin = true
+        ).body<BrowseResponse>()
+        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicShelfRenderer?.contents!!
+            .mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
+            .mapNotNull {
+                SearchSuggestionPage.fromMusicResponsiveListItemRenderer(it) as? ArtistItem
             }
     }
 

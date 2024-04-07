@@ -30,6 +30,7 @@ import com.dd3boh.outertune.ui.component.YouTubeGridItem
 import com.dd3boh.outertune.ui.component.shimmer.GridItemPlaceHolder
 import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.menu.YouTubeAlbumMenu
+import com.dd3boh.outertune.ui.menu.YouTubeArtistMenu
 import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.AccountViewModel
@@ -48,6 +49,8 @@ fun AccountScreen(
     val playlists by viewModel.playlists.collectAsState()
 
     val albums by viewModel.albums.collectAsState()
+
+    val artists by viewModel.artists.collectAsState()
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
@@ -95,6 +98,30 @@ fun AccountScreen(
                                 YouTubeAlbumMenu(
                                     albumItem = item,
                                     navController = navController,
+                                    onDismiss = menuState::dismiss
+                                )
+                            }
+                        }
+                    )
+            )
+        }
+
+        items(
+            items = artists.orEmpty(),
+            key = { it.id }
+        ) { item ->
+            YouTubeGridItem(
+                item = item,
+                fillMaxWidth = true,
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = {
+                            navController.navigate("artist/${item.id}")
+                        },
+                        onLongClick = {
+                            menuState.show {
+                                YouTubeArtistMenu(
+                                    artist = item,
                                     onDismiss = menuState::dismiss
                                 )
                             }
