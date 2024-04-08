@@ -268,4 +268,48 @@ class InnerTube {
             )
         )
     }
+
+    suspend fun addToPlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        videoId: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId.removePrefix("VL"),
+                actions = listOf(
+                    EditPlaylistBody.Action(
+                        playlistName = null,
+                        action = "ACTION_ADD_VIDEO",
+                        addedVideoId = videoId
+                    )
+                )
+            )
+        )
+    }
+
+    suspend fun removeFromPlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        videoId: String,
+        setVideoId: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId.removePrefix("VL"),
+                actions = listOf(
+                    EditPlaylistBody.Action(
+                        playlistName = null,
+                        action = "ACTION_REMOVE_VIDEO",
+                        removedVideoId = videoId,
+                        setVideoId = setVideoId,
+                    )
+                )
+            )
+        )
+    }
 }
