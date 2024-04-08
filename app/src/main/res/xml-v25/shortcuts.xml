@@ -6,9 +6,9 @@
         android:icon="@drawable/shortcut_search"
         android:shortcutShortLabel="@string/search">
         <intent
-            android:targetClass="com.zionhuang.music.MainActivity"
-            android:targetPackage="com.zionhuang.music"
-            android:action="com.zionhuang.music.action.SEARCH" />
+            android:targetClass="com.dd3boh.outertune.MainActivity"
+            android:targetPackage="com.dd3boh.outertune"
+            android:action="com.dd3boh.outertune.action.SEARCH" />
     </shortcut>
     <shortcut
         android:shortcutId="songs"
@@ -16,9 +16,9 @@
         android:icon="@drawable/shortcut_songs"
         android:shortcutShortLabel="@string/songs">
         <intent
-            android:targetClass="com.zionhuang.music.MainActivity"
-            android:targetPackage="com.zionhuang.music"
-            android:action="com.zionhuang.music.action.SONGS" />
+            android:targetClass="com.dd3boh.outertune.MainActivity"
+            android:targetPackage="com.dd3boh.outertune"
+            android:action="com.dd3boh.outertune.action.SONGS" />
     </shortcut>
     <shortcut
         android:shortcutId="albums"
@@ -26,9 +26,9 @@
         android:icon="@drawable/shortcut_albums"
         android:shortcutShortLabel="@string/albums">
         <intent
-            android:targetClass="com.zionhuang.music.MainActivity"
-            android:targetPackage="com.zionhuang.music"
-            android:action="com.zionhuang.music.action.ALBUMS" />
+            android:targetClass="com.dd3boh.outertune.MainActivity"
+            android:targetPackage="com.dd3boh.outertune"
+            android:action="com.dd3boh.outertune.action.ALBUMS" />
     </shortcut>
     <shortcut
         android:shortcutId="playlists"
@@ -36,8 +36,8 @@
         android:icon="@drawable/shortcut_playlists"
         android:shortcutShortLabel="@string/playlists">
         <intent
-            android:targetClass="com.zionhuang.music.MainActivity"
-            android:targetPackage="com.zionhuang.music"
-            android:action="com.zionhuang.music.action.PLAYLISTS" />
+            android:targetClass="com.dd3boh.outertune.MainActivity"
+            android:targetPackage="com.dd3boh.outertune"
+            android:action="com.dd3boh.outertune.action.PLAYLISTS" />
     </shortcut>
 </shortcuts>

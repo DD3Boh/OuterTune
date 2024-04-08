@@ -17,11 +17,11 @@ if (isFullBuild && System.getenv("PULL_REQUEST") == null) {
 }
 
 android {
-    namespace = "com.zionhuang.music"
+    namespace = "com.dd3boh.outertune"
     compileSdk = 33
     buildToolsVersion = "30.0.3"
     defaultConfig {
-        applicationId = "com.zionhuang.music"
+        applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 33
         versionCode = 19
