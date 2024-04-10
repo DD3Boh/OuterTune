@@ -51,6 +51,7 @@ import com.dd3boh.outertune.ui.utils.getDirectoryTree
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
+import com.zionhuang.music.ui.utils.ItemWrapper
 import java.util.Stack
 
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -97,6 +98,11 @@ fun LibrarySongsFolderScreen(
     // content to load for this page
     var currDir by remember {
         mutableStateOf(folderStack.peek())
+    }
+
+    val wrappedSongs = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
+    var selection by remember {
+        mutableStateOf(false)
     }
 
     Box(

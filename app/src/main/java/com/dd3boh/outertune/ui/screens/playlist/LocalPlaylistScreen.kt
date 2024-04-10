@@ -20,7 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -115,6 +118,8 @@ import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
+import com.dd3boh.outertune.ui.menu.SelectionSongMenu
+import com.zionhuang.music.ui.utils.ItemWrapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -148,6 +153,10 @@ fun LocalPlaylistScreen(
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSongSortTypeKey, PlaylistSongSortType.CUSTOM)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSongSortDescendingKey, true)
     var locked by rememberPreference(PlaylistEditLockKey, defaultValue = false)
+    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
+    var selection by remember {
+        mutableStateOf(false)
+    }
 
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -640,32 +649,93 @@ fun LocalPlaylistScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(start = 16.dp)
                         ) {
-                            SortHeader(
-                                sortType = sortType,
-                                sortDescending = sortDescending,
-                                onSortTypeChange = onSortTypeChange,
-                                onSortDescendingChange = onSortDescendingChange,
-                                sortTypeText = { sortType ->
-                                    when (sortType) {
-                                        PlaylistSongSortType.CUSTOM -> R.string.sort_by_custom
-                                        PlaylistSongSortType.CREATE_DATE -> R.string.sort_by_create_date
-                                        PlaylistSongSortType.NAME -> R.string.sort_by_name
-                                        PlaylistSongSortType.ARTIST -> R.string.sort_by_artist
-                                        PlaylistSongSortType.PLAY_TIME -> R.string.sort_by_play_time
-                                    }
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
 
-                            if (editable) {
+
+                            if (selection) {
+                                val count = wrappedSongs.count { it.isSelected }
+                                Text(text = "$count elements selected", modifier = Modifier.weight(1f))
                                 IconButton(
-                                    onClick = { locked = !locked },
+                                    onClick = {
+                                        if (count == wrappedSongs.size) {
+                                            wrappedSongs.forEach { it.isSelected = false }
+                                        } else {
+                                            wrappedSongs.forEach { it.isSelected = true }
+                                        }
+                                    },
+                                ) {
+                                    Icon(
+                                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                        contentDescription = null
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            SelectionSongMenu(
+                                                songSelection = wrappedSongs.filter { it.isSelected }
+                                                    .map { it.item.song },
+                                                onDismiss = menuState::dismiss,
+                                                clearAction = { selection = false }
+                                            )
+                                        }
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = null
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { selection = false },
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        contentDescription = null
+                                    )
+                                }
+                            } else {
+
+
+                                SortHeader(
+                                    sortType = sortType,
+                                    sortDescending = sortDescending,
+                                    onSortTypeChange = onSortTypeChange,
+                                    onSortDescendingChange = onSortDescendingChange,
+                                    sortTypeText = { sortType ->
+                                        when (sortType) {
+                                            PlaylistSongSortType.CUSTOM -> R.string.sort_by_custom
+                                            PlaylistSongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                            PlaylistSongSortType.NAME -> R.string.sort_by_name
+                                            PlaylistSongSortType.ARTIST -> R.string.sort_by_artist
+                                            PlaylistSongSortType.PLAY_TIME -> R.string.sort_by_play_time
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                IconButton(
+                                    onClick = { selection = !selection },
                                     modifier = Modifier.padding(horizontal = 6.dp)
                                 ) {
                                     Icon(
-                                        imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
                                         contentDescription = null
                                     )
+                                }
+
+
+                                if (editable) {
+                                    IconButton(
+                                        onClick = { locked = !locked },
+                                        modifier = Modifier.padding(horizontal = 6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                            contentDescription = null
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -683,19 +753,19 @@ fun LocalPlaylistScreen(
             }
 
             itemsIndexed(
-                items = mutableSongs,
-                key = { _, song -> song.map.id }
-            ) { index, song ->
+                items = wrappedSongs,
+                key = { _, song -> song.item.map.id }
+            ) { index, songWrapper ->
                 ReorderableItem(
                     reorderableState = reorderableState,
-                    key = song.map.id
+                    key = songWrapper.item.map.id
                 ) {
                     SwipeToQueueBox(
-                        item = song.song.toMediaItem(),
+                        item = songWrapper.item.song.toMediaItem(),
                         content = {
                             SongListItem(
-                                song = song.song,
-                                isActive = song.song.id == mediaMetadata?.id,
+                                song = songWrapper.item.song,
+                                isActive = songWrapper.item.song.id == mediaMetadata?.id,
                                 isPlaying = isPlaying,
                                 showInLibraryIcon = true,
 
@@ -704,8 +774,8 @@ fun LocalPlaylistScreen(
                                         onClick = {
                                             menuState.show {
                                                 SongMenu(
-                                                    originalSong = song.song,
-                                                    playlistSong = song,
+                                                    originalSong = songWrapper.item.song,
+                                                    playlistSong = songWrapper.item,
                                                     playlistBrowseId = playlist?.playlist?.browseId,
                                                     navController = navController,
                                                     onDismiss = menuState::dismiss
@@ -731,12 +801,14 @@ fun LocalPlaylistScreen(
                                         }
                                     }
                                 },
+                                isSelected = songWrapper.isSelected && selection,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.background)
                                     .combinedClickable(
                                         onClick = {
-                                            if (song.song.id == mediaMetadata?.id) {
+                                            if (!selection) {
+                                            if (songWrapper.item.song.id == mediaMetadata?.id) {
                                                 playerConnection.player.togglePlayPause()
                                             } else {
                                                 playerConnection.playQueue(
@@ -748,12 +820,15 @@ fun LocalPlaylistScreen(
                                                     )
                                                 )
                                             }
+                                            } else {
+                                                songWrapper.isSelected = !songWrapper.isSelected
+                                            }
                                         },
                                         onLongClick = {
                                             menuState.show {
                                                 SongMenu(
-                                                    originalSong = song.song,
-                                                    playlistSong = song,
+                                                    originalSong = songWrapper.item.song,
+                                                    playlistSong = songWrapper.item,
                                                     playlistBrowseId = playlist?.playlist?.browseId,
                                                     navController = navController,
                                                     onDismiss = menuState::dismiss
