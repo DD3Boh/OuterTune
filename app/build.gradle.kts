@@ -13,7 +13,7 @@ plugins {
 android {
     namespace = "com.dd3boh.outertune"
     compileSdk = 33
-    buildToolsVersion = "30.0.3"
+    buildToolsVersion = "34.0.0"
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
