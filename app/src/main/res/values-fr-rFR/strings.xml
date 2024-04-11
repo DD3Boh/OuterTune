@@ -274,6 +274,4 @@
     <string name="app_version">Version de l\’application</string>
 
     <string name="new_version_available">Nouvelle version disponible</string>
-    <string name="translation_models">Modèles de traduction</string>
-    <string name="clear_translation_models">Effacer les modèles de traduction</string>
 </resources>

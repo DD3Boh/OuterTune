@@ -265,6 +265,4 @@
     <string name="app_version">Alkalmazásverzió</string>
 
     <string name="new_version_available">Új verzió érhető el</string>
-    <string name="translation_models">Fordítási modellek</string>
-    <string name="clear_translation_models">Fordítási modellek törlése</string>
 </resources>

@@ -10,26 +10,20 @@ import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
-import com.dd3boh.outertune.constants.TranslateLyricsKey
 import com.dd3boh.outertune.db.MusicDatabase
-import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.playback.MusicService.MusicBinder
 import com.dd3boh.outertune.playback.queues.Queue
-import com.dd3boh.outertune.utils.TranslationHelper
-import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -51,26 +45,9 @@ class PlayerConnection(
     val currentSong = mediaMetadata.flatMapLatest {
         database.song(it?.id)
     }
-    val translating = MutableStateFlow(false)
-    val currentLyrics = combine(
-        context.dataStore.data.map {
-            it[TranslateLyricsKey] ?: false
-        }.distinctUntilChanged(),
-        mediaMetadata.flatMapLatest { mediaMetadata ->
-            database.lyrics(mediaMetadata?.id)
-        }
-    ) { translateEnabled, lyrics ->
-        if (!translateEnabled || lyrics == null || lyrics.lyrics == LYRICS_NOT_FOUND) return@combine lyrics
-        translating.value = true
-        try {
-            TranslationHelper.translate(lyrics)
-        } catch (e: Exception) {
-            reportException(e)
-            lyrics
-        }.also {
-            translating.value = false
-        }
-    }.stateIn(scope, SharingStarted.Lazily, null)
+    val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
+        database.lyrics(mediaMetadata?.id)
+    }
     val currentFormat = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.format(mediaMetadata?.id)
     }
