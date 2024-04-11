@@ -20,6 +20,7 @@ import com.zionhuang.innertube.models.YouTubeLocale
 import com.zionhuang.innertube.models.getContinuation
 import com.zionhuang.innertube.models.oddElements
 import com.zionhuang.innertube.models.response.AccountMenuResponse
+import com.zionhuang.innertube.models.response.AddItemYouTubePlaylistResponse
 import com.zionhuang.innertube.models.response.BrowseResponse
 import com.zionhuang.innertube.models.response.GetQueueResponse
 import com.zionhuang.innertube.models.response.GetSearchSuggestionsResponse
@@ -388,6 +389,14 @@ object YouTube {
             innerTube.likeVideo(WEB_REMIX, videoId)
         else
             innerTube.unlikeVideo(WEB_REMIX, videoId)
+    }
+
+    suspend fun addToPlaylist(playlistId: String, videoId: String) = runCatching {
+        innerTube.addToPlaylist(WEB_REMIX, playlistId, videoId).body<AddItemYouTubePlaylistResponse>()
+    }
+
+    suspend fun removeFromPlaylist(playlistId: String, videoId: String, setVideoId: String) = runCatching {
+        innerTube.removeFromPlaylist(WEB_REMIX, playlistId, videoId, setVideoId)
     }
 
     suspend fun player(videoId: String, playlistId: String? = null): Result<PlayerResponse> = runCatching {
