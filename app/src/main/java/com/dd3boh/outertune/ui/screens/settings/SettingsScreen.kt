@@ -27,7 +27,6 @@ fun SettingsScreen(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier

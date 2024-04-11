@@ -43,9 +43,9 @@ fun YouTubeArtistMenu(
             IconButton(
                 onClick = {
                     database.query {
-                        val libraryArtist = libraryArtist
-                        if (libraryArtist != null) {
-                            update(libraryArtist.artist.toggleLike())
+                        val libraryArtistLocal = libraryArtist
+                        if (libraryArtistLocal != null) {
+                            update(libraryArtistLocal.artist.toggleLike())
                         } else {
                             insert(
                                 ArtistEntity(

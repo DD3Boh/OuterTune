@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerConnection(
-    context: Context,
     binder: MusicBinder,
     val database: MusicDatabase,
     scope: CoroutineScope,
@@ -52,9 +51,10 @@ class PlayerConnection(
         database.format(mediaMetadata?.id)
     }
 
+    private val currentMediaItemIndex = MutableStateFlow(-1)
+
     val queueTitle = MutableStateFlow<String?>(null)
     val queueWindows = MutableStateFlow<List<Timeline.Window>>(emptyList())
-    val currentMediaItemIndex = MutableStateFlow(-1)
     val currentWindowIndex = MutableStateFlow(-1)
 
     val shuffleModeEnabled = MutableStateFlow(false)

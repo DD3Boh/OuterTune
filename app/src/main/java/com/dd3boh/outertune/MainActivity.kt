@@ -121,7 +121,7 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service is MusicBinder) {
-                playerConnection = PlayerConnection(this@MainActivity, service, database, lifecycleScope)
+                playerConnection = PlayerConnection(service, database, lifecycleScope)
             }
         }
 
@@ -755,7 +755,7 @@ class MainActivity : ComponentActivity() {
                         )
 
                         sharedSong?.let { song ->
-                            playerConnection?.let { playerConnection ->
+                            playerConnection?.let {
                                 Dialog(
                                     onDismissRequest = { sharedSong = null },
                                     properties = DialogProperties(usePlatformDefaultWidth = false)

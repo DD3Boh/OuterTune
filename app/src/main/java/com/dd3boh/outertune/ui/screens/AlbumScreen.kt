@@ -125,8 +125,8 @@ fun AlbumScreen(
     LazyColumn(
         contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
     ) {
-        val albumWithSongs = albumWithSongs
-        if (albumWithSongs != null && albumWithSongs.songs.isNotEmpty()) {
+        val albumWithSongsLocal = albumWithSongs
+        if (albumWithSongsLocal != null && albumWithSongsLocal.songs.isNotEmpty()) {
             item {
                 Column(
                     modifier = Modifier.padding(12.dp)
@@ -135,7 +135,7 @@ fun AlbumScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = albumWithSongs.album.thumbnailUrl,
+                            model = albumWithSongsLocal.album.thumbnailUrl,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(AlbumThumbnailSize)
@@ -148,7 +148,7 @@ fun AlbumScreen(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             AutoResizeText(
-                                text = albumWithSongs.album.title,
+                                text = albumWithSongsLocal.album.title,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
@@ -162,11 +162,11 @@ fun AlbumScreen(
                                         color = MaterialTheme.colorScheme.onBackground
                                     ).toSpanStyle()
                                 ) {
-                                    albumWithSongs.artists.fastForEachIndexed { index, artist ->
+                                    albumWithSongsLocal.artists.fastForEachIndexed { index, artist ->
                                         pushStringAnnotation(artist.id, artist.name)
                                         append(artist.name)
                                         pop()
-                                        if (index != albumWithSongs.artists.lastIndex) {
+                                        if (index != albumWithSongsLocal.artists.lastIndex) {
                                             append(", ")
                                         }
                                     }
@@ -178,9 +178,9 @@ fun AlbumScreen(
                                 }
                             }
 
-                            if (albumWithSongs.album.year != null) {
+                            if (albumWithSongsLocal.album.year != null) {
                                 Text(
-                                    text = albumWithSongs.album.year.toString(),
+                                    text = albumWithSongsLocal.album.year.toString(),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Normal
                                 )
@@ -190,14 +190,14 @@ fun AlbumScreen(
                                 IconButton(
                                     onClick = {
                                         database.query {
-                                            update(albumWithSongs.album.toggleLike())
+                                            update(albumWithSongsLocal.album.toggleLike())
                                         }
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(if (albumWithSongs.album.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border),
+                                        painter = painterResource(if (albumWithSongsLocal.album.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border),
                                         contentDescription = null,
-                                        tint = if (albumWithSongs.album.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                        tint = if (albumWithSongsLocal.album.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current
                                     )
                                 }
 
@@ -205,7 +205,7 @@ fun AlbumScreen(
                                     Download.STATE_COMPLETED -> {
                                         IconButton(
                                             onClick = {
-                                                albumWithSongs.songs.forEach { song ->
+                                                albumWithSongsLocal.songs.forEach { song ->
                                                     DownloadService.sendRemoveDownload(
                                                         context,
                                                         ExoDownloadService::class.java,
@@ -225,7 +225,7 @@ fun AlbumScreen(
                                     Download.STATE_DOWNLOADING -> {
                                         IconButton(
                                             onClick = {
-                                                albumWithSongs.songs.forEach { song ->
+                                                albumWithSongsLocal.songs.forEach { song ->
                                                     DownloadService.sendRemoveDownload(
                                                         context,
                                                         ExoDownloadService::class.java,
@@ -245,7 +245,7 @@ fun AlbumScreen(
                                     else -> {
                                         IconButton(
                                             onClick = {
-                                                albumWithSongs.songs.forEach { song ->
+                                                albumWithSongsLocal.songs.forEach { song ->
                                                     val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
                                                         .setCustomCacheKey(song.id)
                                                         .setData(song.song.title.toByteArray())
@@ -271,7 +271,7 @@ fun AlbumScreen(
                                     onClick = {
                                         menuState.show {
                                             AlbumMenu(
-                                                originalAlbum = Album(albumWithSongs.album, albumWithSongs.artists),
+                                                originalAlbum = Album(albumWithSongsLocal.album, albumWithSongsLocal.artists),
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss
                                             )
@@ -294,8 +294,8 @@ fun AlbumScreen(
                             onClick = {
                                 playerConnection.playQueue(
                                     ListQueue(
-                                        title = albumWithSongs.album.title,
-                                        items = albumWithSongs.songs.map(Song::toMediaItem)
+                                        title = albumWithSongsLocal.album.title,
+                                        items = albumWithSongsLocal.songs.map(Song::toMediaItem)
                                     )
                                 )
                             },
@@ -317,8 +317,8 @@ fun AlbumScreen(
                             onClick = {
                                 playerConnection.playQueue(
                                     ListQueue(
-                                        title = albumWithSongs.album.title,
-                                        items = albumWithSongs.songs.shuffled().map(Song::toMediaItem)
+                                        title = albumWithSongsLocal.album.title,
+                                        items = albumWithSongsLocal.songs.shuffled().map(Song::toMediaItem)
                                     )
                                 )
                             },
@@ -338,7 +338,7 @@ fun AlbumScreen(
             }
 
             itemsIndexed(
-                items = albumWithSongs.songs,
+                items = albumWithSongsLocal.songs,
                 key = { _, song -> song.id }
             ) { index, song ->
                 SongListItem(
@@ -373,8 +373,8 @@ fun AlbumScreen(
                             } else {
                                 playerConnection.playQueue(
                                     ListQueue(
-                                        title = albumWithSongs.album.title,
-                                        items = albumWithSongs.songs.map { it.toMediaItem() },
+                                        title = albumWithSongsLocal.album.title,
+                                        items = albumWithSongsLocal.songs.map { it.toMediaItem() },
                                         startIndex = index
                                     )
                                 )
