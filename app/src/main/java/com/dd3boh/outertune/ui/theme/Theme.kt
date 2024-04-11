@@ -18,7 +18,7 @@ import androidx.palette.graphics.Palette
 import com.google.material.color.scheme.Scheme
 import com.google.material.color.score.Score
 
-val DefaultThemeColor = Color(0xFFED5564)
+val DefaultThemeColor = Color(0xFF4285F4)
 
 @Composable
 fun OuterTuneTheme(
@@ -33,8 +33,8 @@ fun OuterTuneTheme(
             if (darkTheme) dynamicDarkColorScheme(context).pureBlack(pureBlack)
             else dynamicLightColorScheme(context)
         } else {
-            if (darkTheme) Scheme.dark(themeColor.toArgb()).toColorScheme().pureBlack(pureBlack)
-            else Scheme.light(themeColor.toArgb()).toColorScheme()
+            if (darkTheme) Scheme.dark(DefaultThemeColor.toArgb()).toColorScheme().pureBlack(pureBlack)
+            else Scheme.light(DefaultThemeColor.toArgb()).toColorScheme()
         }
     }
 

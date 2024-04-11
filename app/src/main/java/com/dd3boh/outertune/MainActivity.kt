@@ -130,7 +130,6 @@ class MainActivity : ComponentActivity() {
             playerConnection = null
         }
     }
-    var latestVersion by mutableStateOf(BuildConfig.VERSION_CODE.toLong())
 
     override fun onStart() {
         super.onStart()
@@ -530,7 +529,7 @@ class MainActivity : ComponentActivity() {
                                 YouTubeBrowseScreen(navController, scrollBehavior)
                             }
                             composable("settings") {
-                                SettingsScreen(latestVersion, navController, scrollBehavior)
+                                SettingsScreen(navController, scrollBehavior)
                             }
                             composable("settings/appearance") {
                                 AppearanceSettings(navController, scrollBehavior)
@@ -651,28 +650,15 @@ class MainActivity : ComponentActivity() {
                                             Screens.Playlists.route
                                         )
                                     ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(CircleShape)
-                                                .clickable {
-                                                    navController.navigate("settings")
-                                                }
-                                        ) {
-                                            BadgedBox(
-                                                badge = {
-                                                    if (latestVersion > BuildConfig.VERSION_CODE) {
-                                                        Badge()
-                                                    }
-                                                }
-                                            ) {
-
-                                                Icon(
-                                                    painter = painterResource(R.drawable.settings),
-                                                    contentDescription = null
-                                                )
+                                        IconButton(
+                                            onClick = {
+                                                navController.navigate("settings")
                                             }
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.settings),
+                                                contentDescription = null
+                                            )
                                         }
                                     }
                                 },
