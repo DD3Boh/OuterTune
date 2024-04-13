@@ -251,7 +251,7 @@ class InnerTube {
         setBody(
             LikeBody(
                 context = client.toContext(locale, visitorData),
-                target = LikeBody.Target(videoId)
+                target = LikeBody.Target.VideoTarget(videoId)
             )
         )
     }
@@ -264,7 +264,33 @@ class InnerTube {
         setBody(
             LikeBody(
                 context = client.toContext(locale, visitorData),
-                target = LikeBody.Target(videoId)
+                target = LikeBody.Target.VideoTarget(videoId)
+            )
+        )
+    }
+
+    suspend fun likePlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+    ) = httpClient.post("like/like") {
+        ytClient(client, setLogin = true)
+        setBody(
+            LikeBody(
+                context = client.toContext(locale, visitorData),
+                target = LikeBody.Target.PlaylistTarget(playlistId)
+            )
+        )
+    }
+
+    suspend fun unlikePlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+    ) = httpClient.post("like/removelike") {
+        ytClient(client, setLogin = true)
+        setBody(
+            LikeBody(
+                context = client.toContext(locale, visitorData),
+                target = LikeBody.Target.PlaylistTarget(playlistId)
             )
         )
     }

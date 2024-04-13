@@ -17,6 +17,7 @@ import com.zionhuang.innertube.models.YouTubeClient.Companion.TVHTML5
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.YouTubeLocale
+import com.zionhuang.innertube.models.body.LikeBody
 import com.zionhuang.innertube.models.getContinuation
 import com.zionhuang.innertube.models.oddElements
 import com.zionhuang.innertube.models.response.AccountMenuResponse
@@ -389,6 +390,13 @@ object YouTube {
             innerTube.likeVideo(WEB_REMIX, videoId)
         else
             innerTube.unlikeVideo(WEB_REMIX, videoId)
+    }
+
+    suspend fun likePlaylist(playlistId: String, like: Boolean) = runCatching {
+        if (like)
+            innerTube.likePlaylist(WEB_REMIX, playlistId)
+        else
+            innerTube.unlikePlaylist(WEB_REMIX, playlistId)
     }
 
     suspend fun addToPlaylist(playlistId: String, videoId: String) = runCatching {
