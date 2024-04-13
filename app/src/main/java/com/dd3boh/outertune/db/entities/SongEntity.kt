@@ -5,7 +5,9 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.zionhuang.innertube.YouTube
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -33,16 +35,18 @@ data class SongEntity(
         liked = !liked,
         inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary
     ).also {
-        GlobalScope.launch() {
+        CoroutineScope(Dispatchers.IO).launch() {
             YouTube.likeVideo(id, !liked)
+            this.cancel()
         }
     }
 
     fun setLiked() = copy(
         liked = true,
     ).also {
-        GlobalScope.launch() {
+        CoroutineScope(Dispatchers.IO).launch() {
             YouTube.likeVideo(id, true)
+            this.cancel()
         }
     }
 
