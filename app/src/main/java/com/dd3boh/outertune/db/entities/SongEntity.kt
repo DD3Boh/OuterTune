@@ -31,21 +31,14 @@ data class SongEntity(
     val totalPlayTime: Long = 0, // in milliseconds
     val inLibrary: LocalDateTime? = null,
 ) {
-    fun toggleLike() = copy(
+    fun localToggleLike() = copy(
         liked = !liked,
         inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary
-    ).also {
+    )
+
+    fun toggleLike() = localToggleLike().also {
         CoroutineScope(Dispatchers.IO).launch() {
             YouTube.likeVideo(id, !liked)
-            this.cancel()
-        }
-    }
-
-    fun setLiked() = copy(
-        liked = true,
-    ).also {
-        CoroutineScope(Dispatchers.IO).launch() {
-            YouTube.likeVideo(id, true)
             this.cancel()
         }
     }

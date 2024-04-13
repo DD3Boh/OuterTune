@@ -67,6 +67,7 @@ import com.zionhuang.innertube.models.WatchEndpoint
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
@@ -88,6 +89,7 @@ import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.menu.YouTubeSongMenu
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.viewmodels.OnlinePlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -103,6 +105,7 @@ fun OnlinePlaylistScreen(
     val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
@@ -194,14 +197,8 @@ fun OnlinePlaylistScreen(
                                             onClick = {
                                                 database.transaction {
                                                     if (playlist.id == "LM") {
-                                                        for (song in songs) {
-                                                            viewModel.viewModelScope.launch(Dispatchers.IO) {
-                                                                val dbSong = database.song(song.id).firstOrNull()
-                                                                if (dbSong == null)
-                                                                    insert(song.toMediaMetadata(), SongEntity::toggleLike)
-                                                                else
-                                                                    update(dbSong.song.setLiked())
-                                                            }
+                                                        viewModel.viewModelScope.launch(Dispatchers.IO) {
+                                                            syncUtils.syncLikedSongs()
                                                         }
                                                     } else {
                                                         val playlistEntity = PlaylistEntity(
