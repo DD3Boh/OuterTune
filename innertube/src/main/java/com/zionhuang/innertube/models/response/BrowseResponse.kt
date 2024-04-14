@@ -7,6 +7,7 @@ import com.zionhuang.innertube.models.MusicShelfRenderer
 import com.zionhuang.innertube.models.ResponseContext
 import com.zionhuang.innertube.models.Runs
 import com.zionhuang.innertube.models.SectionListRenderer
+import com.zionhuang.innertube.models.SubscriptionButton
 import com.zionhuang.innertube.models.Tabs
 import com.zionhuang.innertube.models.ThumbnailRenderer
 import kotlinx.serialization.Serializable
@@ -58,6 +59,7 @@ data class BrowseResponse(
             val thumbnail: ThumbnailRenderer?,
             val playButton: Button?,
             val startRadioButton: Button?,
+            val subscriptionButton: SubscriptionButton?,
             val menu: Menu,
         )
 
