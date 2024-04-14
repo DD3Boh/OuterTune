@@ -441,9 +441,9 @@ fun ArtistScreen(
                                     ArtistEntity(
                                         id = it.id,
                                         name = it.title,
+                                        channelId = it.channelId,
                                         thumbnailUrl = it.thumbnail,
-                                        bookmarkedAt = LocalDateTime.now()
-                                    )
+                                    ).toggleLike()
                                 )
                             }
                         }
