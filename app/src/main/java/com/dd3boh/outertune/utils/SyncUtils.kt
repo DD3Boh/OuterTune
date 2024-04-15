@@ -2,12 +2,16 @@ package com.dd3boh.outertune.utils
 
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.ArtistEntity
+import com.dd3boh.outertune.db.entities.Playlist
+import com.dd3boh.outertune.db.entities.PlaylistEntity
+import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.SongItem
+import com.zionhuang.innertube.utils.completed
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDateTime
@@ -88,6 +92,40 @@ class SyncUtils @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    suspend fun syncSavedPlaylists() {
+        YouTube.likedPlaylists().onSuccess { playlistList ->
+            val dbPlaylists = database.playlistsByNameAsc().first()
+
+            playlistList.drop(1).forEach { playlist ->
+                var playlistEntity = dbPlaylists.find { playlist.id == it.playlist.browseId }?.playlist
+                if (playlistEntity == null) {
+                    playlistEntity = PlaylistEntity(name = playlist.title, browseId = playlist.id)
+                    database.insert(playlistEntity)
+                }
+
+                syncPlaylist(playlist.id, playlistEntity.id)
+            }
+        }
+    }
+
+    suspend fun syncPlaylist(browseId: String, playlistId: String) {
+        val playlistPage = YouTube.playlist(browseId).completed().getOrNull() ?: return
+        database.transaction {
+            clearPlaylist(playlistId)
+            playlistPage.songs
+                .map(SongItem::toMediaMetadata)
+                .onEach(::insert)
+                .mapIndexed { position, song ->
+                    PlaylistSongMap(
+                        songId = song.id,
+                        playlistId = playlistId,
+                        position = position
+                    )
+                }
+                .forEach(::insert)
         }
     }
 }

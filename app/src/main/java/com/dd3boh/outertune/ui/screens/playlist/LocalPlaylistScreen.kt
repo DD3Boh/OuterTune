@@ -94,6 +94,7 @@ import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.PlaylistEditLockKey
@@ -142,6 +143,7 @@ fun LocalPlaylistScreen(
     val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
@@ -363,21 +365,7 @@ fun LocalPlaylistScreen(
                                             IconButton(
                                                 onClick = {
                                                     coroutineScope.launch(Dispatchers.IO) {
-                                                        val playlistPage = YouTube.playlist(playlist.playlist.browseId).completed().getOrNull() ?: return@launch
-                                                        database.transaction {
-                                                            clearPlaylist(playlist.id)
-                                                            playlistPage.songs
-                                                                .map(SongItem::toMediaMetadata)
-                                                                .onEach(::insert)
-                                                                .mapIndexed { position, song ->
-                                                                    PlaylistSongMap(
-                                                                        songId = song.id,
-                                                                        playlistId = playlist.id,
-                                                                        position = position
-                                                                    )
-                                                                }
-                                                                .forEach(::insert)
-                                                        }
+                                                        syncUtils.syncPlaylist(playlist.playlist.browseId, playlist.id)
                                                         snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
                                                     }
                                                 }
