@@ -3,6 +3,7 @@ package com.zionhuang.innertube.utils
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.ArtistItem
+import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.pages.LibraryContinuationPage
 import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.PlaylistPage
@@ -37,6 +38,10 @@ suspend fun Result<LibraryPage>.completedLibraryPage(): Result<LibraryPage>? = r
 
             is ArtistItem -> {
                 YouTube.libraryArtistsSubscriptionsContinuation(continuation).getOrNull() ?: break
+            }
+
+            is SongItem -> {
+                YouTube.librarySongsContinuation(continuation).getOrNull() ?: break
             }
 
             else -> return null

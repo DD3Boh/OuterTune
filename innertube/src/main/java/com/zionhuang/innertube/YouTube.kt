@@ -428,6 +428,41 @@ object YouTube {
         )
     }
 
+    suspend fun librarySongs(): Result<LibraryPage> = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            browseId = "FEmusic_liked_videos",
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        LibraryPage(
+            items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicShelfRenderer?.contents!!.mapNotNull {
+                    LibraryPage.fromMusicResponsiveListItemRenderer(it.musicResponsiveListItemRenderer)
+                },
+            continuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicShelfRenderer?.continuations?.firstOrNull()?.nextContinuationData?.continuation
+        )
+    }
+
+    suspend fun librarySongsContinuation(continuation: String): Result<LibraryContinuationPage> = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            continuation = continuation,
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        LibraryContinuationPage(
+            items = response.continuationContents?.musicShelfContinuation?.contents!!.mapNotNull {
+                LibraryPage.fromMusicResponsiveListItemRenderer(it.musicResponsiveListItemRenderer)
+            },
+            continuation = response.continuationContents.musicShelfContinuation.continuations?.firstOrNull()?.
+            nextContinuationData?.continuation
+        )
+    }
+
     suspend fun likedPlaylists(): Result<List<PlaylistItem>> = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,

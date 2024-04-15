@@ -69,6 +69,7 @@ fun LibrarySongsScreen(
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
+            syncUtils.syncLibrarySongs()
             syncUtils.syncLikedSongs()
         }
     }

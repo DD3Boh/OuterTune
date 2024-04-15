@@ -4,6 +4,7 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
+import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.zionhuang.innertube.YouTube
@@ -36,6 +37,26 @@ class SyncUtils @Inject constructor(
                     when (dbSong) {
                         null -> insert(song.toMediaMetadata(), SongEntity::localToggleLike)
                         else -> if (!dbSong.song.liked) update(dbSong.song.localToggleLike())
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun syncLibrarySongs() {
+        YouTube.librarySongs().completedLibraryPage()?.onSuccess { page ->
+            val songs = page.items.filterIsInstance<SongItem>().reversed()
+
+            database.songsByNameAsc().first()
+                .filterNot { it.id in songs.map(SongItem::id) }
+                .forEach { database.update(it.song.toggleLibrary()) }
+
+            songs.forEach { song ->
+                val dbSong = database.song(song.id).firstOrNull()
+                database.transaction {
+                    when (dbSong) {
+                        null -> insert(song.toMediaMetadata(), SongEntity::toggleLibrary)
+                        else -> if (dbSong.song.inLibrary == null) update(dbSong.song.toggleLibrary())
                     }
                 }
             }
