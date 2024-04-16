@@ -12,6 +12,7 @@ import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.utils.completed
+import com.zionhuang.innertube.utils.completedAlbumPage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDateTime
@@ -43,12 +44,12 @@ class SyncUtils @Inject constructor(
     }
 
     suspend fun syncLikedAlbums() {
-        YouTube.libraryAlbums().onSuccess { ytAlbums ->
+        YouTube.libraryAlbums().completedAlbumPage().onSuccess { page ->
             database.albumsByNameAsc().first()
-                .filterNot { it.id in ytAlbums.map(AlbumItem::id) }
+                .filterNot { it.id in page.albums.map(AlbumItem::id) }
                 .forEach { database.update(it.album.localToggleLike()) }
 
-            ytAlbums.forEach { album ->
+            page.albums.forEach { album ->
                 val dbAlbum = database.album(album.id).firstOrNull()
                 YouTube.album(album.browseId).onSuccess { albumPage ->
                     when (dbAlbum) {
