@@ -44,6 +44,7 @@ import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.resize
+import com.zionhuang.innertube.models.AlbumItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
@@ -626,6 +627,36 @@ interface DatabaseDao {
             ?.mapIndexed { index, artist ->
                 AlbumArtistMap(
                     albumId = albumPage.album.browseId,
+                    artistId = artist.id,
+                    order = index
+                )
+            }
+            ?.forEach(::insert)
+    }
+
+    @Transaction
+    fun insert(albumItem: AlbumItem) {
+        if (insert(AlbumEntity(
+                id = albumItem.browseId,
+                playlistId = albumItem.playlistId,
+                title = albumItem.title,
+                year = albumItem.year,
+                thumbnailUrl = albumItem.thumbnail,
+                songCount = 0,
+                duration = 0
+            )) == -1L
+        ) return
+        albumItem.artists
+            ?.map { artist ->
+                ArtistEntity(
+                    id = artist.id ?: artistByName(artist.name)?.id ?: ArtistEntity.generateArtistId(),
+                    name = artist.name
+                )
+            }
+            ?.onEach(::insert)
+            ?.mapIndexed { index, artist ->
+                AlbumArtistMap(
+                    albumId = albumItem.browseId,
                     artistId = artist.id,
                     order = index
                 )
