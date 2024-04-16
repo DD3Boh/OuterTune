@@ -476,7 +476,9 @@ fun AlbumListItem(
     title = album.album.title,
     subtitle = joinByBullet(
         album.artists.joinToString { it.name },
-        pluralStringResource(R.plurals.n_song, album.album.songCount, album.album.songCount),
+        album.album.songCount.takeIf { it != 0 }?.let { songCount ->
+            pluralStringResource(R.plurals.n_song, songCount, songCount)
+        },
         album.album.year?.toString()
     ),
     badges = badges,
