@@ -371,12 +371,11 @@ object YouTube {
             items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
             tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.items!!
                 .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
-                .mapNotNull { ArtistItemsPage.fromMusicTwoRowItemRenderer(it) as? AlbumItem },
+                .mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) },
             continuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()?.
             tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.
             continuations?.firstOrNull()?.nextContinuationData?.continuation
         )
-
     }
 
     suspend fun libraryAlbumsContinuation(continuation: String) = runCatching {

@@ -1,9 +1,11 @@
 package com.zionhuang.innertube.pages
 
 import com.zionhuang.innertube.models.AlbumItem
+import com.zionhuang.innertube.models.Artist
 import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.MusicResponsiveListItemRenderer
 import com.zionhuang.innertube.models.MusicTwoRowItemRenderer
+import com.zionhuang.innertube.models.Run
 import com.zionhuang.innertube.models.YTItem
 
 data class LibraryPage(
@@ -18,7 +20,7 @@ data class LibraryPage(
                             ?.musicPlayButtonRenderer?.playNavigationEndpoint
                             ?.watchPlaylistEndpoint?.playlistId ?: return null,
                         title = renderer.title.runs?.firstOrNull()?.text ?: return null,
-                        artists = null,
+                        artists = parseArtists(renderer.subtitle?.runs),
                         year = renderer.subtitle?.runs?.lastOrNull()?.text?.toIntOrNull(),
                         thumbnail = renderer.thumbnailRenderer.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
                         explicit = renderer.subtitleBadges?.find {
@@ -39,6 +41,24 @@ data class LibraryPage(
                             ?.find { it.menuNavigationItemRenderer?.icon?.iconType == "MIX" }
                             ?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint
                     )
+        }
+
+        private fun parseArtists(runs: List<Run>?): List<Artist> {
+            val artists = mutableListOf<Artist>()
+
+            if (runs != null) {
+                for (run in runs) {
+                    if (run.navigationEndpoint != null) {
+                        artists.add(
+                            Artist(
+                                id = run.navigationEndpoint.browseEndpoint?.browseId!!,
+                                name = run.text
+                            )
+                        )
+                    }
+                }
+            }
+            return artists
         }
     }
 }
