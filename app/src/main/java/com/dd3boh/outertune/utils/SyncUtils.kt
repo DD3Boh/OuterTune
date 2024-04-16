@@ -44,7 +44,7 @@ class SyncUtils @Inject constructor(
 
     suspend fun syncLikedAlbums() {
         YouTube.libraryAlbums().completedLibraryPage()?.onSuccess { page ->
-            val albums = page.items.filterIsInstance<AlbumItem>()
+            val albums = page.items.filterIsInstance<AlbumItem>().reversed()
 
             database.albumsByNameAsc().first()
                 .filterNot { it.id in albums.map(AlbumItem::id) }
