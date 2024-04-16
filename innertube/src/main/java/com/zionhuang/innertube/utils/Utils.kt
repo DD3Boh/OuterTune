@@ -1,7 +1,10 @@
 package com.zionhuang.innertube.utils
 
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.pages.LibraryAlbumsPage
+import com.zionhuang.innertube.models.AlbumItem
+import com.zionhuang.innertube.models.ArtistItem
+import com.zionhuang.innertube.pages.LibraryContinuationPage
+import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.PlaylistPage
 import java.security.MessageDigest
 
@@ -22,17 +25,27 @@ suspend fun Result<PlaylistPage>.completed() = runCatching {
     )
 }
 
-suspend fun Result<LibraryAlbumsPage>.completedAlbumPage() = runCatching {
+suspend fun Result<LibraryPage>.completedLibraryPage(): Result<LibraryPage>? = runCatching {
     val page = getOrThrow()
-    val albums = page.albums.toMutableList()
+    val items = page.items.toMutableList()
     var continuation = page.continuation
     while (continuation != null) {
-        val continuationPage = YouTube.libraryAlbumsContinuation(continuation).getOrNull() ?: break
-        albums += continuationPage.albums
+        val continuationPage: LibraryContinuationPage = when (items.first()) {
+            is AlbumItem -> {
+                YouTube.libraryAlbumsContinuation(continuation).getOrNull() ?: break
+            }
+
+            is ArtistItem -> {
+                YouTube.libraryArtistsSubscriptionsContinuation(continuation).getOrNull() ?: break
+            }
+
+            else -> return null
+        }
+        items += continuationPage.items
         continuation = continuationPage.continuation
     }
-    LibraryAlbumsPage(
-        albums = albums,
+    LibraryPage(
+        items = items,
         continuation = page.continuation
     )
 }

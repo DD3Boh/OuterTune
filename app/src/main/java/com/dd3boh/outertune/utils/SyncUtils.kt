@@ -2,7 +2,6 @@ package com.dd3boh.outertune.utils
 
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.ArtistEntity
-import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.SongEntity
@@ -12,7 +11,7 @@ import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.utils.completed
-import com.zionhuang.innertube.utils.completedAlbumPage
+import com.zionhuang.innertube.utils.completedLibraryPage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDateTime
@@ -44,12 +43,14 @@ class SyncUtils @Inject constructor(
     }
 
     suspend fun syncLikedAlbums() {
-        YouTube.libraryAlbums().completedAlbumPage().onSuccess { page ->
+        YouTube.libraryAlbums().completedLibraryPage()?.onSuccess { page ->
+            val albums = page.items.filterIsInstance<AlbumItem>()
+
             database.albumsByNameAsc().first()
-                .filterNot { it.id in page.albums.map(AlbumItem::id) }
+                .filterNot { it.id in albums.map(AlbumItem::id) }
                 .forEach { database.update(it.album.localToggleLike()) }
 
-            page.albums.forEach { album ->
+            albums.forEach { album ->
                 val dbAlbum = database.album(album.id).firstOrNull()
                 YouTube.album(album.browseId).onSuccess { albumPage ->
                     when (dbAlbum) {
@@ -66,8 +67,8 @@ class SyncUtils @Inject constructor(
     }
 
     suspend fun syncArtistsSubscriptions() {
-        YouTube.libraryArtistsSubscriptions().onSuccess { ytArtists ->
-            val artists: List<ArtistItem> = ytArtists
+        YouTube.libraryArtistsSubscriptions().completedLibraryPage()?.onSuccess { page ->
+            val artists = page.items.filterIsInstance<ArtistItem>()
 
             database.artistsBookmarkedByNameAsc().first()
                 .filterNot { it.id in artists.map(ArtistItem::id) }

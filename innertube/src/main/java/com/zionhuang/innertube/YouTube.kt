@@ -37,8 +37,8 @@ import com.zionhuang.innertube.pages.ArtistItemsPage
 import com.zionhuang.innertube.pages.ArtistPage
 import com.zionhuang.innertube.pages.BrowseResult
 import com.zionhuang.innertube.pages.ExplorePage
-import com.zionhuang.innertube.pages.LibraryAlbumsContinuationPage
-import com.zionhuang.innertube.pages.LibraryAlbumsPage
+import com.zionhuang.innertube.pages.LibraryContinuationPage
+import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.MoodAndGenres
 import com.zionhuang.innertube.pages.NewReleaseAlbumPage
 import com.zionhuang.innertube.pages.NextPage
@@ -361,14 +361,14 @@ object YouTube {
         )
     }
 
-    suspend fun libraryAlbums(): Result<LibraryAlbumsPage> = runCatching {
+    suspend fun libraryAlbums(): Result<LibraryPage> = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,
             browseId = "FEmusic_liked_albums",
             setLogin = true
         ).body<BrowseResponse>()
-        LibraryAlbumsPage (
-            albums = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
+        LibraryPage (
+            items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
             tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.items!!
                 .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
                 .mapNotNull { ArtistItemsPage.fromMusicTwoRowItemRenderer(it) as? AlbumItem },
@@ -386,25 +386,47 @@ object YouTube {
             setLogin = true
         ).body<BrowseResponse>()
 
-        LibraryAlbumsContinuationPage(
-            albums = response.continuationContents?.gridContinuation?.items!!
+        LibraryContinuationPage(
+            items = response.continuationContents?.gridContinuation?.items!!
                 .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
-                .mapNotNull { LibraryAlbumsPage.fromMusicTwoRowItemRenderer(it) as? AlbumItem },
-            continuation = response.continuationContents?.gridContinuation?.continuations?.firstOrNull()?.nextContinuationData?.continuation
+                .mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) },
+            continuation = response.continuationContents.gridContinuation.continuations?.firstOrNull()?.nextContinuationData?.continuation
         )
     }
 
-    suspend fun libraryArtistsSubscriptions(): Result<List<ArtistItem>> = runCatching {
+    suspend fun libraryArtistsSubscriptions(): Result<LibraryPage> = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,
             browseId = "FEmusic_library_corpus_artists",
             setLogin = true
         ).body<BrowseResponse>()
-        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicShelfRenderer?.contents!!
-            .mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
-            .mapNotNull {
-                SearchSuggestionPage.fromMusicResponsiveListItemRenderer(it) as? ArtistItem
-            }
+
+        LibraryPage(
+            items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
+            tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicShelfRenderer?.
+            contents!!
+                .mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
+                .mapNotNull { LibraryPage.fromMusicResponsiveListItemRenderer(it) },
+            continuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()?.
+            tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicShelfRenderer?.
+            continuations?.getContinuation()
+        )
+    }
+
+    suspend fun libraryArtistsSubscriptionsContinuation(continuation: String): Result<LibraryContinuationPage> = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            continuation = continuation,
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        LibraryContinuationPage(
+            items = response.continuationContents?.musicShelfContinuation?.contents!!
+                .mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
+                .mapNotNull { LibraryPage.fromMusicResponsiveListItemRenderer(it) },
+            continuation = response.continuationContents.musicShelfContinuation.continuations?.
+            firstOrNull()?.nextContinuationData?.continuation
+        )
     }
 
     suspend fun likedPlaylists(): Result<List<PlaylistItem>> = runCatching {
