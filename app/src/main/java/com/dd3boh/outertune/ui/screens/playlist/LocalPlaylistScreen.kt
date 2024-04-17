@@ -82,6 +82,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
@@ -127,6 +128,7 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
@@ -255,8 +257,20 @@ fun LocalPlaylistScreen(
             }
         },
         onDragEnd = { fromIndex, toIndex ->
-            database.transaction {
-                move(viewModel.playlistId, fromIndex - headerItems, toIndex - headerItems)
+            viewModel.viewModelScope.launch(Dispatchers.IO) {
+                val playlistSongMap = database.playlistSongMaps(viewModel.playlistId, 0)
+
+                playlistSongMap[fromIndex - headerItems].setVideoId?.let { setVideoId ->
+                    playlistSongMap[toIndex - headerItems + 1].setVideoId?.let { successorSetVideoId ->
+                        viewModel.playlist.first()?.playlist?.browseId?.let { browseId ->
+                            YouTube.moveSongPlaylist(browseId, setVideoId, successorSetVideoId)
+                        }
+                    }
+                }
+
+                database.transaction {
+                    move(viewModel.playlistId, fromIndex - headerItems, toIndex - headerItems)
+                }
             }
         }
     )

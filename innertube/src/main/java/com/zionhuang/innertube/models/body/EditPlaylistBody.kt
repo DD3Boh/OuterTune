@@ -14,6 +14,7 @@ data class EditPlaylistBody(
         val action: String = "ACTION_SET_PLAYLIST_NAME",
         val playlistName: String?,
         val addedVideoId: String? = null,
+        val movedSetVideoIdSuccessor: String? = null,
         val removedVideoId: String? = null,
         val setVideoId: String? = null,
     )

@@ -364,4 +364,28 @@ class InnerTube {
             )
         )
     }
+
+    suspend fun moveSongPlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        setVideoId: String,
+        successorSetVideoId: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId,
+                actions = listOf(
+                    EditPlaylistBody.Action(
+                        playlistName = null,
+                        action = "ACTION_MOVE_VIDEO_BEFORE",
+                        movedSetVideoIdSuccessor = successorSetVideoId,
+                        setVideoId = setVideoId,
+                    )
+                )
+
+            )
+        )
+    }
 }
