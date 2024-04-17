@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.QueuePlayNext
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
@@ -307,7 +308,7 @@ fun AlbumMenu(
         }
 
         GridMenuItem(
-            icon = R.drawable.select_all,
+            icon = Icons.Rounded.SelectAll,
             title = R.string.select
         ) {
             onDismiss()
