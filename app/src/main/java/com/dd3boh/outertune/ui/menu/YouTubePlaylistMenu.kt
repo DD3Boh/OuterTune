@@ -74,7 +74,8 @@ fun YouTubePlaylistMenu(
                                     PlaylistSongMap(
                                         songId = song.id,
                                         playlistId = targetPlaylist.id,
-                                        position = position++
+                                        position = position++,
+                                        setVideoId = song.setVideoId
                                     )
                                 )
                             }

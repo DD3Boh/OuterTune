@@ -112,7 +112,8 @@ fun PlayerMenu(
                     PlaylistSongMap(
                         songId = mediaMetadata.id,
                         playlistId = playlist.id,
-                        position = playlist.songCount
+                        position = playlist.songCount,
+                        setVideoId = mediaMetadata.setVideoId
                     )
                 )
             }

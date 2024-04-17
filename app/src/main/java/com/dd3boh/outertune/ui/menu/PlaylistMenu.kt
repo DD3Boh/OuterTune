@@ -316,7 +316,8 @@ fun PlaylistMenu(
                                 PlaylistSongMap(
                                     songId = song.id,
                                     playlistId = playlist.id,
-                                    position = position
+                                    position = position,
+                                    setVideoId = song.setVideoId
                                 )
                             }
                             .forEach(::insert)

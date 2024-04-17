@@ -551,11 +551,10 @@ fun LocalPlaylistScreen(
                             if (dismissValue == SwipeToDismissBoxValue.EndToStart || dismissValue == SwipeToDismissBoxValue.StartToEnd) {
                                 database.transaction {
                                     coroutineScope.launch {
-                                        playlist?.playlist?.browseId?.let { it1 ->
-                                            var setVideoId = getSetVideoId(currentItem.map.songId)
-                                            if (setVideoId?.setVideoId != null) {
+                                        playlist?.playlist?.browseId?.let { playlistId ->
+                                            if (currentItem.map.setVideoId != null) {
                                                 YouTube.removeFromPlaylist(
-                                                    it1, currentItem.map.songId, setVideoId.setVideoId!!
+                                                    playlistId, currentItem.map.songId, currentItem.map.setVideoId!!
                                                 )
                                             }
                                         }

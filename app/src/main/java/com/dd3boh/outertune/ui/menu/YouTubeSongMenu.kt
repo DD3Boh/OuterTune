@@ -66,7 +66,6 @@ import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
-import com.dd3boh.outertune.db.entities.SetVideoIdEntity
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
@@ -110,27 +109,19 @@ fun YouTubeSongMenu(
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
         onAdd = { playlist ->
-            database.transaction {
-                insert(song.toMediaMetadata())
-                insert(
-                    PlaylistSongMap(
-                        songId = song.id,
-                        playlistId = playlist.id,
-                        position = playlist.songCount
-                    )
-                )
+            database.query {
                 coroutineScope.launch {
                     playlist.playlist.browseId?.let { browseId ->
                         YouTube.addToPlaylist(browseId, song.id).onSuccess { result ->
                             if (result.playlistEditResults.isNotEmpty()) {
-                                for (playlistEditResult in result.playlistEditResults) {
-                                    insertSetVideoId(
-                                        SetVideoIdEntity(
-                                            playlistEditResult.playlistEditVideoAddedResultData.videoId,
-                                            playlistEditResult.playlistEditVideoAddedResultData.setVideoId,
-                                        )
+                                insert(
+                                    PlaylistSongMap(
+                                        songId = song.id,
+                                        playlistId = playlist.id,
+                                        position = playlist.songCount,
+                                        setVideoId = result.playlistEditResults.first().playlistEditVideoAddedResultData.setVideoId
                                     )
-                                }
+                                )
                             }
                         }
                     }
