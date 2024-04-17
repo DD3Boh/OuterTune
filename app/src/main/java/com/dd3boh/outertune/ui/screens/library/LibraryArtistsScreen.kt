@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
-import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ArtistFilter
 import com.dd3boh.outertune.constants.ArtistFilterKey
@@ -60,8 +59,6 @@ import com.dd3boh.outertune.ui.menu.ArtistMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryArtistsViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -71,16 +68,11 @@ fun LibraryArtistsScreen(
 ) {
     val menuState = LocalMenuState.current
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
-    val syncUtils = LocalSyncUtils.current
     var viewType by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
 
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            syncUtils.syncArtistsSubscriptions()
-        }
-    }
+    LaunchedEffect(Unit) { viewModel.sync() }
 
     val artists by viewModel.allArtists.collectAsState()
     val coroutineScope = rememberCoroutineScope()

@@ -13,6 +13,7 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
+import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +31,7 @@ class LibrarySongsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
     downloadUtil: DownloadUtil,
+    private val syncUtils: SyncUtils,
 ) : ViewModel() {
     val allSongs = context.dataStore.data
         .map {
@@ -66,12 +68,20 @@ class LibrarySongsViewModel @Inject constructor(
                 }
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun sync() {
+        viewModelScope.launch(Dispatchers.IO) {
+            syncUtils.syncLibrarySongs()
+            syncUtils.syncLikedSongs()
+        }
+    }
 }
 
 @HiltViewModel
 class LibraryArtistsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
+    private val syncUtils: SyncUtils,
 ) : ViewModel() {
     val allArtists = context.dataStore.data
         .map {
@@ -89,6 +99,8 @@ class LibraryArtistsViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -114,6 +126,7 @@ class LibraryArtistsViewModel @Inject constructor(
 class LibraryAlbumsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
+    private val syncUtils: SyncUtils,
 ) : ViewModel() {
     val allAlbums = context.dataStore.data
         .map {
@@ -131,6 +144,8 @@ class LibraryAlbumsViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -160,6 +175,7 @@ class LibraryAlbumsViewModel @Inject constructor(
 class LibraryPlaylistsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
+    private val syncUtils: SyncUtils,
 ) : ViewModel() {
     val allPlaylists = context.dataStore.data
         .map {
@@ -170,6 +186,8 @@ class LibraryPlaylistsViewModel @Inject constructor(
             database.playlists(sortType, descending)
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() } }
 }
 
 @HiltViewModel
