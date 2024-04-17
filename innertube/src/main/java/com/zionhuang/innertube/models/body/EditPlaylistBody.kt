@@ -1,6 +1,7 @@
 package com.zionhuang.innertube.models.body
 
 import com.zionhuang.innertube.models.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -8,14 +9,27 @@ data class EditPlaylistBody(
     val context: Context,
     val playlistId: String,
     val actions: List<Action>
-) {
+)
+
+@Serializable
+sealed class Action {
     @Serializable
-    data class Action(
-        val action: String = "ACTION_SET_PLAYLIST_NAME",
-        val playlistName: String?,
-        val addedVideoId: String? = null,
-        val movedSetVideoIdSuccessor: String? = null,
-        val removedVideoId: String? = null,
-        val setVideoId: String? = null,
-    )
+    data class AddVideoAction(
+        val action: String = "ACTION_ADD_VIDEO",
+        val addedVideoId: String
+    ) : Action()
+
+    @Serializable
+    data class MoveVideoAction(
+        val action: String = "ACTION_MOVE_VIDEO_BEFORE",
+        val setVideoId: String,
+        val movedSetVideoIdSuccessor: String
+    ) : Action()
+
+    @Serializable
+    data class RemoveVideoAction(
+        val action: String = "ACTION_REMOVE_VIDEO",
+        val setVideoId: String,
+        val removedVideoId: String
+    ) : Action()
 }

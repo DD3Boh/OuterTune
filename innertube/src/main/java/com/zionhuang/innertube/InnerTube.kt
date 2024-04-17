@@ -332,11 +332,7 @@ class InnerTube {
                 context = client.toContext(locale, visitorData),
                 playlistId = playlistId.removePrefix("VL"),
                 actions = listOf(
-                    EditPlaylistBody.Action(
-                        playlistName = null,
-                        action = "ACTION_ADD_VIDEO",
-                        addedVideoId = videoId
-                    )
+                    Action.AddVideoAction(addedVideoId = videoId)
                 )
             )
         )
@@ -354,9 +350,7 @@ class InnerTube {
                 context = client.toContext(locale, visitorData),
                 playlistId = playlistId.removePrefix("VL"),
                 actions = listOf(
-                    EditPlaylistBody.Action(
-                        playlistName = null,
-                        action = "ACTION_REMOVE_VIDEO",
+                    Action.RemoveVideoAction(
                         removedVideoId = videoId,
                         setVideoId = setVideoId,
                     )
@@ -377,9 +371,7 @@ class InnerTube {
                 context = client.toContext(locale, visitorData),
                 playlistId = playlistId,
                 actions = listOf(
-                    EditPlaylistBody.Action(
-                        playlistName = null,
-                        action = "ACTION_MOVE_VIDEO_BEFORE",
+                    Action.MoveVideoAction(
                         movedSetVideoIdSuccessor = successorSetVideoId,
                         setVideoId = setVideoId,
                     )
