@@ -297,7 +297,8 @@ fun AlbumScreen(
                                             AlbumMenu(
                                                 originalAlbum = Album(albumWithSongsLocal.album, albumWithSongsLocal.artists),
                                                 navController = navController,
-                                                onDismiss = menuState::dismiss
+                                                onDismiss = menuState::dismiss,
+                                                selectAction = { selection = true }
                                             )
                                         }
                                     }
@@ -409,18 +410,6 @@ fun AlbumScreen(
                         ) {
                             Icon(
                                 Icons.Rounded.Close,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                    else {
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(
-                            onClick = { selection = !selection },
-                            modifier = Modifier.padding(horizontal = 6.dp)
-                        ) {
-                            Icon(
-                                if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
                                 contentDescription = null
                             )
                         }
