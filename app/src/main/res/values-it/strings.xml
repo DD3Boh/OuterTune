@@ -72,8 +72,6 @@
     <string name="play">Riproduci</string>
     <string name="play_next">Riproduci come successiva</string>
     <string name="add_to_queue">Metti in coda</string>
-    <string name="add_to_library">Aggiungi a libreria</string>
-    <string name="remove_from_library">Rimuovi da libreria</string>
     <string name="download">Scarica</string>
     <string name="downloading">In scaricamento</string>
     <string name="remove_download">Rimuovi scaricamento</string>

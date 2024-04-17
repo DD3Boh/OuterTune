@@ -71,8 +71,6 @@
     <string name="play">গান বাজান</string>
     <string name="play_next">পরবর্তী গান বাজান</string>
     <string name="add_to_queue">পরবর্তী গান যোগ করুন</string>
-    <string name="add_to_library">লাইব্রেরি তে যোগ করুন</string>
-    <string name="remove_from_library">লাইব্রেরি থেকে সরান</string>
     <string name="download">ডাউনলোড</string>
     <string name="downloading">ডাউনলোড হচ্ছে</string>
     <string name="remove_download">ডাউনলোড মুছে ফেলুন</string>

@@ -73,8 +73,6 @@
     <string name="play">Odtwórz</string>
     <string name="play_next">Odtwórz jako następny</string>
     <string name="add_to_queue">Dodaj do kolejki</string>
-    <string name="add_to_library">Dodaj do biblioteki</string>
-    <string name="remove_from_library">Usuń z biblioteki</string>
     <string name="download">Pobierz</string>
     <string name="downloading">Pobieranie</string>
     <string name="remove_download">Usuń z pobranych</string>

@@ -71,8 +71,6 @@
     <string name="play">Afspelen</string>
     <string name="play_next">Volgende afspelen</string>
     <string name="add_to_queue">Voeg toe aan wachtrij</string>
-    <string name="add_to_library">Voeg toe aan bibliotheek</string>
-    <string name="remove_from_library">Verwijderen van bibliotheek</string>
     <string name="download">Downloaden</string>
     <string name="downloading">Downloading</string>
     <string name="remove_download">Verwijder download</string>

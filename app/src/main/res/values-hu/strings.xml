@@ -71,8 +71,6 @@
     <string name="play">Lejátszás</string>
     <string name="play_next">Következő</string>
     <string name="add_to_queue">Várólistához ad</string>
-    <string name="add_to_library">Könyvtárhoz ad</string>
-    <string name="remove_from_library">Eltávolítás a könyvtárból</string>
     <string name="download">Letöltés</string>
     <string name="downloading">Letöltés</string>
     <string name="remove_download">Letöltés eltávolítása</string>

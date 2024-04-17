@@ -70,8 +70,6 @@
     <string name="play">再生</string>
     <string name="play_next">次に再生</string>
     <string name="add_to_queue">キューに追加</string>
-    <string name="add_to_library">ライブラリに追加</string>
-    <string name="remove_from_library">ライブラリから削除</string>
     <string name="download">ダウンロード</string>
     <string name="downloading">ダウンロード中</string>
     <string name="remove_download">ダウンロード削除</string>

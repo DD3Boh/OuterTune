@@ -71,8 +71,6 @@
     <string name="play">پخش</string>
     <string name="play_next">پخش بعدی</string>
     <string name="add_to_queue">اضافه‌کردن به صف</string>
-    <string name="add_to_library">اضافه‌کردن به کتاب‌خانه</string>
-    <string name="remove_from_library">حذف از کتاب‌خانه</string>
     <string name="download">بارگیری</string>
     <string name="downloading">درحال بارگیری</string>
     <string name="remove_download">حذف بارگیری</string>

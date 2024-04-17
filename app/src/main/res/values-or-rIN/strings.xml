@@ -71,8 +71,6 @@
     <string name="play">ଚଲାନ୍ତୁ</string>
     <string name="play_next">ପରବର୍ତ୍ତୀ ରେ ଚଲାନ୍ତୁ</string>
     <string name="add_to_queue">ଧାଡିରେ ଯୋଡନ୍ତୁ</string>
-    <string name="add_to_library">ଲାଇବ୍ରେରୀରେ ଯୋଡନ୍ତୁ</string>
-    <string name="remove_from_library">ଲାଇବ୍ରେରୀରୁ ଅପସାରଣ କରନ୍ତୁ</string>
     <string name="download">ଡାଉନଲୋଡ୍ କରନ୍ତୁ</string>
     <string name="downloading">Downloading</string>
     <string name="remove_download">ଡାଉନଲୋଡ୍ ଅପସାରଣ କରନ୍ତୁ</string>

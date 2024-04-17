@@ -70,8 +70,6 @@
     <string name="play">Chạy</string>
     <string name="play_next">Chạy bài tiếp theo</string>
     <string name="add_to_queue">Thêm vào hàng chờ</string>
-    <string name="add_to_library">Thêm vào thư viện</string>
-    <string name="remove_from_library">Xoá khỏi thư viện</string>
     <string name="download">Tải xuống</string>
     <string name="downloading">Đang tải xuống</string>
     <string name="remove_download">Xoá tải</string>

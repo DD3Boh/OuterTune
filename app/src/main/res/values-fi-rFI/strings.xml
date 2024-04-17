@@ -71,8 +71,6 @@
     <string name="play">Play</string>
     <string name="play_next">Toista seuraavaksi</string>
     <string name="add_to_queue">Lisää jonoon</string>
-    <string name="add_to_library">Lisää kirjastoon</string>
-    <string name="remove_from_library">Remove from library</string>
     <string name="download">Lataa</string>
     <string name="downloading">Downloading</string>
     <string name="remove_download">Poista lataus</string>

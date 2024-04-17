@@ -70,8 +70,6 @@
     <string name="play">Putar</string>
     <string name="play_next">Putar selanjutnya</string>
     <string name="add_to_queue">Tambahkan ke antrian</string>
-    <string name="add_to_library">Tambahkan ke perpustakaan</string>
-    <string name="remove_from_library">Hapus dari perpustakaan</string>
     <string name="download">Unduh</string>
     <string name="downloading">Downloading</string>
     <string name="remove_download">Hapus unduhan</string>

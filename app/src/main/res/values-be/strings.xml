@@ -73,8 +73,6 @@
     <string name="play">Прайграць</string>
     <string name="play_next">Прайграць наступным</string>
     <string name="add_to_queue">Дадаць у чаргу</string>
-    <string name="add_to_library">Дадаць у бібліятэку</string>
-    <string name="remove_from_library">Выдаліць з бібліятэкі</string>
     <string name="download">Спампаваць</string>
     <string name="downloading">Спампоўка</string>
     <string name="remove_download">Выдаліць са спамповак</string>

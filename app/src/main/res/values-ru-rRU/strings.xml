@@ -73,8 +73,6 @@
     <string name="play">Воспоизвести</string>
     <string name="play_next">Воспроизвести следующим</string>
     <string name="add_to_queue">Добавить в очередь</string>
-    <string name="add_to_library">Добавить в библиотеку</string>
-    <string name="remove_from_library">Удалить из библиотеки</string>
     <string name="download">Загрузить</string>
     <string name="downloading">Загрузка</string>
     <string name="remove_download">Удалить из загруженных</string>

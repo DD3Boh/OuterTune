@@ -254,26 +254,6 @@ fun YouTubeSongMenu(
             playerConnection.addToQueue((song.toMediaItem()))
             onDismiss()
         }
-        if (librarySong?.song?.inLibrary != null) {
-            GridMenuItem(
-                icon = Icons.Rounded.LibraryAddCheck,
-                title = R.string.remove_from_library
-            ) {
-                database.query {
-                    inLibrary(song.id, null)
-                }
-            }
-        } else {
-            GridMenuItem(
-                icon = Icons.Rounded.LibraryAdd,
-                title = R.string.add_to_library
-            ) {
-                database.transaction {
-                    insert(song.toMediaMetadata())
-                    inLibrary(song.id, LocalDateTime.now())
-                }
-            }
-        }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist

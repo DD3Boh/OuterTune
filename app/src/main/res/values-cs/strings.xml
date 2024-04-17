@@ -73,8 +73,6 @@
     <string name="play">Přehrát</string>
     <string name="play_next">Přehrát jako další</string>
     <string name="add_to_queue">Přidat do fronty</string>
-    <string name="add_to_library">Přidat do knihovny</string>
-    <string name="remove_from_library">Odebrat z knihovny</string>
     <string name="download">Stáhnout</string>
     <string name="downloading">Stahování</string>
     <string name="remove_download">Odebrat stahování</string>
