@@ -63,7 +63,7 @@ fun LibraryAlbumsScreen(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
-    var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIBRARY)
+    var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIKED)
     var viewType by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
     val (sortType, onSortTypeChange) = rememberEnumPreference(AlbumSortTypeKey, AlbumSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(AlbumSortDescendingKey, true)
@@ -76,8 +76,8 @@ fun LibraryAlbumsScreen(
         Row {
             ChipsRow(
                 chips = listOf(
-                    AlbumFilter.LIBRARY to stringResource(R.string.filter_library),
-                    AlbumFilter.LIKED to stringResource(R.string.filter_liked)
+                    AlbumFilter.LIKED to stringResource(R.string.filter_liked),
+                    AlbumFilter.LIBRARY to stringResource(R.string.filter_library)
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },

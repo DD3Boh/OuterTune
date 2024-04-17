@@ -66,7 +66,7 @@ fun LibraryArtistsScreen(
     viewModel: LibraryArtistsViewModel = hiltViewModel(),
 ) {
     val menuState = LocalMenuState.current
-    var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIBRARY)
+    var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
     var viewType by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
@@ -78,8 +78,8 @@ fun LibraryArtistsScreen(
         Row {
             ChipsRow(
                 chips = listOf(
-                    ArtistFilter.LIBRARY to stringResource(R.string.filter_library),
-                    ArtistFilter.LIKED to stringResource(R.string.filter_liked)
+                    ArtistFilter.LIKED to stringResource(R.string.filter_liked),
+                    ArtistFilter.LIBRARY to stringResource(R.string.filter_library)
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },

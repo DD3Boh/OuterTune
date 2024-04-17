@@ -55,7 +55,7 @@ fun LibrarySongsScreen(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
-    var filter by rememberEnumPreference(SongFilterKey, SongFilter.LIBRARY)
+    var filter by rememberEnumPreference(SongFilterKey, SongFilter.LIKED)
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
@@ -76,8 +76,8 @@ fun LibrarySongsScreen(
             ) {
                 ChipsRow(
                     chips = listOf(
-                        SongFilter.LIBRARY to stringResource(R.string.filter_library),
                         SongFilter.LIKED to stringResource(R.string.filter_liked),
+                        SongFilter.LIBRARY to stringResource(R.string.filter_library),
                         SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
                     ),
                     currentValue = filter,
