@@ -26,6 +26,7 @@ import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.ui.component.Lyrics
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.rememberPreference
 
 @Composable
@@ -64,7 +65,8 @@ fun Thumbnail(
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
                 AsyncImage(
-                    model = mediaMetadata?.thumbnailUrl,
+                    model = if (mediaMetadata?.isLocal == true) getLocalThumbnail(mediaMetadata!!.localPath)
+                            else mediaMetadata?.thumbnailUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()

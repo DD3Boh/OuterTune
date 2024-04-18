@@ -2,6 +2,9 @@ package com.dd3boh.outertune.ui.utils
 
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import android.util.Log
 import com.dd3boh.outertune.db.MusicDatabase
@@ -268,4 +271,67 @@ fun syncDB(
         }
     }
 
+}
+
+object CachedBitmap {
+    var path: String? = null
+    var image: Bitmap? = null
+
+    /**
+     * Adds an image to the cache
+     */
+    fun cache(path: String, image: Bitmap?) {
+        if (image == null) {
+            return
+        }
+
+        this.path = path
+        this.image = image
+        bitmapCache.add(this)
+    }
+
+    /**
+     * Retrieves an image from the cache
+     */
+    fun retrieveImage(path: String): Bitmap? {
+        return bitmapCache.first { it.path == path }.image
+    }
+}
+
+/**
+ * TODO: Fix the root cause of the miniplayer constantly needing reloading
+ * TODO: Clear the cache on library re-scan
+ */
+// memory leak? who cares? speed is king!
+var bitmapCache = ArrayList<CachedBitmap>()
+
+/**
+ * Extract the album art from the audio file
+ *
+ * @param path Full path of audio file
+ */
+fun getLocalThumbnail(path: String?): Bitmap? {
+    if (path == null) {
+        return null
+    }
+
+    // get cached image
+    try {
+        return CachedBitmap.retrieveImage(path)
+    } catch (_: NoSuchElementException) {
+    }
+
+
+    val mData = MediaMetadataRetriever()
+    mData.setDataSource(path)
+
+    val image: Bitmap? = try {
+        val art = mData.embeddedPicture
+        BitmapFactory.decodeByteArray(art, 0, art!!.size)
+    } catch (e: Exception) {
+        null
+    }
+
+    CachedBitmap.cache(path, image)
+    return image
 }

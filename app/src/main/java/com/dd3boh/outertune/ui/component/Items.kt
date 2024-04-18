@@ -97,6 +97,7 @@ import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.screens.MoodAndGenresButtonHeight
 import com.dd3boh.outertune.ui.theme.extractThemeColor
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.reportException
@@ -326,7 +327,8 @@ fun SongListItem(
                 }
             } else {
                 AsyncImage(
-                    model = song.song.thumbnailUrl,
+                    model = if (song.song.isLocal == true) getLocalThumbnail(song.song.localPath)
+                            else song.song.thumbnailUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
