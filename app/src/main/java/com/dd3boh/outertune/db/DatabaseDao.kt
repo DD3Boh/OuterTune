@@ -583,7 +583,8 @@ interface DatabaseDao {
             insert(
                 ArtistEntity(
                     id = artistId,
-                    name = artist.name
+                    name = artist.name,
+                    isLocal = artist.isLocal
                 )
             )
             insert(

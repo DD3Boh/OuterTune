@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens.library
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -43,6 +44,8 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.utils.scanLocal
+import com.dd3boh.outertune.ui.utils.syncDB
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
@@ -142,6 +145,24 @@ fun LibrarySongsScreen(
                 }
             }
 
+
+            // temp button to force re scan of DB
+            item (
+                key = "weh"
+            ) {
+                IconButton(
+                    onClick = {
+                        syncDB(viewModel.databseLink, scanLocal(context).toList())
+                        Toast.makeText(context, "SCANNING DATABASE...", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.replay),
+                        contentDescription = null
+                    )
+                }
+            }
+
             itemsIndexed(
                 items = songs,
                 key = { _, item -> item.id },
@@ -171,6 +192,14 @@ fun LibrarySongsScreen(
                                         Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
+
+                                    // local song indicator
+                                    if (song.song.isLocal == true) {
+                                        return@IconButton Icon(
+                                            painter = painterResource(R.drawable.tab),
+                                            contentDescription = null
+                                        )
+                                    }
                                 }
                             },
                             modifier = Modifier

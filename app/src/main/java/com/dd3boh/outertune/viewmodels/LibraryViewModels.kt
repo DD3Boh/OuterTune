@@ -17,6 +17,8 @@ import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.utils.SyncUtils
+import com.dd3boh.outertune.ui.utils.scanLocal
+import com.dd3boh.outertune.ui.utils.syncDB
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +38,11 @@ class LibrarySongsViewModel @Inject constructor(
     downloadUtil: DownloadUtil,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+
+    // scan for local songs
+    val localSongs = syncDB(database, scanLocal(context).toList())
+    val databseLink = database
+
     val allSongs = context.dataStore.data
         .map {
             Triple(
@@ -54,7 +61,8 @@ class LibrarySongsViewModel @Inject constructor(
                         .flowOn(Dispatchers.IO)
                         .map { songs ->
                             songs.filter {
-                                downloads[it.id]?.state == Download.STATE_COMPLETED
+                                // show local songs as under downloaded for now
+                                downloads[it.id]?.state == Download.STATE_COMPLETED || it.song.isLocal == true
                             }
                         }
                         .map { songs ->

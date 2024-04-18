@@ -20,6 +20,7 @@ data class ArtistEntity(
     val channelId: String? = null,
     val lastUpdateTime: LocalDateTime = LocalDateTime.now(),
     val bookmarkedAt: LocalDateTime? = null,
+    val isLocal: Boolean? = false
 ) {
     val isYouTubeArtist: Boolean
         get() = id.startsWith("UC")

@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +51,10 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
@@ -141,6 +146,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+//                Toast.makeText(this, "Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     override fun onStart() {
         super.onStart()
         startService(Intent(this, MusicService::class.java))
@@ -151,12 +165,19 @@ class MainActivity : ComponentActivity() {
         unbindService(serviceConnection)
         super.onStop()
     }
-
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Check if the permission is not granted
+        // i have no idea is this will explode under API 33
+        if (checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            // Request the permission using the permission launcher
+            permissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
+        }
 
         setContent {
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)

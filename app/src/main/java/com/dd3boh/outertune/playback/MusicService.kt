@@ -7,7 +7,9 @@ import android.content.Intent
 import android.database.SQLException
 import android.media.audiofx.AudioEffect
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.os.Binder
+import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
@@ -111,6 +113,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -120,6 +123,7 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import java.io.File
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.net.ConnectException
@@ -194,7 +198,7 @@ class MusicService : MediaLibraryService(),
                 }
         )
         player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(createMediaSourceFactory())
+            .setMediaSourceFactory(DefaultMediaSourceFactory(createDataSourceFactory()))
             .setRenderersFactory(createRenderersFactory())
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
@@ -595,6 +599,16 @@ class MusicService : MediaLibraryService(),
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
 
+            // find a better way to detect local files later...
+            if (mediaId.startsWith("1000")) {
+                val songPath = runBlocking(Dispatchers.IO) {
+                    database.song(mediaId).firstOrNull()?.song?.localPath
+                }
+                Log.d("WTF", "Looking for local file: " + songPath)
+
+                return@Factory dataSpec.withUri(Uri.fromFile(File(songPath)))
+            }
+
             if (downloadCache.isCached(mediaId, dataSpec.position, if (dataSpec.length >= 0) dataSpec.length else 1) ||
                 playerCache.isCached(mediaId, dataSpec.position, CHUNK_LENGTH)
             ) {
@@ -607,6 +621,7 @@ class MusicService : MediaLibraryService(),
                 return@Factory dataSpec.withUri(it.first.toUri())
             }
 
+            Log.d("WTF", "Media ID for current song: " + mediaId)
             // Check whether format exists so that users from older version can view format details
             // There may be inconsistent between the downloaded file and the displayed info if user change audio quality frequently
             val playedFormat = runBlocking(Dispatchers.IO) { database.format(mediaId).first() }
@@ -668,14 +683,6 @@ class MusicService : MediaLibraryService(),
             dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
         }
     }
-
-    private fun createMediaSourceFactory() =
-        DefaultMediaSourceFactory(
-            createDataSourceFactory(),
-            ExtractorsFactory {
-                arrayOf(MatroskaExtractor(), FragmentedMp4Extractor())
-            }
-        )
 
     private fun createRenderersFactory() = object : DefaultRenderersFactory(this) {
         override fun buildAudioSink(
