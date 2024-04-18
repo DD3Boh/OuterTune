@@ -29,6 +29,7 @@ import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.ListItem
 import com.dd3boh.outertune.ui.component.PlaylistListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import java.time.LocalDateTime
 
 @Composable
 fun AddToPlaylistDialog(
@@ -92,7 +93,8 @@ fun AddToPlaylistDialog(
                 database.query {
                     insert(
                         PlaylistEntity(
-                            name = playlistName
+                            name = playlistName,
+                            bookmarkedAt = LocalDateTime.now()
                         )
                     )
                 }

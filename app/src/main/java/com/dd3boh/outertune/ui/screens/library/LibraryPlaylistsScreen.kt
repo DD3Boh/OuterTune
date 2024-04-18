@@ -67,6 +67,7 @@ import com.dd3boh.outertune.ui.menu.PlaylistMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -103,7 +104,8 @@ fun LibraryPlaylistsScreen(
                 database.query {
                     insert(
                         PlaylistEntity(
-                            name = playlistName
+                            name = playlistName,
+                            bookmarkedAt = LocalDateTime.now()
                         )
                     )
                 }

@@ -39,6 +39,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
@@ -151,6 +152,8 @@ fun LocalPlaylistScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val playlist by viewModel.playlist.collectAsState()
+    val liked = playlist?.playlist?.bookmarkedAt != null
+
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<PlaylistSong>() }
     val playlistLength = remember(songs) {
@@ -368,6 +371,20 @@ fun LocalPlaylistScreen(
                                     )
 
                                     Row {
+                                        IconButton(
+                                            onClick = {
+                                                database.transaction {
+                                                    update(playlist.playlist.toggleLike())
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
+                                                contentDescription = null,
+                                                tint = if (liked) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                            )
+                                        }
+
                                         if (editable) {
                                             IconButton(
                                                 onClick = { showEditDialog = true }

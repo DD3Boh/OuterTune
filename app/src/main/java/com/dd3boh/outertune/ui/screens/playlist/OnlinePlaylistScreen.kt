@@ -33,6 +33,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
@@ -59,7 +60,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.zionhuang.innertube.models.SongItem
@@ -67,13 +67,11 @@ import com.zionhuang.innertube.models.WatchEndpoint
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
-import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
-import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
@@ -89,11 +87,7 @@ import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.menu.YouTubeSongMenu
 import com.dd3boh.outertune.ui.utils.backToMain
-import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.viewmodels.OnlinePlaylistViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -102,16 +96,15 @@ fun OnlinePlaylistScreen(
     scrollBehavior: TopAppBarScrollBehavior,
     viewModel: OnlinePlaylistViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
-    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val playlist by viewModel.playlist.collectAsState()
     val songs by viewModel.playlistSongs.collectAsState()
+    val dbPlaylist by viewModel.dbPlaylist.collectAsState()
 
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -193,47 +186,44 @@ fun OnlinePlaylistScreen(
                                     }
 
                                     Row {
-                                        IconButton(
-                                            onClick = {
-                                                database.transaction {
-                                                    if (playlist.id == "LM") {
-                                                        viewModel.viewModelScope.launch(Dispatchers.IO) {
-                                                            syncUtils.syncLikedSongs()
+                                        if (playlist.id != "LM") {
+                                            IconButton(
+                                                onClick = {
+                                                    if (dbPlaylist?.playlist == null) {
+                                                        database.transaction {
+                                                            val playlistEntity = PlaylistEntity(
+                                                                name = playlist.title,
+                                                                browseId = playlist.id,
+                                                                isEditable = playlist.isEditable,
+                                                            ).toggleLike()
+
+                                                            insert(playlistEntity)
+                                                            songs.map(SongItem::toMediaMetadata)
+                                                                .onEach(::insert)
+                                                                .mapIndexed { index, song ->
+                                                                    PlaylistSongMap(
+                                                                        songId = song.id,
+                                                                        playlistId = playlistEntity.id,
+                                                                        position = index
+                                                                    )
+                                                                }
+                                                                .forEach(::insert)
                                                         }
                                                     } else {
-                                                        val playlistEntity = PlaylistEntity(
-                                                            name = playlist.title,
-                                                            browseId = playlist.id,
-                                                            isEditable = playlist.isEditable
-                                                        )
-
-                                                        insert(playlistEntity)
-                                                        songs.map(SongItem::toMediaMetadata)
-                                                            .onEach(::insert)
-                                                            .mapIndexed { index, song ->
-                                                                PlaylistSongMap(
-                                                                    songId = song.id,
-                                                                    playlistId = playlistEntity.id,
-                                                                    position = index
-                                                                )
-                                                            }
-                                                            .forEach(::insert)
-                                                    }
-
-                                                    coroutineScope.launch {
-                                                        snackbarHostState.showSnackbar(
-                                                            context.getString(
-                                                                R.string.playlist_imported
-                                                            )
-                                                        )
+                                                        database.transaction {
+                                                            update(dbPlaylist!!.playlist.toggleLike())
+                                                        }
                                                     }
                                                 }
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(
+                                                        if (dbPlaylist?.playlist?.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border
+                                                    ),
+                                                    contentDescription = null,
+                                                    tint = if (dbPlaylist?.playlist?.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                                )
                                             }
-                                        ) {
-                                            Icon(
-                                                Icons.AutoMirrored.Rounded.Input,
-                                                contentDescription = null
-                                            )
                                         }
 
                                         IconButton(
@@ -327,7 +317,12 @@ fun OnlinePlaylistScreen(
                                     if (song.id == mediaMetadata?.id) {
                                         playerConnection.player.togglePlayPause()
                                     } else {
-                                        playerConnection.playQueue(YouTubeQueue(song.endpoint ?: WatchEndpoint(videoId = song.id), song.toMediaMetadata()))
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(
+                                                song.endpoint ?: WatchEndpoint(videoId = song.id),
+                                                song.toMediaMetadata()
+                                            )
+                                        )
                                     }
                                 }
                                 .animateItemPlacement()
