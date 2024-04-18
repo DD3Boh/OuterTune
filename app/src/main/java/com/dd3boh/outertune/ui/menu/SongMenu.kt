@@ -76,6 +76,7 @@ import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
@@ -120,20 +121,17 @@ fun SongMenu(
         isVisible = showChoosePlaylistDialog,
         onAdd = { playlist ->
             database.query {
-                coroutineScope.launch {
+                insert(
+                    PlaylistSongMap(
+                        songId = song.id,
+                        playlistId = playlist.id,
+                        position = playlist.songCount
+                    )
+                )
+
+                coroutineScope.launch(Dispatchers.IO) {
                     playlist.playlist.browseId?.let { browseId ->
-                        YouTube.addToPlaylist(browseId, song.id).onSuccess { result ->
-                            if (result.playlistEditResults.isNotEmpty()) {
-                                insert(
-                                    PlaylistSongMap(
-                                        songId = song.id,
-                                        playlistId = playlist.id,
-                                        position = playlist.songCount,
-                                        setVideoId = result.playlistEditResults.first().playlistEditVideoAddedResultData.setVideoId
-                                    )
-                                )
-                            }
-                        }
+                        YouTube.addToPlaylist(browseId, song.id)
                     }
                 }
             }
