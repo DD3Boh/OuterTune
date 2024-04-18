@@ -3,6 +3,7 @@ package com.zionhuang.innertube.utils
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.ArtistItem
+import com.zionhuang.innertube.models.PlaylistItem
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.pages.LibraryContinuationPage
 import com.zionhuang.innertube.pages.LibraryPage
@@ -44,7 +45,9 @@ suspend fun Result<LibraryPage>.completedLibraryPage(): Result<LibraryPage>? = r
                 YouTube.librarySongsContinuation(continuation).getOrNull() ?: break
             }
 
-            else -> return null
+            is PlaylistItem -> {
+                YouTube.likedPlaylistsContinuation(continuation).getOrNull() ?: break
+            }
         }
         items += continuationPage.items
         continuation = continuationPage.continuation

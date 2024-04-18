@@ -21,9 +21,9 @@ class AccountViewModel @Inject constructor() : ViewModel() {
 
     init {
         viewModelScope.launch {
-            YouTube.likedPlaylists().onSuccess {
-                playlists.value = it
-            }.onFailure {
+            YouTube.likedPlaylists().completedLibraryPage()?.onSuccess {
+                playlists.value = it.items.filterIsInstance<PlaylistItem>()
+            }?.onFailure {
                 reportException(it)
             }
             YouTube.libraryAlbums().completedLibraryPage()?.onSuccess {

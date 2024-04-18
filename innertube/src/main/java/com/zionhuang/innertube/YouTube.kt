@@ -462,18 +462,38 @@ object YouTube {
         )
     }
 
-    suspend fun likedPlaylists(): Result<List<PlaylistItem>> = runCatching {
+    suspend fun likedPlaylists(): Result<LibraryPage> = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,
             browseId = "FEmusic_liked_playlists",
             setLogin = true
         ).body<BrowseResponse>()
-        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.items!!
-            .drop(1) // the first item is "create new playlist"
-            .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
-            .mapNotNull {
-                ArtistItemsPage.fromMusicTwoRowItemRenderer(it) as? PlaylistItem
-            }
+        LibraryPage(
+            items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
+            tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.items!!
+                .drop(1) // the first item is "create new playlist"
+                .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
+                .mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) },
+            continuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()?.
+            tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.
+            continuations?.firstOrNull()?.nextContinuationData?.continuation
+        )
+    }
+
+    suspend fun likedPlaylistsContinuation(continuation: String) = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            continuation = continuation,
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        LibraryContinuationPage(
+            items = response.continuationContents?.gridContinuation?.items!!
+                .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
+                .mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) },
+            continuation = response.continuationContents.gridContinuation.continuations?.firstOrNull()?.
+            nextContinuationData?.continuation
+        )
     }
 
     suspend fun likeVideo(videoId: String, like: Boolean) = runCatching {

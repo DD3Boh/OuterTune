@@ -10,6 +10,7 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.ArtistItem
+import com.zionhuang.innertube.models.PlaylistItem
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.utils.completed
 import com.zionhuang.innertube.utils.completedLibraryPage
@@ -118,7 +119,8 @@ class SyncUtils @Inject constructor(
     }
 
     suspend fun syncSavedPlaylists() {
-        YouTube.likedPlaylists().onSuccess { playlistList ->
+        YouTube.likedPlaylists().completedLibraryPage()?.onSuccess { page ->
+            val playlistList = page.items.filterIsInstance<PlaylistItem>()
             val dbPlaylists = database.playlistsByNameAsc().first()
 
             playlistList.drop(1).forEach { playlist ->
