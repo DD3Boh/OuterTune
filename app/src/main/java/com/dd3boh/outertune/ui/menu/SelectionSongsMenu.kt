@@ -47,7 +47,8 @@ import com.dd3boh.outertune.ui.component.GridMenuItem
 fun SelectionSongMenu(
     songSelection: List<Song>,
     onDismiss: () -> Unit,
-    clearAction: () -> Unit
+    clearAction: () -> Unit,
+    songPosition: List<PlaylistSongMap>? = emptyList(),
 ){
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -152,13 +153,13 @@ fun SelectionSongMenu(
             title = R.string.play
         ) {
             onDismiss()
-            clearAction()
             playerConnection.playQueue(
                 ListQueue(
                     title = "Selection",
                     items = songSelection.map { it.toMediaItem() }
                 )
             )
+            clearAction()
         }
 
         GridMenuItem(
@@ -166,13 +167,13 @@ fun SelectionSongMenu(
             title = R.string.shuffle
         ) {
             onDismiss()
-            clearAction()
             playerConnection.playQueue(
                 ListQueue(
                     title = "Selection",
                     items = songSelection.shuffled().map { it.toMediaItem() }
                 )
             )
+            clearAction()
         }
 
         GridMenuItem(
@@ -180,8 +181,8 @@ fun SelectionSongMenu(
             title = R.string.add_to_queue
         ) {
             onDismiss()
-            clearAction()
             playerConnection.addToQueue(songSelection.map { it.toMediaItem() })
+            clearAction()
         }
 
         GridMenuItem(
@@ -225,6 +226,24 @@ fun SelectionSongMenu(
                     if ((!allLiked && !song.song.liked) || allLiked)
                         update(song.song.toggleLike())
                 }
+            }
+        }
+
+        if (songPosition != null) {
+            GridMenuItem(
+                icon = Icons.Rounded.Delete,
+                title = R.string.delete
+            ) {
+                onDismiss()
+                var i = 0
+                database.query {
+                    songPosition.forEach {cur ->
+                        move(cur.playlistId, cur.position - i, Int.MAX_VALUE)
+                        delete(cur.copy(position = Int.MAX_VALUE))
+                        i++
+                    }
+                }
+                clearAction()
             }
         }
     }

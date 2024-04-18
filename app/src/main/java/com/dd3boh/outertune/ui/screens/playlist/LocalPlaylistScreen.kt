@@ -675,8 +675,12 @@ fun LocalPlaylistScreen(
                                             SelectionSongMenu(
                                                 songSelection = wrappedSongs.filter { it.isSelected }
                                                     .map { it.item.song },
+                                                songPosition = wrappedSongs.filter { it.isSelected }.map { it.item.map },
                                                 onDismiss = menuState::dismiss,
-                                                clearAction = { selection = false }
+                                                clearAction = {
+                                                    selection = false
+                                                    wrappedSongs.clear()
+                                                }
                                             )
                                         }
                                     },
