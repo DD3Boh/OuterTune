@@ -65,6 +65,8 @@ fun YouTubePlaylistMenu(
                         YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
                     }
                 }.let { songs ->
+                    targetPlaylist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) }
+
                     database.transaction {
                         songs
                             .map { it.toMediaMetadata() }
@@ -80,6 +82,10 @@ fun YouTubePlaylistMenu(
                                 )
                             }
                     }
+                }
+
+                targetPlaylist.playlist.browseId?.let { playlistId ->
+                    YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
                 }
             }
         },
