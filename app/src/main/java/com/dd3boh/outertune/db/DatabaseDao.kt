@@ -465,6 +465,10 @@ interface DatabaseDao {
     @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist ORDER BY songCount")
     fun playlistsBySongCountAsc(): Flow<List<Playlist>>
 
+    @Transaction
+    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE isEditable ORDER BY rowId")
+    fun editablePlaylistsByCreateDateAsc(): Flow<List<Playlist>>
+
     fun playlists(sortType: PlaylistSortType, descending: Boolean) =
         when (sortType) {
             PlaylistSortType.CREATE_DATE -> playlistsByCreateDateAsc()

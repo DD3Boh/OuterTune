@@ -254,6 +254,7 @@ object YouTube {
             setLogin = true
         ).body<BrowseResponse>()
         val header = response.header?.musicDetailHeaderRenderer ?: response.header?.musicEditablePlaylistDetailHeaderRenderer?.header?.musicDetailHeaderRenderer!!
+        val editable = response.header?.musicEditablePlaylistDetailHeaderRenderer != null
         PlaylistPage(
             playlist = PlaylistItem(
                 id = playlistId,
@@ -270,7 +271,8 @@ object YouTube {
                 shuffleEndpoint = header.menu.menuRenderer.topLevelButtons?.firstOrNull()?.buttonRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
                 radioEndpoint = header.menu.menuRenderer.items.find {
                     it.menuNavigationItemRenderer?.icon?.iconType == "MIX"
-                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!
+                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
+                isEditable = editable
             ),
             songs = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
                 ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()

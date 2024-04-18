@@ -168,6 +168,8 @@ fun LocalPlaylistScreen(
         mutableStateOf(Download.STATE_STOPPED)
     }
 
+    val editable: Boolean = playlist?.playlist?.isEditable == true
+
     LaunchedEffect(songs) {
         mutableSongs.apply {
             clear()
@@ -366,13 +368,15 @@ fun LocalPlaylistScreen(
                                     )
 
                                     Row {
-                                        IconButton(
-                                            onClick = { showEditDialog = true }
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.Edit,
-                                                contentDescription = null
-                                            )
+                                        if (editable) {
+                                            IconButton(
+                                                onClick = { showEditDialog = true }
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Edit,
+                                                    contentDescription = null
+                                                )
+                                            }
                                         }
 
                                         if (playlist.playlist.browseId != null) {
@@ -534,14 +538,16 @@ fun LocalPlaylistScreen(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            IconButton(
-                                onClick = { locked = !locked },
-                                modifier = Modifier.padding(horizontal = 6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                                    contentDescription = null
-                                )
+                            if (editable) {
+                                IconButton(
+                                    onClick = { locked = !locked },
+                                    modifier = Modifier.padding(horizontal = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                        contentDescription = null
+                                    )
+                                }
                             }
                         }
                     }
@@ -619,7 +625,7 @@ fun LocalPlaylistScreen(
                                     )
                                 }
 
-                                if (sortType == PlaylistSongSortType.CUSTOM && !locked) {
+                                if (sortType == PlaylistSongSortType.CUSTOM && !locked && editable) {
                                     IconButton(
                                         onClick = { },
                                         modifier = Modifier.detectReorder(reorderableState)
@@ -649,7 +655,7 @@ fun LocalPlaylistScreen(
                         )
                     }
 
-                    if (locked) {
+                    if (locked || !editable) {
                         content()
                     } else {
                         setOf(SwipeToDismissBoxValue.EndToStart,

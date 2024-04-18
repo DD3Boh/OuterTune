@@ -90,6 +90,8 @@ fun PlaylistMenu(
         mutableStateOf(Download.STATE_STOPPED)
     }
 
+    val editable: Boolean = playlist?.playlist?.isEditable == true
+
     LaunchedEffect(songs) {
         if (songs.isEmpty()) return@LaunchedEffect
         downloadUtil.downloads.collect { downloads ->
@@ -262,11 +264,13 @@ fun PlaylistMenu(
             playerConnection.addToQueue(songs.map { it.toMediaItem() })
         }
 
-        GridMenuItem(
-            icon = Icons.Rounded.Edit,
-            title = R.string.edit
-        ) {
-            showEditDialog = true
+        if (editable) {
+            GridMenuItem(
+                icon = Icons.Rounded.Edit,
+                title = R.string.edit
+            ) {
+                showEditDialog = true
+            }
         }
 
         DownloadGridMenu(

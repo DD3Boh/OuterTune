@@ -203,7 +203,8 @@ fun OnlinePlaylistScreen(
                                                     } else {
                                                         val playlistEntity = PlaylistEntity(
                                                             name = playlist.title,
-                                                            browseId = playlist.id
+                                                            browseId = playlist.id,
+                                                            isEditable = playlist.isEditable
                                                         )
 
                                                         insert(playlistEntity)

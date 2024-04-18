@@ -45,7 +45,7 @@ fun AddToPlaylistDialog(
     }
 
     LaunchedEffect(Unit) {
-        database.playlistsByCreateDateAsc().collect {
+        database.editablePlaylistsByCreateDateAsc().collect {
             playlists = it.asReversed()
         }
     }
