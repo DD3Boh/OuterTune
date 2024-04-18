@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.CheckBox
 import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
+import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
@@ -552,6 +553,19 @@ fun Queue(
                 )
 
                 if (selectedSongs.isNotEmpty()) {
+
+                    IconButton(
+                        onClick = {
+                            selectedSongs.clear()
+                            selectedItems.clear()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Rounded.Deselect,
+                            contentDescription = null,
+                            tint = LocalContentColor.current
+                        )
+                    }
                     IconButton(
                         onClick = {
                             menuState.show {
