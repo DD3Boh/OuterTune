@@ -397,4 +397,23 @@ class InnerTube {
             )
         )
     }
+
+    suspend fun renamePlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        name: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId,
+                actions = listOf(
+                    Action.RenamePlaylistAction(
+                        playlistName = name
+                    )
+                )
+            )
+        )
+    }
 }

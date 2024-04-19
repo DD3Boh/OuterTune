@@ -38,4 +38,10 @@ sealed class Action {
         val setVideoId: String,
         val removedVideoId: String
     ) : Action()
+
+    @Serializable
+    data class RenamePlaylistAction(
+        val action: String = "ACTION_SET_PLAYLIST_NAME",
+        val playlistName: String
+    ) : Action()
 }

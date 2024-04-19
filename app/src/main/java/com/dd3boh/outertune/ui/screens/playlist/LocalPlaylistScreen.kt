@@ -209,6 +209,10 @@ fun LocalPlaylistScreen(
                     database.query {
                         update(playlistEntity.copy(name = name))
                     }
+
+                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                        playlistEntity.browseId?.let { YouTube.renamePlaylist(it, name) }
+                    }
                 }
             )
         }
