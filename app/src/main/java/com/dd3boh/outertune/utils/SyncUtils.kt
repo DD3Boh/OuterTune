@@ -126,7 +126,7 @@ class SyncUtils @Inject constructor(
             dbPlaylists.filterNot { it.playlist.browseId in playlistList.map(PlaylistItem::id) }
                 .forEach { database.update(it.playlist.localToggleLike()) }
 
-            playlistList.forEach { playlist ->
+            playlistList.onEach { playlist ->
                 var playlistEntity = dbPlaylists.find { playlist.id == it.playlist.browseId }?.playlist
                 if (playlistEntity == null) {
                     playlistEntity = PlaylistEntity(
@@ -140,8 +140,8 @@ class SyncUtils @Inject constructor(
 
                     database.insert(playlistEntity)
                 } else database.update(playlistEntity, playlist)
-
-                syncPlaylist(playlist.id, playlistEntity.id)
+            }.forEach { playlist ->
+                syncPlaylist(playlist.id, database.playlistByBrowseId(playlist.id).first()!!.id)
             }
         }
     }
