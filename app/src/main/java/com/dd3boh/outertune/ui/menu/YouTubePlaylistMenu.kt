@@ -116,6 +116,7 @@ fun YouTubePlaylistMenu(
                                     name = playlist.title,
                                     browseId = playlist.id,
                                     isEditable = false,
+                                    thumbnailUrl = playlist.thumbnail
                                 ).toggleLike()
 
                                 insert(playlistEntity)
