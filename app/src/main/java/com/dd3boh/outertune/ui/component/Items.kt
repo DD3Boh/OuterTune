@@ -691,7 +691,11 @@ fun PlaylistListItem(
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) = ListItem(
     title = playlist.playlist.name,
-    subtitle = pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
+    subtitle =
+        if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
+            pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+        else
+            pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
     thumbnailContent = {
         when (playlist.thumbnails.size) {
             0 -> Icon(
@@ -744,7 +748,11 @@ fun PlaylistGridItem(
     fillMaxWidth: Boolean = false,
 ) = GridItem(
     title = playlist.playlist.name,
-    subtitle = pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
+    subtitle =
+        if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
+            pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+        else
+            pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
     badges = badges,
     thumbnailContent = {
         val width = maxWidth

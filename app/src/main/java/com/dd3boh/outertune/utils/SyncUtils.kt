@@ -134,8 +134,10 @@ class SyncUtils @Inject constructor(
                         browseId = playlist.id,
                         isEditable = playlist.isEditable,
                         bookmarkedAt = LocalDateTime.now(),
-                        thumbnailUrl = playlist.thumbnail
+                        thumbnailUrl = playlist.thumbnail,
+                        remoteSongCount = playlist.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
                     )
+
                     database.insert(playlistEntity)
                 }
 

@@ -344,7 +344,7 @@ fun LocalPlaylistScreen(
             modifier = Modifier.reorderable(reorderableState)
         ) {
             playlist?.let { playlist ->
-                if (playlist.songCount == 0) {
+                if (playlist.songCount == 0 && playlist.playlist.remoteSongCount == 0) {
                     item {
                         EmptyPlaceholder(
                             icon = Icons.Rounded.MusicNote,
@@ -406,7 +406,11 @@ fun LocalPlaylistScreen(
                                     )
 
                                     Text(
-                                        text = pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
+                                        text =
+                                            if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
+                                                pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+                                            else
+                                                pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Normal
                                     )

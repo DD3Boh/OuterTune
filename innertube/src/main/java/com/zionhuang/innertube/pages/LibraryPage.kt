@@ -44,7 +44,7 @@ data class LibraryPage(
                             id = it.navigationEndpoint?.browseEndpoint?.browseId
                         )
                     },
-                    songCountText = renderer.subtitle?.runs?.getOrNull(4)?.text,
+                    songCountText = renderer.subtitle?.runs?.lastOrNull()?.text,
                     thumbnail = renderer.thumbnailRenderer.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
                     playEndpoint = renderer.thumbnailOverlay
                         ?.musicItemThumbnailOverlayRenderer?.content
