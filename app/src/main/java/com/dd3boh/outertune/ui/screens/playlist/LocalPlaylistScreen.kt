@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
@@ -258,6 +258,49 @@ fun LocalPlaylistScreen(
         )
     }
 
+    var showDeletePlaylistDialog by remember {
+        mutableStateOf(false)
+    }
+
+    if (showDeletePlaylistDialog) {
+        DefaultDialog(
+            onDismiss = { showDeletePlaylistDialog = false },
+            content = {
+                Text(
+                    text = stringResource(R.string.delete_playlist_confirm, playlist?.playlist!!.name),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(horizontal = 18.dp)
+                )
+            },
+            buttons = {
+                TextButton(
+                    onClick = {
+                        showDeletePlaylistDialog = false
+                    }
+                ) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
+
+                TextButton(
+                    onClick = {
+                        showDeletePlaylistDialog = false
+                        database.query {
+                            playlist?.let { delete(it.playlist) }
+                        }
+
+                        viewModel.viewModelScope.launch(Dispatchers.IO) {
+                            playlist?.playlist?.browseId?.let { YouTube.deletePlaylist(it) }
+                        }
+
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text(text = stringResource(android.R.string.ok))
+                }
+            }
+        )
+    }
+
     val headerItems = 2
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to ->
@@ -375,18 +418,31 @@ fun LocalPlaylistScreen(
                                     )
 
                                     Row {
-                                        IconButton(
-                                            onClick = {
-                                                database.transaction {
-                                                    update(playlist.playlist.toggleLike())
+                                        if (editable) {
+                                            IconButton(
+                                                onClick = {
+                                                    showDeletePlaylistDialog = true
                                                 }
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Delete,
+                                                    contentDescription = null,
+                                                )
                                             }
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
-                                                contentDescription = null,
-                                                tint = if (liked) MaterialTheme.colorScheme.error else LocalContentColor.current
-                                            )
+                                        } else {
+                                            IconButton(
+                                                onClick = {
+                                                    database.transaction {
+                                                        update(playlist.playlist.toggleLike())
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
+                                                    contentDescription = null,
+                                                    tint = if (liked) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                                )
+                                            }
                                         }
 
                                         if (editable) {

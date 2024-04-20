@@ -416,4 +416,18 @@ class InnerTube {
             )
         )
     }
+
+    suspend fun deletePlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+    ) = httpClient.post("playlist/delete") {
+        println("deleting $playlistId")
+        ytClient(client, setLogin = true)
+        setBody(
+            PlaylistDeleteBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId
+            )
+        )
+    }
 }
