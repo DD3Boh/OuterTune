@@ -13,9 +13,11 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
+import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
+import com.dd3boh.outertune.ui.utils.DirectoryTree
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.ui.utils.scanLocal
 import com.dd3boh.outertune.ui.utils.syncDB
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.Stack
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,46 +42,18 @@ class LibrarySongsViewModel @Inject constructor(
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
 
-    // scan for local songs
-    val localSongs = syncDB(database, scanLocal(context, database).value.toList())
+    /**
+     * The top of the stack is the folder that the page will render.
+     * Clicking on a folder pushes, while the back button pops.
+     */
+    val folderPositionStack = Stack<DirectoryTree>()
     val databseLink = database
+    val downloadUtilLink = downloadUtil
 
-    val allSongs = context.dataStore.data
-        .map {
-            Triple(
-                it[SongFilterKey].toEnum(SongFilter.LIKED),
-                it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
-                (it[SongSortDescendingKey] ?: true)
-            )
-        }
-        .distinctUntilChanged()
-        .flatMapLatest { (filter, sortType, descending) ->
-            when (filter) {
-                SongFilter.LIBRARY -> database.songs(sortType, descending)
-                SongFilter.LIKED -> database.likedSongs(sortType, descending)
-                SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
-                    database.allSongs()
-                        .flowOn(Dispatchers.IO)
-                        .map { songs ->
-                            songs.filter {
-                                // show local songs as under downloaded for now
-                                downloads[it.id]?.state == Download.STATE_COMPLETED || it.song.isLocal == true
-                            }
-                        }
-                        .map { songs ->
-                            when (sortType) {
-                                SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
-                                SongSortType.NAME -> songs.sortedBy { it.song.title }
-                                SongSortType.ARTIST -> songs.sortedBy { song ->
-                                    song.artists.joinToString(separator = "") { it.name }
-                                }
+    val allSongs = syncAllSongs(context, database, downloadUtil)
 
-                                SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
-                            }.reversed(descending)
-                        }
-                }
-            }
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    // In the future, build this based on paths from database, and the metadata gets filled in on the fly
+    val localSongDirectoryTree = scanLocal(context, database)
 
     fun syncLibrarySongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
@@ -86,6 +61,60 @@ class LibrarySongsViewModel @Inject constructor(
 
     fun syncLikedSongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
+    }
+
+
+    /**
+     * Rescan local songs
+     *
+     * @return DirectoryTree
+     */
+    fun syncLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
+        val directoryStructure = scanLocal(context, database).value
+
+        syncDB(database, directoryStructure.toList())
+        return MutableStateFlow(directoryStructure)
+    }
+
+
+    fun syncAllSongs(context: Context, database: MusicDatabase, downloadUtil: DownloadUtil): StateFlow<List<Song>> {
+
+        return context.dataStore.data
+                .map {
+                    Triple(
+                            it[SongFilterKey].toEnum(SongFilter.LIKED),
+                            it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
+                            (it[SongSortDescendingKey] ?: true)
+                    )
+                }
+                .distinctUntilChanged()
+                .flatMapLatest { (filter, sortType, descending) ->
+                    when (filter) {
+                        SongFilter.LIBRARY -> database.songs(sortType, descending)
+                        SongFilter.LIKED -> database.likedSongs(sortType, descending)
+                        SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
+                            database.allSongs()
+                                    .flowOn(Dispatchers.IO)
+                                    .map { songs ->
+                                        songs.filter {
+                                            // show local songs as under downloaded for now
+                                            downloads[it.id]?.state == Download.STATE_COMPLETED || it.song.isLocal == true
+                                        }
+                                    }
+                                    .map { songs ->
+                                        when (sortType) {
+                                            SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
+                                            SongSortType.NAME -> songs.sortedBy { it.song.title }
+                                            SongSortType.ARTIST -> songs.sortedBy { song ->
+                                                song.artists.joinToString(separator = "") { it.name }
+                                            }
+
+                                            SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
+                                        }.reversed(descending)
+                                    }
+                        }
+                    }
+                }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 }
 

@@ -27,9 +27,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 
+const val TAG = "LocalMediaUtils"
+
 // stuff to make this work
 const val sdcardRoot = "/storage/emulated/0/"
 val testScanPaths = arrayListOf("Music")
+var directoryUID = 0
+var cachedDirectoryTree: DirectoryTree? = null
 
 
 // useful metadata
@@ -52,19 +56,27 @@ val projection = arrayOf(
  * @param path root directory start
  */
 class DirectoryTree(path: String) {
-    private var currentDir = path // file name, id
+    var currentDir = path // file name, id
 
     // folder contents
-    private var subdirs = ArrayList<DirectoryTree>()
-    private var files = ArrayList<Song>()
+    var subdirs = ArrayList<DirectoryTree>()
+    var files = ArrayList<Song>()
+
+    val uid = directoryUID
+
+    init {
+        // increment uid
+        directoryUID++
+    }
+
 
     fun insert(path: String, song: Song) {
 //        println("curr path =" + path)
 
         // add a file
-        if (path.indexOf("/") == -1) {
+        if (path.indexOf('/') == -1) {
             files.add(song)
-//            println("add file to " + path)
+            println("add A MUSIC FILE AAAAAAHHH " + path)
             return
         }
 
@@ -73,7 +85,9 @@ class DirectoryTree(path: String) {
         if (path[path.length - 1] == '/') {
             tmppath = path.substring(0, path.length - 1)
         }
-        val subdirPath = tmppath.split("/")[tmppath.split("/").size - 1]
+
+        // the first directory before the .
+        val subdirPath = tmppath.substringBefore('/')
 
         // create subdirs if they do not exist, then insert
         var existingSubdir: DirectoryTree? = null
@@ -86,11 +100,11 @@ class DirectoryTree(path: String) {
 
         if (existingSubdir == null) {
             val tree = DirectoryTree(subdirPath)
-            tree.insert(subdirPath, song)
+            tree.insert(tmppath.substringAfter('/'), song)
             subdirs.add(tree)
 
         } else {
-            existingSubdir!!.insert(subdirPath, song)
+            existingSubdir!!.insert(tmppath.substringAfter('/'), song)
         }
     }
 
@@ -284,6 +298,7 @@ fun scanLocal(
         }
     }
 
+    cachedDirectoryTree = newDirectoryStructure
     return MutableStateFlow(newDirectoryStructure)
 }
 
@@ -345,17 +360,16 @@ fun syncDB(
                     // match file names
                     if (strictFileNames &&
                         (it.song.localPath?.substringBeforeLast('/') !=
-                                song.song.localPath?.substringBeforeLast('/'))
+                            song.song.localPath?.substringBeforeLast('/'))
                     ) {
                         return@filter false
                     }
 
                     // rest of metadata
                     when (matchStrength) {
-                        ScannerSensitivity.LEVEL_1 -> it.song.title.compareTo(song.song.title) == 1
-                        ScannerSensitivity.LEVEL_2 -> it.song.title.compareTo(song.song.title) == 1 && compareArtist(
-                            it.artists
-                        )
+                        ScannerSensitivity.LEVEL_1 -> it.song.title == song.song.title
+                        ScannerSensitivity.LEVEL_2 -> it.song.title == song.song.title &&
+                            compareArtist(it.artists)
 
                         ScannerSensitivity.LEVEL_3 -> it.song.title.compareTo(song.song.title) == 1 && compareArtist(
                             it.artists
@@ -442,4 +456,15 @@ fun getLocalThumbnail(path: String?): Bitmap? {
 
     CachedBitmap.cache(path, image)
     return image
+}
+
+
+/**
+ * Get cached directory tree
+ */
+fun getDirectorytree(): DirectoryTree? {
+    if (cachedDirectoryTree == null) {
+        return null
+    }
+    return cachedDirectoryTree
 }

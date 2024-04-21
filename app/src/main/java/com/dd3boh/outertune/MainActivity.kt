@@ -93,6 +93,7 @@ import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryScreen
+import com.dd3boh.outertune.ui.screens.library.LibrarySongsFolderScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
@@ -557,6 +558,10 @@ class MainActivity : ComponentActivity() {
                                 composable("new_release") {
                                     NewReleaseScreen(navController, scrollBehavior)
                                 }
+                                composable(Screens.SongFolders.route) {
+                                    LibrarySongsFolderScreen(navController)
+                                }
+
                                 composable(
                                     route = "search/{query}",
                                     arguments = listOf(

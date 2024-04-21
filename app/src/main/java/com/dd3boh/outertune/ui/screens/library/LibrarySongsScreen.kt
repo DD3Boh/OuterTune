@@ -8,7 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,8 +46,6 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
-import com.dd3boh.outertune.ui.utils.scanLocal
-import com.dd3boh.outertune.ui.utils.syncDB
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
@@ -152,12 +152,25 @@ fun LibrarySongsScreen(
             ) {
                 IconButton(
                     onClick = {
-                        syncDB(viewModel.databseLink, scanLocal(context).toList())
                         Toast.makeText(context, "SCANNING DATABASE...", Toast.LENGTH_SHORT).show()
+                        viewModel.syncLocalSongs(context, viewModel.databseLink)
+                        viewModel.syncAllSongs(context, viewModel.databseLink, viewModel.downloadUtilLink)
                     }
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.replay),
+                       Icons.Rounded.Replay,
+                        contentDescription = null
+                    )
+                }
+
+                // show folders
+                IconButton(
+                    onClick = {
+                        navController.navigate("songs_folders_screen")
+                    }
+                ) {
+                    Icon(
+                        Icons.Rounded.Folder,
                         contentDescription = null
                     )
                 }
@@ -196,7 +209,7 @@ fun LibrarySongsScreen(
                                     // local song indicator
                                     if (song.song.isLocal == true) {
                                         return@IconButton Icon(
-                                            painter = painterResource(R.drawable.tab),
+                                            Icons.Rounded.Folder,
                                             contentDescription = null
                                         )
                                     }
