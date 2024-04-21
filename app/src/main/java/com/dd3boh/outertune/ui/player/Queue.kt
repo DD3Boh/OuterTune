@@ -30,7 +30,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DismissValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,9 +38,11 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SwipeToDismiss
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDismissState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -394,21 +395,30 @@ fun Queue(
                     key = window.uid.hashCode()
                 ) {
                     val currentItem by rememberUpdatedState(window)
-                    val dismissState = rememberDismissState(
+                    val dismissState = rememberSwipeToDismissBoxState(
                         positionalThreshold = { totalDistance ->
                             totalDistance
                         },
                         confirmValueChange = { dismissValue ->
-                            if (dismissValue == DismissValue.DismissedToEnd || dismissValue == DismissValue.DismissedToStart) {
-                                playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                            when (dismissValue) {
+                                SwipeToDismissBoxValue.StartToEnd -> {
+                                    playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                    return@rememberSwipeToDismissBoxState true
+                                }
+                                SwipeToDismissBoxValue.EndToStart -> {
+                                    playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                    return@rememberSwipeToDismissBoxState true
+                                }
+                                SwipeToDismissBoxValue.Settled -> {
+                                    return@rememberSwipeToDismissBoxState false
+                                }
                             }
-                            true
                         }
                     )
-                    SwipeToDismiss(
+                    SwipeToDismissBox(
                         state = dismissState,
-                        background = {},
-                        dismissContent = {
+                        backgroundContent = {},
+                        content = {
                             MediaMetadataListItem(
                                 mediaMetadata = window.mediaItem.metadata!!,
                                 isActive = index == currentWindowIndex,

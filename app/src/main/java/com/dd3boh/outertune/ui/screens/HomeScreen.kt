@@ -85,9 +85,6 @@ fun HomeScreen(
             val snapLayoutInfoProvider = remember(mostPlayedLazyGridState) {
                 SnapLayoutInfoProvider(
                     lazyGridState = mostPlayedLazyGridState,
-                    positionInLayout = { layoutSize, itemSize ->
-                        (layoutSize * horizontalLazyGridItemWidthFactor / 2f - itemSize / 2f)
-                    }
                 )
             }
 

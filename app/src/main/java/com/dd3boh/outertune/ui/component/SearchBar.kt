@@ -36,6 +36,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Decoration
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBarColors
@@ -214,7 +215,7 @@ fun SearchBar(
 
                 if (animationProgress > 0) {
                     Column(Modifier.alpha(animationProgress)) {
-                        Divider(color = colors.dividerColor)
+                        HorizontalDivider(color = colors.dividerColor)
                         content()
                     }
                 }
@@ -247,7 +248,7 @@ private fun SearchBarInputField(
     val searchSemantics = getString(Strings.SearchBarSearch)
     val suggestionsAvailableSemantics = getString(Strings.SuggestionsAvailable)
     val textColor = LocalTextStyle.current.color.takeOrElse {
-        colors.textColor(enabled).value
+        colors.focusedTextColor
     }
 
     Row(
@@ -306,7 +307,7 @@ private fun SearchBarInputField(
                     if (placeholder != null && query.text.isEmpty()) {
                         Box(Modifier.alpha(0.8f)) {
                             Decoration(
-                                contentColor = colors.placeholderColor(enabled).value,
+                                contentColor = colors.focusedPlaceholderColor,
                                 typography = MaterialTheme.typography.bodyLarge,
                                 content = placeholder
                             )

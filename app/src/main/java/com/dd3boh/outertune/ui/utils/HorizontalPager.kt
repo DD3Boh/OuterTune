@@ -7,33 +7,45 @@ import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyList
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.animateToNextPage
+import androidx.compose.foundation.pager.animateToPreviousPage
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.semantics.*
+import androidx.compose.ui.semantics.pageDown
+import androidx.compose.ui.semantics.pageLeft
+import androidx.compose.ui.semantics.pageRight
+import androidx.compose.ui.semantics.pageUp
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @Composable
 @ExperimentalFoundationApi
 fun <T> HorizontalPager(
     items: List<T>,
     modifier: Modifier = Modifier,
-    state: PagerState = rememberPagerState(),
+    state: PagerState,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     pageSize: PageSize = PageSize.Fill,
     beyondBoundsPageCount: Int = 0,
@@ -44,7 +56,8 @@ fun <T> HorizontalPager(
     reverseLayout: Boolean = false,
     key: ((item: T) -> Any)? = null,
     pageNestedScrollConnection: NestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
-        Orientation.Horizontal
+        state = state,
+        orientation = Orientation.Horizontal
     ),
     pageContent: @Composable (item: T) -> Unit,
 ) {
@@ -107,17 +120,6 @@ internal fun <T> Pager(
         PagerWrapperFlingBehavior(flingBehavior, state)
     }
 
-    LaunchedEffect(density, state, pageSpacing) {
-        with(density) { state.pageSpacing = pageSpacing.roundToPx() }
-    }
-
-    LaunchedEffect(state) {
-        snapshotFlow { state.isScrollInProgress }
-            .filter { !it }
-            .drop(1) // Initial scroll is false
-            .collect { state.updateOnScrollStopped() }
-    }
-
     val pagerSemantics = if (userScrollEnabled) {
         Modifier.pagerSemantics(state, isVertical)
     } else {
@@ -150,17 +152,9 @@ internal fun <T> Pager(
         val verticalAlignmentForSpacedArrangement =
             if (!reverseLayout) Alignment.Top else Alignment.Bottom
 
-        val lazyListState = remember(state) {
-            val initialPageOffset =
-                with(density) { pageAvailableSize.roundToPx() } * state.initialPageOffsetFraction
-            LazyListState(state.initialPage, initialPageOffset.roundToInt()).also {
-                state.loadNewState(it)
-            }
-        }
-
         LazyList(
             modifier = Modifier,
-            state = lazyListState,
+            state = rememberLazyListState(),
             contentPadding = contentPadding,
             flingBehavior = pagerFlingBehavior,
             horizontalAlignment = horizontalAlignment,

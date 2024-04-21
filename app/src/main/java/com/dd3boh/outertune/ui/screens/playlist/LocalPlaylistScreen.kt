@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DismissValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,11 +30,13 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismiss
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.rememberDismissState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -537,12 +539,12 @@ fun LocalPlaylistScreen(
                     key = song.map.id
                 ) {
                     val currentItem by rememberUpdatedState(song)
-                    val dismissState = rememberDismissState(
+                    val dismissState = rememberSwipeToDismissBoxState(
                         positionalThreshold = { totalDistance ->
                             totalDistance
                         },
                         confirmValueChange = { dismissValue ->
-                            if (dismissValue == DismissValue.DismissedToEnd || dismissValue == DismissValue.DismissedToStart) {
+                            if (dismissValue == SwipeToDismissBoxValue.EndToStart || dismissValue == SwipeToDismissBoxValue.StartToEnd) {
                                 database.transaction {
                                     coroutineScope.launch {
                                         playlist?.playlist?.browseId?.let { it1 ->
@@ -633,13 +635,18 @@ fun LocalPlaylistScreen(
                     if (locked) {
                         content()
                     } else {
-                        SwipeToDismiss(
-                            state = dismissState,
-                            background = {},
-                            dismissContent = {
-                                content()
-                            }
+                        setOf(SwipeToDismissBoxValue.EndToStart,
+                            SwipeToDismissBoxValue.StartToEnd
                         )
+                        SwipeToDismissBox(state = dismissState,
+                            backgroundContent = {
+
+                            },
+                            enableDismissFromStartToEnd = true,
+                            enableDismissFromEndToStart = true,
+                            content = {
+                                content()
+                            })
                     }
                 }
             }

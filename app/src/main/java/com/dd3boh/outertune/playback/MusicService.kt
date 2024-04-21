@@ -16,15 +16,11 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.Player.EVENT_IS_PLAYING_CHANGED
-import androidx.media3.common.Player.EVENT_PLAYBACK_STATE_CHANGED
-import androidx.media3.common.Player.EVENT_PLAY_WHEN_READY_CHANGED
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
-import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Player.STATE_IDLE
 import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
@@ -40,6 +36,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.analytics.PlaybackStats
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
+import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -160,9 +157,11 @@ class MusicService : MediaLibraryService(),
     var queueTitle: String? = null
 
     val currentMediaMetadata = MutableStateFlow<com.dd3boh.outertune.models.MediaMetadata?>(null)
+
     private val currentSong = currentMediaMetadata.flatMapLatest { mediaMetadata ->
         database.song(mediaMetadata?.id)
     }.stateIn(scope, SharingStarted.Lazily, null)
+
     private val currentFormat = currentMediaMetadata.flatMapLatest { mediaMetadata ->
         database.format(mediaMetadata?.id)
     }
@@ -213,10 +212,12 @@ class MusicService : MediaLibraryService(),
                 addListener(sleepTimer)
                 addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
             }
+
         mediaLibrarySessionCallback.apply {
             toggleLike = ::toggleLike
             toggleLibrary = ::toggleLibrary
         }
+
         mediaSession = MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
             .setSessionActivity(
                 PendingIntent.getActivity(
@@ -228,6 +229,7 @@ class MusicService : MediaLibraryService(),
             )
             .setBitmapLoader(CoilBitmapLoader(this, scope))
             .build()
+
         player.repeatMode = dataStore.get(RepeatModeKey, REPEAT_MODE_OFF)
 
         // Keep a connected controller so that notification works
@@ -659,22 +661,24 @@ class MusicService : MediaLibraryService(),
             }
         )
 
-    private fun createRenderersFactory() =
-        object : DefaultRenderersFactory(this) {
-            override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean, enableOffload: Boolean) =
-                DefaultAudioSink.Builder(this@MusicService)
-                    .setEnableFloatOutput(enableFloatOutput)
-                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-                    .setOffloadMode(if (enableOffload) DefaultAudioSink.OFFLOAD_MODE_ENABLED_GAPLESS_REQUIRED else DefaultAudioSink.OFFLOAD_MODE_DISABLED)
-                    .setAudioProcessorChain(
-                        DefaultAudioSink.DefaultAudioProcessorChain(
-                            emptyArray(),
-                            SilenceSkippingAudioProcessor(2_000_000, 20_000, 256),
-                            SonicAudioProcessor()
-                        )
+    private fun createRenderersFactory() = object : DefaultRenderersFactory(this) {
+        override fun buildAudioSink(
+            context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean
+        ): AudioSink {
+            return DefaultAudioSink.Builder(this@MusicService)
+                .setEnableFloatOutput(enableFloatOutput)
+
+                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                .setAudioProcessorChain(
+                    DefaultAudioSink.DefaultAudioProcessorChain(
+                        emptyArray(),
+                        SilenceSkippingAudioProcessor(),
+                        SonicAudioProcessor()
                     )
-                    .build()
+                )
+                .build()
         }
+    }
 
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
