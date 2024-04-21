@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,7 +85,7 @@ fun YouTubeArtistMenu(
     ) {
         artist.radioEndpoint?.let { watchEndpoint ->
             GridMenuItem(
-                icon = R.drawable.radio,
+                icon = Icons.Rounded.Radio,
                 title = R.string.start_radio
             ) {
                 playerConnection.playQueue(YouTubeQueue(watchEndpoint))
@@ -90,7 +94,7 @@ fun YouTubeArtistMenu(
         }
         artist.shuffleEndpoint?.let { watchEndpoint ->
             GridMenuItem(
-                icon = R.drawable.shuffle,
+                icon = Icons.Rounded.Shuffle,
                 title = R.string.shuffle
             ) {
                 playerConnection.playQueue(YouTubeQueue(watchEndpoint))
@@ -98,7 +102,7 @@ fun YouTubeArtistMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.share,
+            icon = Icons.Rounded.Share,
             title = R.string.share
         ) {
             val intent = Intent().apply {

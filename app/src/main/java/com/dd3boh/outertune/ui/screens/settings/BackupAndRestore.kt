@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -53,7 +58,7 @@ fun BackupAndRestore(
     ) {
         PreferenceEntry(
             title = { Text(stringResource(R.string.backup)) },
-            icon = { Icon(painterResource(R.drawable.backup), null) },
+            icon = { Icon(Icons.Rounded.Backup, null) },
             onClick = {
                 val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
                 backupLauncher.launch("${context.getString(R.string.app_name)}_${LocalDateTime.now().format(formatter)}.backup")
@@ -61,7 +66,7 @@ fun BackupAndRestore(
         )
         PreferenceEntry(
             title = { Text(stringResource(R.string.restore)) },
-            icon = { Icon(painterResource(R.drawable.restore), null) },
+            icon = { Icon(Icons.Rounded.Restore, null) },
             onClick = {
                 restoreLauncher.launch(arrayOf("application/octet-stream"))
             }
@@ -76,7 +81,7 @@ fun BackupAndRestore(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

@@ -14,6 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -137,7 +140,7 @@ fun OnlineSearchResult(
                     }
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.more_vert),
+                        Icons.Rounded.MoreVert,
                         contentDescription = null
                     )
                 }
@@ -184,7 +187,7 @@ fun OnlineSearchResult(
             if (searchSummary?.summaries?.isEmpty() == true) {
                 item {
                     EmptyPlaceholder(
-                        icon = R.drawable.search,
+                        icon = Icons.Rounded.Search,
                         text = stringResource(R.string.no_results_found)
                     )
                 }
@@ -209,7 +212,7 @@ fun OnlineSearchResult(
             if (itemsPage?.items?.isEmpty() == true) {
                 item {
                     EmptyPlaceholder(
-                        icon = R.drawable.search,
+                        icon = Icons.Rounded.Search,
                         text = stringResource(R.string.no_results_found)
                     )
                 }

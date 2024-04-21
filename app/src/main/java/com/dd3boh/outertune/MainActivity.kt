@@ -23,6 +23,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -604,13 +612,12 @@ class MainActivity : ComponentActivity() {
                                         }
                                     ) {
                                         Icon(
-                                            painterResource(
+                                            imageVector =
                                                 if (active || (navController.canNavigateUp && !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route })) {
-                                                    R.drawable.arrow_back
+                                                    Icons.AutoMirrored.Rounded.ArrowBack
                                                 } else {
-                                                    R.drawable.search
-                                                }
-                                            ),
+                                                    Icons.Rounded.Search
+                                                },
                                             contentDescription = null
                                         )
                                     }
@@ -622,7 +629,7 @@ class MainActivity : ComponentActivity() {
                                                 onClick = { onQueryChange(TextFieldValue("")) }
                                             ) {
                                                 Icon(
-                                                    painter = painterResource(R.drawable.close),
+                                                    imageVector = Icons.Rounded.Close,
                                                     contentDescription = null
                                                 )
                                             }
@@ -633,12 +640,11 @@ class MainActivity : ComponentActivity() {
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(
-                                                    when (searchSource) {
-                                                        SearchSource.LOCAL -> R.drawable.library_music
-                                                        SearchSource.ONLINE -> R.drawable.language
+                                                imageVector = when (searchSource) {
+                                                        SearchSource.LOCAL -> Icons.Rounded.LibraryMusic
+                                                        SearchSource.ONLINE -> Icons.Rounded.Language
                                                     }
-                                                ),
+                                                ,
                                                 contentDescription = null
                                             )
                                         }
@@ -656,7 +662,7 @@ class MainActivity : ComponentActivity() {
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.settings),
+                                                imageVector = Icons.Rounded.Settings,
                                                 contentDescription = null
                                             )
                                         }
@@ -725,7 +731,7 @@ class MainActivity : ComponentActivity() {
                                     selected = navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true,
                                     icon = {
                                         Icon(
-                                            painter = painterResource(screen.iconId),
+                                            screen.icon,
                                             contentDescription = null
                                         )
                                     },

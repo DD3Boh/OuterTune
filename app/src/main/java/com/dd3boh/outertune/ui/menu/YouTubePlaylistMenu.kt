@@ -5,6 +5,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,7 +95,7 @@ fun YouTubePlaylistMenu(
     ) {
         playlist.playEndpoint?.let {
             GridMenuItem(
-                icon = R.drawable.play,
+                icon = Icons.Rounded.PlayArrow,
                 title = R.string.play
             ) {
                 playerConnection.playQueue(YouTubeQueue(it))
@@ -93,7 +103,7 @@ fun YouTubePlaylistMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.shuffle,
+            icon = Icons.Rounded.Shuffle,
             title = R.string.shuffle
         ) {
             playerConnection.playQueue(YouTubeQueue(playlist.shuffleEndpoint))
@@ -101,7 +111,7 @@ fun YouTubePlaylistMenu(
         }
         playlist.radioEndpoint?.let { radioEndpoint ->
             GridMenuItem(
-                icon = R.drawable.radio,
+                icon = Icons.Rounded.Radio,
                 title = R.string.start_radio
             ) {
                 playerConnection.playQueue(YouTubeQueue(radioEndpoint))
@@ -109,7 +119,7 @@ fun YouTubePlaylistMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.playlist_play,
+            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
             title = R.string.play_next
         ) {
             coroutineScope.launch {
@@ -124,7 +134,7 @@ fun YouTubePlaylistMenu(
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.queue_music,
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
             coroutineScope.launch {
@@ -139,13 +149,13 @@ fun YouTubePlaylistMenu(
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.playlist_add,
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
         }
         GridMenuItem(
-            icon = R.drawable.share,
+            icon = Icons.Rounded.Share,
             title = R.string.share
         ) {
             val intent = Intent().apply {

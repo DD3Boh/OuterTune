@@ -9,6 +9,12 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Casino
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -101,14 +107,14 @@ fun HomeScreen(
                 ) {
                     NavigationTile(
                         title = stringResource(R.string.history),
-                        icon = R.drawable.history,
+                        icon = Icons.Rounded.History,
                         onClick = { navController.navigate("history") },
                         modifier = Modifier.weight(1f)
                     )
 
                     NavigationTile(
                         title = stringResource(R.string.stats),
-                        icon = R.drawable.trending_up,
+                        icon = Icons.Rounded.TrendingUp,
                         onClick = { navController.navigate("stats") },
                         modifier = Modifier.weight(1f)
                     )
@@ -116,7 +122,7 @@ fun HomeScreen(
                     if (isLoggedIn) {
                         NavigationTile(
                             title = stringResource(R.string.account),
-                            icon = R.drawable.person,
+                            icon = Icons.Rounded.Person,
                             onClick = {
                                 navController.navigate("account")
                             },
@@ -178,7 +184,7 @@ fun HomeScreen(
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.more_vert),
+                                                Icons.Rounded.MoreVert,
                                                 contentDescription = null
                                             )
                                         }
@@ -274,7 +280,7 @@ fun HomeScreen(
             HideOnScrollFAB(
                 visible = !quickPicks.isNullOrEmpty() || explorePage?.newReleaseAlbums?.isNotEmpty() == true,
                 scrollState = scrollState,
-                icon = R.drawable.casino,
+                icon = Icons.Rounded.Casino,
                 onClick = {
                     if (Random.nextBoolean() && !quickPicks.isNullOrEmpty()) {
                         val song = quickPicks!!.random()

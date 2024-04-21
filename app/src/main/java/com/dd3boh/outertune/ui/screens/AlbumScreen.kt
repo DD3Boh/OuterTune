@@ -17,6 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,7 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -101,7 +107,7 @@ fun AlbumScreen(
 
     val downloadUtil = LocalDownloadUtil.current
     var downloadState by remember {
-        mutableStateOf(Download.STATE_STOPPED)
+        mutableIntStateOf(Download.STATE_STOPPED)
     }
 
     LaunchedEffect(albumWithSongs) {
@@ -216,7 +222,7 @@ fun AlbumScreen(
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.offline),
+                                                imageVector = Icons.Rounded.OfflinePin,
                                                 contentDescription = null
                                             )
                                         }
@@ -260,7 +266,7 @@ fun AlbumScreen(
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.download),
+                                                Icons.Rounded.Download,
                                                 contentDescription = null
                                             )
                                         }
@@ -279,7 +285,7 @@ fun AlbumScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }
@@ -360,7 +366,7 @@ fun AlbumScreen(
                             }
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.more_vert),
+                                Icons.Rounded.MoreVert,
                                 contentDescription = null
                             )
                         }
@@ -432,7 +438,7 @@ fun AlbumScreen(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

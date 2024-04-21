@@ -4,6 +4,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Contrast
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Tab
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -47,13 +55,13 @@ fun AppearanceSettings(
     ) {
         SwitchPreference(
             title = { Text(stringResource(R.string.enable_dynamic_theme)) },
-            icon = { Icon(painterResource(R.drawable.palette), null) },
+            icon = { Icon(Icons.Rounded.Palette, null) },
             checked = dynamicTheme,
             onCheckedChange = onDynamicThemeChange
         )
         EnumListPreference(
             title = { Text(stringResource(R.string.dark_theme)) },
-            icon = { Icon(painterResource(R.drawable.dark_mode), null) },
+            icon = { Icon(Icons.Rounded.DarkMode, null) },
             selectedValue = darkMode,
             onValueSelected = onDarkModeChange,
             valueText = {
@@ -66,13 +74,13 @@ fun AppearanceSettings(
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.pure_black)) },
-            icon = { Icon(painterResource(R.drawable.contrast), null) },
+            icon = { Icon(Icons.Rounded.Contrast, null) },
             checked = pureBlack,
             onCheckedChange = onPureBlackChange
         )
         EnumListPreference(
             title = { Text(stringResource(R.string.default_open_tab)) },
-            icon = { Icon(painterResource(R.drawable.tab), null) },
+            icon = { Icon(Icons.Rounded.Tab, null) },
             selectedValue = defaultOpenTab,
             onValueSelected = onDefaultOpenTabChange,
             valueText = {
@@ -87,7 +95,7 @@ fun AppearanceSettings(
         )
         EnumListPreference(
             title = { Text(stringResource(R.string.lyrics_text_position)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
             selectedValue = lyricsPosition,
             onValueSelected = onLyricsPositionChange,
             valueText = {
@@ -108,7 +116,7 @@ fun AppearanceSettings(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

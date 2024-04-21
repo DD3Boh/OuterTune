@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -103,6 +107,26 @@ fun LazyGridScope.GridMenuItem(
     }
 }
 
+fun LazyGridScope.GridMenuItem(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    @StringRes title: Int,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) = GridMenuItem(
+    modifier = modifier,
+    icon = {
+        Icon(
+            imageVector = icon,
+            contentDescription = null
+        )
+    },
+    title = title,
+    enabled = enabled,
+    onClick = onClick
+)
+
+
 
 fun LazyGridScope.DownloadGridMenu(
     @Download.State state: Int?,
@@ -112,7 +136,7 @@ fun LazyGridScope.DownloadGridMenu(
     when (state) {
         Download.STATE_COMPLETED -> {
             GridMenuItem(
-                icon = R.drawable.offline,
+                icon = Icons.Rounded.OfflinePin,
                 title = R.string.remove_download,
                 onClick = onRemoveDownload
             )
@@ -133,7 +157,7 @@ fun LazyGridScope.DownloadGridMenu(
 
         else -> {
             GridMenuItem(
-                icon = R.drawable.download,
+                icon = Icons.Rounded.Download,
                 title = R.string.download,
                 onClick = onDownload
             )

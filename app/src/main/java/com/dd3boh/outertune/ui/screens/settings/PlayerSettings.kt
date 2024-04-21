@@ -4,6 +4,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -46,7 +54,7 @@ fun PlayerSettings(
     ) {
         EnumListPreference(
             title = { Text(stringResource(R.string.audio_quality)) },
-            icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
+            icon = { Icon(Icons.Rounded.GraphicEq, null) },
             selectedValue = audioQuality,
             onValueSelected = onAudioQualityChange,
             valueText = {
@@ -59,7 +67,7 @@ fun PlayerSettings(
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.persistent_queue)) },
-            icon = { Icon(painterResource(R.drawable.queue_music), null) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
             checked = persistentQueue,
             onCheckedChange = onPersistentQueueChange
         )
@@ -71,7 +79,7 @@ fun PlayerSettings(
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.audio_normalization)) },
-            icon = { Icon(painterResource(R.drawable.volume_up), null) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.VolumeUp, null) },
             checked = audioNormalization,
             onCheckedChange = onAudioNormalizationChange
         )
@@ -85,7 +93,7 @@ fun PlayerSettings(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

@@ -17,6 +17,22 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.OfflinePin
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -176,7 +192,7 @@ fun LocalPlaylistScreen(
     if (showEditDialog) {
         playlist?.playlist?.let { playlistEntity ->
             TextFieldDialog(
-                icon = { Icon(painter = painterResource(R.drawable.edit), contentDescription = null) },
+                icon = { Icon(imageVector = Icons.Rounded.Edit, contentDescription = null) },
                 title = { Text(text = stringResource(R.string.edit_playlist)) },
                 onDismiss = { showEditDialog = false },
                 initialTextFieldValue = TextFieldValue(playlistEntity.name, TextRange(playlistEntity.name.length)),
@@ -263,7 +279,7 @@ fun LocalPlaylistScreen(
                 if (playlist.songCount == 0) {
                     item {
                         EmptyPlaceholder(
-                            icon = R.drawable.music_note,
+                            icon = Icons.Rounded.MusicNote,
                             text = stringResource(R.string.playlist_is_empty)
                         )
                     }
@@ -338,7 +354,7 @@ fun LocalPlaylistScreen(
                                             onClick = { showEditDialog = true }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.edit),
+                                                Icons.Rounded.Edit,
                                                 contentDescription = null
                                             )
                                         }
@@ -367,7 +383,7 @@ fun LocalPlaylistScreen(
                                                 }
                                             ) {
                                                 Icon(
-                                                    painter = painterResource(R.drawable.sync),
+                                                    Icons.Rounded.Sync,
                                                     contentDescription = null
                                                 )
                                             }
@@ -381,7 +397,7 @@ fun LocalPlaylistScreen(
                                                     }
                                                 ) {
                                                     Icon(
-                                                        painter = painterResource(R.drawable.offline),
+                                                        Icons.Rounded.OfflinePin,
                                                         contentDescription = null
                                                     )
                                                 }
@@ -425,7 +441,7 @@ fun LocalPlaylistScreen(
                                                     }
                                                 ) {
                                                     Icon(
-                                                        painter = painterResource(R.drawable.download),
+                                                        Icons.Rounded.Download,
                                                         contentDescription = null
                                                     )
                                                 }
@@ -440,7 +456,7 @@ fun LocalPlaylistScreen(
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.queue_music),
+                                                Icons.AutoMirrored.Rounded.QueueMusic,
                                                 contentDescription = null
                                             )
                                         }
@@ -462,7 +478,7 @@ fun LocalPlaylistScreen(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.play),
+                                        imageVector = Icons.Rounded.PlayArrow,
                                         contentDescription = null,
                                         modifier = Modifier.size(ButtonDefaults.IconSize)
                                     )
@@ -483,7 +499,7 @@ fun LocalPlaylistScreen(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.shuffle),
+                                        Icons.Rounded.Shuffle,
                                         contentDescription = null,
                                         modifier = Modifier.size(ButtonDefaults.IconSize)
                                     )
@@ -521,7 +537,7 @@ fun LocalPlaylistScreen(
                                 modifier = Modifier.padding(horizontal = 6.dp)
                             ) {
                                 Icon(
-                                    painter = painterResource(if (locked) R.drawable.lock else R.drawable.lock_open),
+                                    imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
                                     contentDescription = null
                                 )
                             }
@@ -597,7 +613,7 @@ fun LocalPlaylistScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }
@@ -608,7 +624,7 @@ fun LocalPlaylistScreen(
                                         modifier = Modifier.detectReorder(reorderableState)
                                     ) {
                                         Icon(
-                                            painter = painterResource(R.drawable.drag_handle),
+                                            Icons.Rounded.DragHandle,
                                             contentDescription = null
                                         )
                                     }
@@ -660,7 +676,7 @@ fun LocalPlaylistScreen(
                     onLongClick = navController::backToMain
                 ) {
                     Icon(
-                        painterResource(R.drawable.arrow_back),
+                        Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = null
                     )
                 }

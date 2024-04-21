@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.OfflinePin
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -251,7 +255,7 @@ fun Lyrics(
                     }
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.more_horiz),
+                        imageVector = Icons.Rounded.MoreHoriz,
                         contentDescription = null
                     )
                 }

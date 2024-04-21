@@ -29,6 +29,17 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -152,7 +163,7 @@ fun Queue(
         AlertDialog(
             properties = DialogProperties(usePlatformDefaultWidth = false),
             onDismissRequest = { showSleepTimerDialog = false },
-            icon = { Icon(painter = painterResource(R.drawable.bedtime), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Timer, contentDescription = null) },
             title = { Text(stringResource(R.string.sleep_timer)) },
             confirmButton = {
                 TextButton(
@@ -208,7 +219,7 @@ fun Queue(
             onDismissRequest = { showDetailsDialog = false },
             icon = {
                 Icon(
-                    painter = painterResource(R.drawable.info),
+                    imageVector = Icons.Rounded.Info,
                     contentDescription = null
                 )
             },
@@ -279,13 +290,13 @@ fun Queue(
             ) {
                 IconButton(onClick = { state.expandSoft() }) {
                     Icon(
-                        painter = painterResource(R.drawable.queue_music),
+                        imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                         contentDescription = null
                     )
                 }
                 IconButton(onClick = { showLyrics = !showLyrics }) {
                     Icon(
-                        painter = painterResource(R.drawable.lyrics),
+                        imageVector = Icons.Rounded.Lyrics,
                         contentDescription = null,
                         modifier = Modifier.alpha(if (showLyrics) 1f else 0.5f)
                     )
@@ -306,7 +317,7 @@ fun Queue(
                     } else {
                         IconButton(onClick = { showSleepTimerDialog = true }) {
                             Icon(
-                                painter = painterResource(R.drawable.bedtime),
+                                imageVector = Icons.Rounded.Bedtime,
                                 contentDescription = null
                             )
                         }
@@ -332,7 +343,7 @@ fun Queue(
                     }
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.more_horiz),
+                        imageVector = Icons.Rounded.MoreHoriz,
                         contentDescription = null
                     )
                 }
@@ -430,7 +441,7 @@ fun Queue(
                                             .detectReorder(reorderableState)
                                     ) {
                                         Icon(
-                                            painter = painterResource(R.drawable.drag_handle),
+                                            imageVector = Icons.Rounded.DragHandle,
                                             contentDescription = null
                                         )
                                     }
@@ -533,14 +544,14 @@ fun Queue(
                 }
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.shuffle),
+                    imageVector = Icons.Rounded.Shuffle,
                     contentDescription = null,
                     modifier = Modifier.alpha(if (shuffleModeEnabled) 1f else 0.5f)
                 )
             }
 
             Icon(
-                painter = painterResource(R.drawable.expand_more),
+                imageVector = Icons.Rounded.ExpandMore,
                 contentDescription = null,
                 modifier = Modifier.align(Alignment.Center)
             )

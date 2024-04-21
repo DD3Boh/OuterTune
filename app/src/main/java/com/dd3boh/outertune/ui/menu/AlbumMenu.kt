@@ -13,6 +13,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.QueuePlayNext
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -212,21 +221,21 @@ fun AlbumMenu(
         )
     ) {
         GridMenuItem(
-            icon = R.drawable.playlist_play,
+            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
             title = R.string.play_next
         ) {
             onDismiss()
             playerConnection.playNext(songs.map { it.toMediaItem() })
         }
         GridMenuItem(
-            icon = R.drawable.queue_music,
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
             onDismiss()
             playerConnection.addToQueue(songs.map { it.toMediaItem() })
         }
         GridMenuItem(
-            icon = R.drawable.playlist_add,
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
@@ -270,7 +279,7 @@ fun AlbumMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.share,
+            icon = Icons.Rounded.Share,
             title = R.string.share
         ) {
             onDismiss()

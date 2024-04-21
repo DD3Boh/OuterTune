@@ -18,6 +18,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PlaylistAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -86,7 +93,7 @@ fun LibraryPlaylistsScreen(
 
     if (showAddPlaylistDialog) {
         TextFieldDialog(
-            icon = { Icon(painter = painterResource(R.drawable.add), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = null) },
             title = { Text(text = stringResource(R.string.create_playlist)) },
             onDismiss = { showAddPlaylistDialog = false },
             onDone = { playlistName ->
@@ -135,12 +142,11 @@ fun LibraryPlaylistsScreen(
                 modifier = Modifier.padding(start = 6.dp, end = 6.dp)
             ) {
                 Icon(
-                    painter = painterResource(
-                        when (viewType) {
-                            LibraryViewType.LIST -> R.drawable.list
-                            LibraryViewType.GRID -> R.drawable.grid_view
-                        }
-                    ),
+                    imageVector =
+                    when (viewType) {
+                        LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
+                        LibraryViewType.GRID -> Icons.Rounded.GridView
+                    },
                     contentDescription = null
                 )
             }
@@ -183,7 +189,7 @@ fun LibraryPlaylistsScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }
@@ -200,7 +206,7 @@ fun LibraryPlaylistsScreen(
 
                 HideOnScrollFAB(
                     lazyListState = lazyListState,
-                    icon = R.drawable.add,
+                    icon = Icons.Rounded.Add,
                     onClick = {
                         showAddPlaylistDialog = true
                     }
@@ -252,7 +258,7 @@ fun LibraryPlaylistsScreen(
 
                 HideOnScrollFAB(
                     lazyListState = lazyGridState,
-                    icon = R.drawable.add,
+                    icon = Icons.Rounded.Add,
                     onClick = {
                         showAddPlaylistDialog = true
                     }

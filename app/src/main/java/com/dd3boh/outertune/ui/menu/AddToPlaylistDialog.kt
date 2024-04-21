@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,7 +59,7 @@ fun AddToPlaylistDialog(
                     title = stringResource(R.string.create_playlist),
                     thumbnailContent = {
                         Image(
-                            painter = painterResource(R.drawable.add),
+                            imageVector = Icons.Rounded.Add,
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                             modifier = Modifier.size(ListThumbnailSize)
@@ -83,7 +85,7 @@ fun AddToPlaylistDialog(
 
     if (showCreatePlaylistDialog) {
         TextFieldDialog(
-            icon = { Icon(painter = painterResource(R.drawable.add), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = null) },
             title = { Text(text = stringResource(R.string.create_playlist)) },
             onDismiss = { showCreatePlaylistDialog = false },
             onDone = { playlistName ->

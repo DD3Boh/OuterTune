@@ -20,6 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cached
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -75,7 +83,7 @@ fun LyricsMenu(
     if (showEditDialog) {
         TextFieldDialog(
             onDismiss = { showEditDialog = false },
-            icon = { Icon(painter = painterResource(R.drawable.edit), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Edit, contentDescription = null) },
             title = { Text(text = mediaMetadataProvider().title) },
             initialTextFieldValue = TextFieldValue(lyricsProvider()?.lyrics.orEmpty()),
             singleLine = false,
@@ -121,7 +129,7 @@ fun LyricsMenu(
         DefaultDialog(
             modifier = Modifier.verticalScroll(rememberScrollState()),
             onDismiss = { showSearchDialog = false },
-            icon = { Icon(painter = painterResource(R.drawable.search), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Search, contentDescription = null) },
             title = { Text(stringResource(R.string.search_lyrics)) },
             buttons = {
                 TextButton(
@@ -231,7 +239,7 @@ fun LyricsMenu(
                             )
                             if (result.lyrics.startsWith("[")) {
                                 Icon(
-                                    painter = painterResource(R.drawable.sync),
+                                    imageVector = Icons.Rounded.Sync,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier
@@ -248,7 +256,7 @@ fun LyricsMenu(
                         }
                     ) {
                         Icon(
-                            painter = painterResource(if (index == expandedItemIndex) R.drawable.expand_less else R.drawable.expand_more),
+                            imageVector = if (index == expandedItemIndex) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                             contentDescription = null
                         )
                     }
@@ -288,20 +296,20 @@ fun LyricsMenu(
         )
     ) {
         GridMenuItem(
-            icon = R.drawable.edit,
+            icon = Icons.Rounded.Edit,
             title = R.string.edit
         ) {
             showEditDialog = true
         }
         GridMenuItem(
-            icon = R.drawable.cached,
+            icon = Icons.Rounded.SyncAlt,
             title = R.string.refetch
         ) {
             onDismiss()
             viewModel.refetchLyrics(mediaMetadataProvider(), lyricsProvider())
         }
         GridMenuItem(
-            icon = R.drawable.search,
+            icon = Icons.Rounded.Search,
             title = R.string.search,
         ) {
             showSearchDialog = true
