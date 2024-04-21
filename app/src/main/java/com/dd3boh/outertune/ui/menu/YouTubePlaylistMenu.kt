@@ -194,7 +194,10 @@ fun YouTubePlaylistMenu(
                                     browseId = playlist.id,
                                     isEditable = false,
                                     thumbnailUrl = playlist.thumbnail,
-                                    remoteSongCount = playlist.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
+                                    remoteSongCount = playlist.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() },
+                                    playEndpointParams = playlist.playEndpoint?.params,
+                                    shuffleEndpointParams = playlist.shuffleEndpoint?.params,
+                                    radioEndpointParams = playlist.radioEndpoint?.params
                                 ).toggleLike()
 
                                 insert(playlistEntity)
@@ -246,6 +249,7 @@ fun YouTubePlaylistMenu(
                 icon = Icons.Rounded.PlayArrow,
                 title = R.string.play
             ) {
+                println("Play: ${it.playlistId}, ${it.params}")
                 playerConnection.playQueue(YouTubeQueue(it))
                 onDismiss()
             }
@@ -256,6 +260,7 @@ fun YouTubePlaylistMenu(
                 icon = Icons.Rounded.Shuffle,
                 title = R.string.shuffle
             ) {
+                println("Shuffle: id: ${shuffleEndpoint.playlistId}, params: ${shuffleEndpoint.params}")
                 playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
                 onDismiss()
             }
@@ -266,6 +271,7 @@ fun YouTubePlaylistMenu(
                 icon = Icons.Rounded.Radio,
                 title = R.string.start_radio
             ) {
+                println("Radio: ${radioEndpoint.playlistId}, ${radioEndpoint.params}")
                 playerConnection.playQueue(YouTubeQueue(radioEndpoint))
                 onDismiss()
             }

@@ -65,6 +65,7 @@ import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.PlaylistListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -314,20 +315,17 @@ fun PlaylistMenu(
         }
 
         playlist.playlist.browseId?.let { browseId ->
-            GridMenuItem(
-                icon = Icons.Rounded.Radio,
-                title = R.string.start_radio
-            ) {
-                coroutineScope.launch(Dispatchers.IO) {
-                    YouTube.playlist(browseId).getOrNull()?.playlist?.let { playlistItem ->
-                        playlistItem.radioEndpoint?.let { radioEndpoint ->
-                            withContext(Dispatchers.Main) {
-                                playerConnection.playQueue(YouTubeQueue(radioEndpoint))
-                            }
-                        }
-                    }
+            playlist.playlist.radioEndpointParams?.let { radioEndpointParams ->
+                GridMenuItem(
+                    icon = Icons.Rounded.Radio,
+                    title = R.string.start_radio
+                ) {
+                    playerConnection.playQueue(YouTubeQueue(WatchEndpoint(
+                        playlistId = "RDAMPL$browseId",
+                        params = radioEndpointParams
+                    )))
+                    onDismiss()
                 }
-                onDismiss()
             }
         }
 

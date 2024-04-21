@@ -65,10 +65,13 @@ import com.dd3boh.outertune.ui.component.PlaylistListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.TextFieldDialog
 import com.dd3boh.outertune.ui.menu.PlaylistMenu
+import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
 import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.models.PlaylistItem
+import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.Dispatchers
 import java.time.LocalDateTime
 import kotlinx.coroutines.launch
@@ -191,23 +194,43 @@ fun LibraryPlaylistsScreen(
                         PlaylistListItem(
                             playlist = playlist,
                             trailingContent = {
-                                if (playlist.playlist.isEditable == true || playlist.songCount != 0) {
-                                    IconButton(
-                                        onClick = {
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = playlist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss
-                                                )
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            playlist.playlist.isEditable?.let { isEditable ->
+                                                if (isEditable || playlist.songCount != 0) {
+                                                    PlaylistMenu(
+                                                        playlist = playlist,
+                                                        coroutineScope = coroutineScope,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                } else {
+                                                    playlist.playlist.browseId?.let { browseId ->
+                                                        YouTubePlaylistMenu(
+                                                            playlist = PlaylistItem(
+                                                                id = browseId,
+                                                                title = playlist.playlist.name,
+                                                                author = null,
+                                                                songCountText = null,
+                                                                thumbnail = playlist.thumbnails[0],
+                                                                playEndpoint = WatchEndpoint(playlistId = browseId, params = playlist.playlist.playEndpointParams),
+                                                                shuffleEndpoint = WatchEndpoint(playlistId = browseId, params = playlist.playlist.shuffleEndpointParams),
+                                                                radioEndpoint = WatchEndpoint(playlistId = "RDAMPL$browseId", params = playlist.playlist.radioEndpointParams),
+                                                                isEditable = false
+                                                            ),
+                                                            coroutineScope = coroutineScope,
+                                                            onDismiss = menuState::dismiss
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.MoreVert,
-                                            contentDescription = null
-                                        )
                                     }
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = null
+                                    )
                                 }
                             },
                             modifier = Modifier
@@ -264,13 +287,42 @@ fun LibraryPlaylistsScreen(
                                             navController.navigate("local_playlist/${playlist.id}")
                                     },
                                     onLongClick = {
-                                        if (playlist.playlist.isEditable == true || playlist.songCount != 0) {
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = playlist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss
-                                                )
+                                        menuState.show {
+                                            playlist.playlist.isEditable?.let { isEditable ->
+                                                if (isEditable || playlist.songCount != 0) {
+                                                    PlaylistMenu(
+                                                        playlist = playlist,
+                                                        coroutineScope = coroutineScope,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                } else {
+                                                    playlist.playlist.browseId?.let { browseId ->
+                                                        YouTubePlaylistMenu(
+                                                            playlist = PlaylistItem(
+                                                                id = browseId,
+                                                                title = playlist.playlist.name,
+                                                                author = null,
+                                                                songCountText = null,
+                                                                thumbnail = playlist.thumbnails[0],
+                                                                playEndpoint = WatchEndpoint(
+                                                                    playlistId = browseId,
+                                                                    params = playlist.playlist.playEndpointParams
+                                                                ),
+                                                                shuffleEndpoint = WatchEndpoint(
+                                                                    playlistId = browseId,
+                                                                    params = playlist.playlist.shuffleEndpointParams
+                                                                ),
+                                                                radioEndpoint = WatchEndpoint(
+                                                                    playlistId = "RDAMPL$browseId",
+                                                                    params = playlist.playlist.radioEndpointParams
+                                                                ),
+                                                                isEditable = false
+                                                            ),
+                                                            coroutineScope = coroutineScope,
+                                                            onDismiss = menuState::dismiss
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
