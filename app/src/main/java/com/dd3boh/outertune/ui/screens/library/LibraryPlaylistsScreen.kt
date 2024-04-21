@@ -191,27 +191,32 @@ fun LibraryPlaylistsScreen(
                         PlaylistListItem(
                             playlist = playlist,
                             trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            PlaylistMenu(
-                                                playlist = playlist,
-                                                coroutineScope = coroutineScope,
-                                                onDismiss = menuState::dismiss
-                                            )
+                                if (playlist.playlist.isEditable == true || playlist.songCount != 0) {
+                                    IconButton(
+                                        onClick = {
+                                            menuState.show {
+                                                PlaylistMenu(
+                                                    playlist = playlist,
+                                                    coroutineScope = coroutineScope,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
                                         }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.MoreVert,
+                                            contentDescription = null
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    navController.navigate("local_playlist/${playlist.id}")
+                                    if (playlist.playlist.isEditable == false && playlist.songCount == 0 && playlist.playlist.remoteSongCount != 0)
+                                        navController.navigate("online_playlist/${playlist.playlist.browseId}")
+                                    else
+                                        navController.navigate("local_playlist/${playlist.id}")
                                 }
                                 .animateItemPlacement()
                         )
@@ -253,15 +258,20 @@ fun LibraryPlaylistsScreen(
                                 .fillMaxWidth()
                                 .combinedClickable(
                                     onClick = {
-                                        navController.navigate("local_playlist/${playlist.id}")
+                                        if (playlist.playlist.isEditable == false && playlist.songCount == 0 && playlist.playlist.remoteSongCount != 0)
+                                            navController.navigate("online_playlist/${playlist.playlist.browseId}")
+                                        else
+                                            navController.navigate("local_playlist/${playlist.id}")
                                     },
                                     onLongClick = {
-                                        menuState.show {
-                                            PlaylistMenu(
-                                                playlist = playlist,
-                                                coroutineScope = coroutineScope,
-                                                onDismiss = menuState::dismiss
-                                            )
+                                        if (playlist.playlist.isEditable == true || playlist.songCount != 0) {
+                                            menuState.show {
+                                                PlaylistMenu(
+                                                    playlist = playlist,
+                                                    coroutineScope = coroutineScope,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
                                         }
                                     }
                                 )
