@@ -121,7 +121,9 @@ import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.dd3boh.outertune.ui.menu.PlaylistMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
@@ -242,6 +244,12 @@ fun LocalPlaylistScreen(
                 TextButton(
                     onClick = {
                         showRemoveDownloadDialog = false
+                        if (!editable) {
+                            database.transaction {
+                                playlist?.id?.let { clearPlaylist(it) }
+                            }
+                        }
+
                         songs.forEach { song ->
                             DownloadService.sendRemoveDownload(
                                 context,
@@ -469,29 +477,6 @@ fun LocalPlaylistScreen(
                                         }
                                     }
 
-                                    if (playlist.playlist.browseId != null) {
-                                        IconButton(
-                                            onClick = {
-                                                coroutineScope.launch(Dispatchers.IO) {
-                                                    syncUtils.syncPlaylist(
-                                                        playlist.playlist.browseId,
-                                                        playlist.id
-                                                    )
-                                                    snackbarHostState.showSnackbar(
-                                                        context.getString(
-                                                            R.string.playlist_synced
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.Sync,
-                                                contentDescription = null
-                                            )
-                                        }
-                                    }
-
                                     if (playlist.songCount != 0) {
                                         when (downloadState) {
                                             Download.STATE_COMPLETED -> {
@@ -565,6 +550,23 @@ fun LocalPlaylistScreen(
                                         ) {
                                             Icon(
                                                 Icons.AutoMirrored.Rounded.QueueMusic,
+                                                contentDescription = null
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = {
+                                                menuState.show {
+                                                    PlaylistMenu(
+                                                        playlist = playlist,
+                                                        coroutineScope = coroutineScope,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.MoreVert,
                                                 contentDescription = null
                                             )
                                         }
