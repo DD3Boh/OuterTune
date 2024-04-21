@@ -69,11 +69,11 @@ fun MiniPlayer(
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
     ) {
         LinearProgressIndicator(
-            progress = (position.toFloat() / duration).coerceIn(0f, 1f),
+            progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(2.dp)
-                .align(Alignment.BottomCenter)
+                .align(Alignment.BottomCenter),
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,

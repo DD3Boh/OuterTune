@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -221,7 +222,7 @@ fun PlaylistMenu(
         }
     )
 
-    Divider()
+    HorizontalDivider()
 
     GridMenu(
         contentPadding = PaddingValues(
