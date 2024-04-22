@@ -60,9 +60,15 @@ fun LibrarySongsScreen(
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
-    LaunchedEffect(Unit) { viewModel.sync() }
-
     val songs by viewModel.allSongs.collectAsState()
+
+    LaunchedEffect(Unit) {
+        when (filter) {
+            SongFilter.LIKED -> viewModel.syncLikedSongs()
+            SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
+            else -> return@LaunchedEffect
+        }
+    }
 
     val lazyListState = rememberLazyListState()
 
@@ -84,7 +90,11 @@ fun LibrarySongsScreen(
                         SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
                     ),
                     currentValue = filter,
-                    onValueUpdate = { filter = it }
+                    onValueUpdate = {
+                        filter = it
+                        if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
+                        else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+                    }
                 )
             }
 

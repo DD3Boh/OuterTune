@@ -7,6 +7,7 @@ import com.zionhuang.innertube.pages.ExplorePage
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     val database: MusicDatabase,
+    val syncUtils: SyncUtils
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
 
@@ -62,5 +64,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             load()
         }
+
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() }
     }
 }

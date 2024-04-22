@@ -69,11 +69,12 @@ class LibrarySongsViewModel @Inject constructor(
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() {
-        viewModelScope.launch(Dispatchers.IO) {
-            syncUtils.syncLibrarySongs()
-            syncUtils.syncLikedSongs()
-        }
+    fun syncLibrarySongs() {
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
+    }
+
+    fun syncLikedSongs() {
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
     }
 }
 
