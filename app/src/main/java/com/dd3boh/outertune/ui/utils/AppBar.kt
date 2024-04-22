@@ -13,7 +13,7 @@ import com.dd3boh.outertune.constants.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun appBarScrollBehavior(
-    state: TopAppBarState = rememberTopAppBarState(),
+    state: TopAppBarState = TopAppBarState(-Float.MAX_VALUE, 0f, 0f),
     canScroll: () -> Boolean = { true },
     snapAnimationSpec: AnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
     flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
