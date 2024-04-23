@@ -205,6 +205,7 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
                     val navigationItems = remember { Screens.MainScreens }
                     val defaultOpenTab = remember {
@@ -307,13 +308,13 @@ class MainActivity : ComponentActivity() {
                         } else if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
                             onQueryChange(TextFieldValue())
                         }
-                        scrollBehavior.state.resetHeightOffset()
-                        searchBarScrollBehavior.state.resetHeightOffset()
-                    }
-                    LaunchedEffect(active) {
-                        if (active) {
-                            scrollBehavior.state.resetHeightOffset()
-                            searchBarScrollBehavior.state.resetHeightOffset()
+
+                        if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route })
+                            if (navigationItems.fastAny { it.route == previousTab })
+                                searchBarScrollBehavior.state.resetHeightOffset()
+
+                        navController.currentBackStackEntry?.destination?.route?.let {
+                            setPreviousTab(it)
                         }
                     }
 
