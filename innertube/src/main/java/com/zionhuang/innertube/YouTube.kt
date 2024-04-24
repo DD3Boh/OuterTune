@@ -269,7 +269,10 @@ object YouTube {
                 },
                 songCountText = header.secondSubtitle.runs?.firstOrNull()?.text,
                 thumbnail = header.thumbnail.croppedSquareThumbnailRenderer?.getThumbnailUrl()!!,
-                playEndpoint = null,
+                playEndpoint =  response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                    ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                    ?.musicPlaylistShelfRenderer?.contents?.firstOrNull()?.musicResponsiveListItemRenderer
+                    ?.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint,
                 shuffleEndpoint = header.menu.menuRenderer.topLevelButtons?.firstOrNull()?.buttonRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
                 radioEndpoint = header.menu.menuRenderer.items.find {
                     it.menuNavigationItemRenderer?.icon?.iconType == "MIX"

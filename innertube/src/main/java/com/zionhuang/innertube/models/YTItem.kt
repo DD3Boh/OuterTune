@@ -3,7 +3,7 @@ package com.zionhuang.innertube.models
 sealed class YTItem {
     abstract val id: String
     abstract val title: String
-    abstract val thumbnail: String
+    abstract val thumbnail: String?
     abstract val explicit: Boolean
     abstract val shareLink: String
 }
@@ -52,7 +52,7 @@ data class PlaylistItem(
     override val title: String,
     val author: Artist?,
     val songCountText: String?,
-    override val thumbnail: String,
+    override val thumbnail: String?,
     val playEndpoint: WatchEndpoint?,
     val shuffleEndpoint: WatchEndpoint?,
     val radioEndpoint: WatchEndpoint?,

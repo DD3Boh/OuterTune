@@ -739,7 +739,10 @@ interface DatabaseDao {
             browseId = playlistItem.id,
             isEditable = playlistItem.isEditable,
             thumbnailUrl = playlistItem.thumbnail,
-            remoteSongCount = playlistItem.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
+            remoteSongCount = playlistItem.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() },
+            playEndpointParams = playlistItem.playEndpoint?.params,
+            shuffleEndpointParams = playlistItem.shuffleEndpoint?.params,
+            radioEndpointParams = playlistItem.radioEndpoint?.params
         ))
     }
 

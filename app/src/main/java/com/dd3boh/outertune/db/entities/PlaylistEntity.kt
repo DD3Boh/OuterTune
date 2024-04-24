@@ -5,6 +5,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -21,7 +22,10 @@ data class PlaylistEntity(
     val isEditable: Boolean? = true,
     val bookmarkedAt: LocalDateTime? = null,
     val thumbnailUrl: String? = null,
-    val remoteSongCount: Int? = null
+    val remoteSongCount: Int? = null,
+    val playEndpointParams: String? = null,
+    val shuffleEndpointParams: String? = null,
+    val radioEndpointParams: String? = null
 ) {
     companion object {
         const val LIKED_PLAYLIST_ID = "LP_LIKED"
@@ -29,6 +33,13 @@ data class PlaylistEntity(
 
         fun generatePlaylistId() = "LP" + RandomStringUtils.random(8, true, false)
     }
+
+    val shareLink: String?
+        get() {
+            return if (browseId != null)
+                "https://music.youtube.com/playlist?list=$browseId"
+            else null
+        }
 
     fun localToggleLike() = copy(
         bookmarkedAt = if (bookmarkedAt != null) null else LocalDateTime.now()

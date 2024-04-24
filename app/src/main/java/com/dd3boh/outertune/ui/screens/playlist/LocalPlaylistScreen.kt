@@ -121,7 +121,9 @@ import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.dd3boh.outertune.ui.menu.PlaylistMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
@@ -242,6 +244,12 @@ fun LocalPlaylistScreen(
                 TextButton(
                     onClick = {
                         showRemoveDownloadDialog = false
+                        if (!editable) {
+                            database.transaction {
+                                playlist?.id?.let { clearPlaylist(it) }
+                            }
+                        }
+
                         songs.forEach { song ->
                             DownloadService.sendRemoveDownload(
                                 context,
@@ -344,138 +352,132 @@ fun LocalPlaylistScreen(
             modifier = Modifier.reorderable(reorderableState)
         ) {
             playlist?.let { playlist ->
-                if (playlist.songCount == 0 && playlist.playlist.remoteSongCount == 0) {
-                    item {
-                        EmptyPlaceholder(
-                            icon = Icons.Rounded.MusicNote,
-                            text = stringResource(R.string.playlist_is_empty)
-                        )
-                    }
-                } else {
-                    item {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(12.dp)
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (playlist.thumbnails.size == 1) {
-                                    AsyncImage(
-                                        model = playlist.thumbnails[0],
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(AlbumThumbnailSize)
-                                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                                    )
-                                } else if (playlist.thumbnails.size > 1) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(AlbumThumbnailSize)
-                                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            when (playlist.thumbnails.size) {
+                                0 -> Icon(
+                                    painter = painterResource(R.drawable.queue_music),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current.copy(alpha = 0.8f),
+                                    modifier = Modifier
+                                        .size(AlbumThumbnailSize)
+                                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                )
+
+                                1 -> AsyncImage(
+                                    model = playlist.thumbnails[0],
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(AlbumThumbnailSize)
+                                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                )
+
+                                else -> Box(
+                                    modifier = Modifier
+                                        .size(AlbumThumbnailSize)
+                                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
                                     ) {
                                         listOf(
-                                            Alignment.TopStart,
-                                            Alignment.TopEnd,
-                                            Alignment.BottomStart,
-                                            Alignment.BottomEnd
-                                        ).fastForEachIndexed { index, alignment ->
-                                            AsyncImage(
-                                                model = playlist.thumbnails.getOrNull(index),
+                                        Alignment.TopStart,
+                                        Alignment.TopEnd,
+                                        Alignment.BottomStart,
+                                        Alignment.BottomEnd
+                                    ).fastForEachIndexed { index, alignment ->
+                                        AsyncImage(
+                                            model = playlist.thumbnails.getOrNull(index),
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .align(alignment)
+                                                .size(AlbumThumbnailSize / 2)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                AutoResizeText(
+                                    text = playlist.playlist.name,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSizeRange = FontSizeRange(16.sp, 22.sp)
+                                )
+
+                                Text(
+                                    text =
+                                    if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
+                                        pluralStringResource(
+                                            R.plurals.n_song,
+                                            playlist.playlist.remoteSongCount,
+                                            playlist.playlist.remoteSongCount
+                                        )
+                                    else
+                                        pluralStringResource(
+                                            R.plurals.n_song,
+                                            playlist.songCount,
+                                            playlist.songCount
+                                        ),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Normal
+                                )
+
+                                Text(
+                                    text = makeTimeString(playlistLength * 1000L),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Normal
+                                )
+
+                                Row {
+                                    if (editable) {
+                                        IconButton(
+                                            onClick = {
+                                                showDeletePlaylistDialog = true
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Delete,
                                                 contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .align(alignment)
-                                                    .size(AlbumThumbnailSize / 2)
+                                            )
+                                        }
+                                    } else {
+                                        IconButton(
+                                            onClick = {
+                                                database.transaction {
+                                                    update(playlist.playlist.toggleLike())
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
+                                                contentDescription = null,
+                                                tint = if (liked) MaterialTheme.colorScheme.error else LocalContentColor.current
                                             )
                                         }
                                     }
-                                }
 
-                                Column(
-                                    verticalArrangement = Arrangement.Center,
-                                ) {
-                                    AutoResizeText(
-                                        text = playlist.playlist.name,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        fontSizeRange = FontSizeRange(16.sp, 22.sp)
-                                    )
-
-                                    Text(
-                                        text =
-                                            if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
-                                                pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
-                                            else
-                                                pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Normal
-                                    )
-
-                                    Text(
-                                        text = makeTimeString(playlistLength * 1000L),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Normal
-                                    )
-
-                                    Row {
-                                        if (editable) {
-                                            IconButton(
-                                                onClick = {
-                                                    showDeletePlaylistDialog = true
-                                                }
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.Delete,
-                                                    contentDescription = null,
-                                                )
-                                            }
-                                        } else {
-                                            IconButton(
-                                                onClick = {
-                                                    database.transaction {
-                                                        update(playlist.playlist.toggleLike())
-                                                    }
-                                                }
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
-                                                    contentDescription = null,
-                                                    tint = if (liked) MaterialTheme.colorScheme.error else LocalContentColor.current
-                                                )
-                                            }
+                                    if (editable) {
+                                        IconButton(
+                                            onClick = { showEditDialog = true }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Edit,
+                                                contentDescription = null
+                                            )
                                         }
+                                    }
 
-                                        if (editable) {
-                                            IconButton(
-                                                onClick = { showEditDialog = true }
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.Edit,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        }
-
-                                        if (playlist.playlist.browseId != null) {
-                                            IconButton(
-                                                onClick = {
-                                                    coroutineScope.launch(Dispatchers.IO) {
-                                                        syncUtils.syncPlaylist(playlist.playlist.browseId, playlist.id)
-                                                        snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
-                                                    }
-                                                }
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.Sync,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        }
-
+                                    if (playlist.songCount != 0) {
                                         when (downloadState) {
                                             Download.STATE_COMPLETED -> {
                                                 IconButton(
@@ -514,10 +516,14 @@ fun LocalPlaylistScreen(
                                                 IconButton(
                                                     onClick = {
                                                         songs.forEach { song ->
-                                                            val downloadRequest = DownloadRequest.Builder(song.song.id, song.song.id.toUri())
-                                                                .setCustomCacheKey(song.song.id)
-                                                                .setData(song.song.song.title.toByteArray())
-                                                                .build()
+                                                            val downloadRequest =
+                                                                DownloadRequest.Builder(
+                                                                    song.song.id,
+                                                                    song.song.id.toUri()
+                                                                )
+                                                                    .setCustomCacheKey(song.song.id)
+                                                                    .setData(song.song.song.title.toByteArray())
+                                                                    .build()
                                                             DownloadService.sendAddDownload(
                                                                 context,
                                                                 ExoDownloadService::class.java,
@@ -547,10 +553,30 @@ fun LocalPlaylistScreen(
                                                 contentDescription = null
                                             )
                                         }
+
+                                        IconButton(
+                                            onClick = {
+                                                menuState.show {
+                                                    PlaylistMenu(
+                                                        playlist = playlist,
+                                                        coroutineScope = coroutineScope,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.MoreVert,
+                                                contentDescription = null
+                                            )
+                                        }
                                     }
                                 }
                             }
+                        }
 
+
+                        if (playlist.songCount != 0) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Button(
                                     onClick = {
@@ -578,7 +604,8 @@ fun LocalPlaylistScreen(
                                         playerConnection.playQueue(
                                             ListQueue(
                                                 title = playlist.playlist.name,
-                                                items = songs.shuffled().map { it.song.toMediaItem() }
+                                                items = songs.shuffled()
+                                                    .map { it.song.toMediaItem() }
                                             )
                                         )
                                     },
@@ -596,7 +623,9 @@ fun LocalPlaylistScreen(
                             }
                         }
                     }
+                }
 
+                if (playlist.songCount != 0) {
                     item {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -632,6 +661,15 @@ fun LocalPlaylistScreen(
                             }
                         }
                     }
+                }
+            }
+
+            if (playlist?.songCount == 0) {
+                item {
+                    EmptyPlaceholder(
+                        icon = Icons.Rounded.MusicNote,
+                        text = stringResource(R.string.playlist_is_empty)
+                    )
                 }
             }
 

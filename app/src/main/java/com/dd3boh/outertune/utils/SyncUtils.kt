@@ -136,13 +136,20 @@ class SyncUtils @Inject constructor(
                         isEditable = playlist.isEditable,
                         bookmarkedAt = LocalDateTime.now(),
                         thumbnailUrl = playlist.thumbnail,
-                        remoteSongCount = playlist.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
+                        remoteSongCount = playlist.songCountText?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() },
+                        playEndpointParams = playlist.playEndpoint?.params,
+                        shuffleEndpointParams = playlist.shuffleEndpoint?.params,
+                        radioEndpointParams = playlist.radioEndpoint?.params
                     )
 
                     database.insert(playlistEntity)
                 } else database.update(playlistEntity, playlist)
             }.forEach { playlist ->
-                syncPlaylist(playlist.id, database.playlistByBrowseId(playlist.id).first()!!.id)
+                val dbPlaylist = database.playlistByBrowseId(playlist.id).first()!!
+                val playlistSongMaps = database.playlistSongMaps(dbPlaylist.id)
+
+                if (dbPlaylist.playlist.isEditable == true || playlistSongMaps.isNotEmpty())
+                    syncPlaylist(playlist.id, dbPlaylist.id)
             }
         }
     }

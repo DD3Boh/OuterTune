@@ -1,18 +1,21 @@
 package com.dd3boh.outertune.ui.menu
 
+import android.content.Intent
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.rounded.Sync
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -54,15 +58,18 @@ import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
+import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.PlaylistListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun PlaylistMenu(
@@ -218,6 +225,42 @@ fun PlaylistMenu(
         )
     }
 
+    var showChoosePlaylistDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToPlaylistDialog(
+        isVisible = showChoosePlaylistDialog,
+        onAdd = { targetPlaylist ->
+            coroutineScope.launch(Dispatchers.IO) {
+                var position = targetPlaylist.songCount
+                songs.let { songs ->
+                    targetPlaylist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) }
+
+                    database.transaction {
+                        songs
+                            .map { it.toMediaMetadata() }
+                            .onEach(::insert)
+                            .forEach { song ->
+                                insert(
+                                    PlaylistSongMap(
+                                        songId = song.id,
+                                        playlistId = targetPlaylist.id,
+                                        position = position++,
+                                    )
+                                )
+                            }
+                    }
+                }
+
+                targetPlaylist.playlist.browseId?.let { playlistId ->
+                    YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
+                }
+            }
+        },
+        onDismiss = { showChoosePlaylistDialog = false }
+    )
+
     PlaylistListItem(
         playlist = playlist,
         trailingContent = {
@@ -271,6 +314,31 @@ fun PlaylistMenu(
             ))
         }
 
+        playlist.playlist.browseId?.let { browseId ->
+            playlist.playlist.radioEndpointParams?.let { radioEndpointParams ->
+                GridMenuItem(
+                    icon = Icons.Rounded.Radio,
+                    title = R.string.start_radio
+                ) {
+                    playerConnection.playQueue(YouTubeQueue(WatchEndpoint(
+                        playlistId = "RDAMPL$browseId",
+                        params = radioEndpointParams
+                    )))
+                    onDismiss()
+                }
+            }
+        }
+
+        GridMenuItem(
+            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
+            title = R.string.play_next
+        ) {
+            coroutineScope.launch {
+                playerConnection.playNext(songs.map { it.toMediaItem() })
+            }
+            onDismiss()
+        }
+
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
@@ -279,13 +347,11 @@ fun PlaylistMenu(
             playerConnection.addToQueue(songs.map { it.toMediaItem() })
         }
 
-        if (editable) {
-            GridMenuItem(
-                icon = Icons.Rounded.Edit,
-                title = R.string.edit
-            ) {
-                showEditDialog = true
-            }
+        GridMenuItem(
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+            title = R.string.add_to_playlist
+        ) {
+            showChoosePlaylistDialog = true
         }
 
         DownloadGridMenu(
@@ -311,6 +377,13 @@ fun PlaylistMenu(
 
         if (editable) {
             GridMenuItem(
+                icon = Icons.Rounded.Edit,
+                title = R.string.edit
+            ) {
+                showEditDialog = true
+            }
+
+            GridMenuItem(
                 icon = Icons.Rounded.Delete,
                 title = R.string.delete
             ) {
@@ -318,31 +391,18 @@ fun PlaylistMenu(
             }
         }
 
-        if (playlist.playlist.browseId != null) {
+        playlist.playlist.shareLink?.let { shareLink ->
             GridMenuItem(
-                icon = Icons.Rounded.Sync,
-                title = R.string.sync
+                icon = Icons.Rounded.Share,
+                title = R.string.share
             ) {
-                onDismiss()
-                coroutineScope.launch(Dispatchers.IO) {
-                    val playlistPage =
-                        YouTube.playlist(playlist.playlist.browseId).completed().getOrNull()
-                            ?: return@launch
-                    database.transaction {
-                        clearPlaylist(playlist.id)
-                        playlistPage.songs
-                            .map(SongItem::toMediaMetadata)
-                            .onEach(::insert)
-                            .mapIndexed { position, song ->
-                                PlaylistSongMap(
-                                    songId = song.id,
-                                    playlistId = playlist.id,
-                                    position = position
-                                )
-                            }
-                            .forEach(::insert)
-                    }
+                val intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareLink)
                 }
+                context.startActivity(Intent.createChooser(intent, null))
+                onDismiss()
             }
         }
     }
