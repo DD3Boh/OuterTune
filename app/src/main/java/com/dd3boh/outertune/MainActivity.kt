@@ -606,27 +606,18 @@ class MainActivity : ComponentActivity() {
                                         onClick = {
                                             when {
                                                 active -> onActiveChange(false)
-                                                navController.canNavigateUp && !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } -> {
+
+                                                !active && navBackStackEntry?.destination?.route?.startsWith("search") == true -> {
                                                     navController.navigateUp()
                                                 }
 
                                                 else -> onActiveChange(true)
                                             }
                                         },
-                                        onLongClick = {
-                                            when {
-                                                active -> {}
-                                                navController.canNavigateUp && !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } -> {
-                                                    navController.backToMain()
-                                                }
-
-                                                else -> {}
-                                            }
-                                        }
                                     ) {
                                         Icon(
                                             imageVector =
-                                                if (active || (navController.canNavigateUp && !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route })) {
+                                                if (active || navBackStackEntry?.destination?.route?.startsWith("search") == true) {
                                                     Icons.AutoMirrored.Rounded.ArrowBack
                                                 } else {
                                                     Icons.Rounded.Search
