@@ -65,7 +65,6 @@ import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
-import com.dd3boh.outertune.db.entities.SetVideoIdEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -77,6 +76,7 @@ import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
@@ -128,20 +128,10 @@ fun SongMenu(
                         position = playlist.songCount
                     )
                 )
-                coroutineScope.launch {
+
+                coroutineScope.launch(Dispatchers.IO) {
                     playlist.playlist.browseId?.let { browseId ->
-                        YouTube.addToPlaylist(browseId, song.id).onSuccess { result ->
-                            if (result.playlistEditResults.isNotEmpty()) {
-                                for (playlistEditResult in result.playlistEditResults) {
-                                    insertSetVideoId(
-                                        SetVideoIdEntity(
-                                            playlistEditResult.playlistEditVideoAddedResultData.videoId,
-                                            playlistEditResult.playlistEditVideoAddedResultData.setVideoId,
-                                        )
-                                    )
-                                }
-                            }
-                        }
+                        YouTube.addToPlaylist(browseId, song.id)
                     }
                 }
             }

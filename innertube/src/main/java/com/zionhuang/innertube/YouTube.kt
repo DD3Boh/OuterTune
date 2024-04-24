@@ -7,25 +7,23 @@ import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.BrowseEndpoint
 import com.zionhuang.innertube.models.GridRenderer
 import com.zionhuang.innertube.models.MusicCarouselShelfRenderer
-import com.zionhuang.innertube.models.MusicResponsiveListItemRenderer
 import com.zionhuang.innertube.models.MusicShelfRenderer
 import com.zionhuang.innertube.models.PlaylistItem
 import com.zionhuang.innertube.models.SearchSuggestions
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.models.WatchEndpoint
 import com.zionhuang.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig.Companion.MUSIC_VIDEO_TYPE_ATV
-import com.zionhuang.innertube.models.YouTubeClient
+import com.zionhuang.innertube.models.YTItem
 import com.zionhuang.innertube.models.YouTubeClient.Companion.ANDROID_MUSIC
 import com.zionhuang.innertube.models.YouTubeClient.Companion.TVHTML5
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.YouTubeLocale
-import com.zionhuang.innertube.models.body.LikeBody
 import com.zionhuang.innertube.models.getContinuation
 import com.zionhuang.innertube.models.oddElements
 import com.zionhuang.innertube.models.response.AccountMenuResponse
-import com.zionhuang.innertube.models.response.AddItemYouTubePlaylistResponse
 import com.zionhuang.innertube.models.response.BrowseResponse
+import com.zionhuang.innertube.models.response.CreatePlaylistResponse
 import com.zionhuang.innertube.models.response.GetQueueResponse
 import com.zionhuang.innertube.models.response.GetSearchSuggestionsResponse
 import com.zionhuang.innertube.models.response.GetTranscriptResponse
@@ -40,6 +38,8 @@ import com.zionhuang.innertube.pages.ArtistItemsPage
 import com.zionhuang.innertube.pages.ArtistPage
 import com.zionhuang.innertube.pages.BrowseResult
 import com.zionhuang.innertube.pages.ExplorePage
+import com.zionhuang.innertube.pages.LibraryContinuationPage
+import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.MoodAndGenres
 import com.zionhuang.innertube.pages.NewReleaseAlbumPage
 import com.zionhuang.innertube.pages.NextPage
@@ -256,6 +256,7 @@ object YouTube {
             setLogin = true
         ).body<BrowseResponse>()
         val header = response.header?.musicDetailHeaderRenderer ?: response.header?.musicEditablePlaylistDetailHeaderRenderer?.header?.musicDetailHeaderRenderer!!
+        val editable = response.header?.musicEditablePlaylistDetailHeaderRenderer != null
         PlaylistPage(
             playlist = PlaylistItem(
                 id = playlistId,
@@ -272,7 +273,8 @@ object YouTube {
                 shuffleEndpoint = header.menu.menuRenderer.topLevelButtons?.firstOrNull()?.buttonRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
                 radioEndpoint = header.menu.menuRenderer.items.find {
                     it.menuNavigationItemRenderer?.icon?.iconType == "MIX"
-                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!
+                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
+                isEditable = editable
             ),
             songs = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
                 ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
@@ -362,44 +364,69 @@ object YouTube {
         )
     }
 
-    suspend fun libraryAlbums(): Result<List<AlbumItem>> = runCatching {
+    suspend fun library(browseId: String) = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,
-            browseId = "FEmusic_liked_albums",
+            browseId = browseId,
             setLogin = true
         ).body<BrowseResponse>()
-        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.items!!
-            .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
-            .mapNotNull {
-                ArtistItemsPage.fromMusicTwoRowItemRenderer(it) as? AlbumItem
+
+        val contents = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
+        tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+
+        when {
+            contents?.gridRenderer != null -> {
+                LibraryPage(
+                    items = contents.gridRenderer.items
+                        .mapNotNull (GridRenderer.Item::musicTwoRowItemRenderer)
+                        .mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) },
+                    continuation = contents.gridRenderer.continuations?.firstOrNull()?.
+                        nextContinuationData?.continuation
+                )
             }
+
+            else -> { // contents?.musicShelfRenderer != null
+                LibraryPage(
+                    items = contents?.musicShelfRenderer?.contents!!
+                        .mapNotNull (MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
+                        .mapNotNull { LibraryPage.fromMusicResponsiveListItemRenderer(it) },
+                    continuation = contents.musicShelfRenderer.continuations?.firstOrNull()?.
+                        nextContinuationData?.continuation
+                )
+            }
+        }
     }
 
-    suspend fun libraryArtistsSubscriptions(): Result<List<ArtistItem>> = runCatching {
+    suspend fun libraryContinuation(continuation: String) = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,
-            browseId = "FEmusic_library_corpus_artists",
+            continuation = continuation,
             setLogin = true
         ).body<BrowseResponse>()
-        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicShelfRenderer?.contents!!
-            .mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
-            .mapNotNull {
-                SearchSuggestionPage.fromMusicResponsiveListItemRenderer(it) as? ArtistItem
-            }
-    }
 
-    suspend fun likedPlaylists(): Result<List<PlaylistItem>> = runCatching {
-        val response = innerTube.browse(
-            client = WEB_REMIX,
-            browseId = "FEmusic_liked_playlists",
-            setLogin = true
-        ).body<BrowseResponse>()
-        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.gridRenderer?.items!!
-            .drop(1) // the first item is "create new playlist"
-            .mapNotNull(GridRenderer.Item::musicTwoRowItemRenderer)
-            .mapNotNull {
-                ArtistItemsPage.fromMusicTwoRowItemRenderer(it) as? PlaylistItem
+        val contents = response.continuationContents
+
+        when {
+            contents?.gridContinuation != null -> {
+                LibraryContinuationPage(
+                    items = contents.gridContinuation.items
+                        .mapNotNull (GridRenderer.Item::musicTwoRowItemRenderer)
+                        .mapNotNull { LibraryPage.fromMusicTwoRowItemRenderer(it) },
+                    continuation = contents.gridContinuation.continuations?.firstOrNull()?.
+                        nextContinuationData?.continuation
+                )
             }
+
+            else -> { // contents?.musicShelfContinuation != null
+                LibraryContinuationPage(
+                    items = contents?.musicShelfContinuation?.contents!!
+                        .mapNotNull (MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
+                        .mapNotNull { LibraryPage.fromMusicResponsiveListItemRenderer(it) },
+                    continuation = contents.musicShelfContinuation.continuations?.firstOrNull()?.
+                        nextContinuationData?.continuation
+                )
+            }
+        }
     }
 
     suspend fun likeVideo(videoId: String, like: Boolean) = runCatching {
@@ -431,11 +458,31 @@ object YouTube {
     }
 
     suspend fun addToPlaylist(playlistId: String, videoId: String) = runCatching {
-        innerTube.addToPlaylist(WEB_REMIX, playlistId, videoId).body<AddItemYouTubePlaylistResponse>()
+        innerTube.addToPlaylist(WEB_REMIX, playlistId, videoId)
+    }
+
+    suspend fun addPlaylistToPlaylist(playlistId: String, addPlaylistId: String) = runCatching {
+        innerTube.addPlaylistToPlaylist(WEB_REMIX, playlistId, addPlaylistId)
     }
 
     suspend fun removeFromPlaylist(playlistId: String, videoId: String, setVideoId: String) = runCatching {
         innerTube.removeFromPlaylist(WEB_REMIX, playlistId, videoId, setVideoId)
+    }
+
+    suspend fun moveSongPlaylist(playlistId: String, setVideoId: String, successorSetVideoId: String) = runCatching {
+        innerTube.moveSongPlaylist(WEB_REMIX, playlistId, setVideoId, successorSetVideoId)
+    }
+
+    suspend fun createPlaylist(title: String) = runCatching {
+        innerTube.createPlaylist(WEB_REMIX, title).body<CreatePlaylistResponse>().playlistId
+    }
+
+    suspend fun renamePlaylist(playlistId: String, name: String) = runCatching {
+        innerTube.renamePlaylist(WEB_REMIX, playlistId, name)
+    }
+
+    suspend fun deletePlaylist(playlistId: String) = runCatching {
+        innerTube.deletePlaylist(WEB_REMIX, playlistId)
     }
 
     suspend fun player(videoId: String, playlistId: String? = null): Result<PlayerResponse> = runCatching {

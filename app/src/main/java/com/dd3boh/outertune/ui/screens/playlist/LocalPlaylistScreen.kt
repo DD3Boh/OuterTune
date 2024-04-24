@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
@@ -39,6 +39,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
@@ -82,6 +83,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
@@ -94,6 +96,7 @@ import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.PlaylistEditLockKey
@@ -126,6 +129,7 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
@@ -142,11 +146,14 @@ fun LocalPlaylistScreen(
     val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val playlist by viewModel.playlist.collectAsState()
+    val liked = playlist?.playlist?.bookmarkedAt != null
+
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<PlaylistSong>() }
     val playlistLength = remember(songs) {
@@ -163,6 +170,8 @@ fun LocalPlaylistScreen(
     var downloadState by remember {
         mutableStateOf(Download.STATE_STOPPED)
     }
+
+    val editable: Boolean = playlist?.playlist?.isEditable == true
 
     LaunchedEffect(songs) {
         mutableSongs.apply {
@@ -199,6 +208,10 @@ fun LocalPlaylistScreen(
                 onDone = { name ->
                     database.query {
                         update(playlistEntity.copy(name = name))
+                    }
+
+                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                        playlistEntity.browseId?.let { YouTube.renamePlaylist(it, name) }
                     }
                 }
             )
@@ -245,6 +258,49 @@ fun LocalPlaylistScreen(
         )
     }
 
+    var showDeletePlaylistDialog by remember {
+        mutableStateOf(false)
+    }
+
+    if (showDeletePlaylistDialog) {
+        DefaultDialog(
+            onDismiss = { showDeletePlaylistDialog = false },
+            content = {
+                Text(
+                    text = stringResource(R.string.delete_playlist_confirm, playlist?.playlist!!.name),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(horizontal = 18.dp)
+                )
+            },
+            buttons = {
+                TextButton(
+                    onClick = {
+                        showDeletePlaylistDialog = false
+                    }
+                ) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
+
+                TextButton(
+                    onClick = {
+                        showDeletePlaylistDialog = false
+                        database.query {
+                            playlist?.let { delete(it.playlist) }
+                        }
+
+                        viewModel.viewModelScope.launch(Dispatchers.IO) {
+                            playlist?.playlist?.browseId?.let { YouTube.deletePlaylist(it) }
+                        }
+
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text(text = stringResource(android.R.string.ok))
+                }
+            }
+        )
+    }
+
     val headerItems = 2
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to ->
@@ -253,8 +309,20 @@ fun LocalPlaylistScreen(
             }
         },
         onDragEnd = { fromIndex, toIndex ->
-            database.transaction {
-                move(viewModel.playlistId, fromIndex - headerItems, toIndex - headerItems)
+            viewModel.viewModelScope.launch(Dispatchers.IO) {
+                val playlistSongMap = database.playlistSongMaps(viewModel.playlistId, 0)
+
+                playlistSongMap[fromIndex - headerItems].setVideoId?.let { setVideoId ->
+                    playlistSongMap[toIndex - headerItems + 1].setVideoId?.let { successorSetVideoId ->
+                        viewModel.playlist.first()?.playlist?.browseId?.let { browseId ->
+                            YouTube.moveSongPlaylist(browseId, setVideoId, successorSetVideoId)
+                        }
+                    }
+                }
+
+                database.transaction {
+                    move(viewModel.playlistId, fromIndex - headerItems, toIndex - headerItems)
+                }
             }
         }
     )
@@ -276,7 +344,7 @@ fun LocalPlaylistScreen(
             modifier = Modifier.reorderable(reorderableState)
         ) {
             playlist?.let { playlist ->
-                if (playlist.songCount == 0) {
+                if (playlist.songCount == 0 && playlist.playlist.remoteSongCount == 0) {
                     item {
                         EmptyPlaceholder(
                             icon = Icons.Rounded.MusicNote,
@@ -338,7 +406,11 @@ fun LocalPlaylistScreen(
                                     )
 
                                     Text(
-                                        text = pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
+                                        text =
+                                            if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
+                                                pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+                                            else
+                                                pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Normal
                                     )
@@ -350,34 +422,49 @@ fun LocalPlaylistScreen(
                                     )
 
                                     Row {
-                                        IconButton(
-                                            onClick = { showEditDialog = true }
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.Edit,
-                                                contentDescription = null
-                                            )
+                                        if (editable) {
+                                            IconButton(
+                                                onClick = {
+                                                    showDeletePlaylistDialog = true
+                                                }
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Delete,
+                                                    contentDescription = null,
+                                                )
+                                            }
+                                        } else {
+                                            IconButton(
+                                                onClick = {
+                                                    database.transaction {
+                                                        update(playlist.playlist.toggleLike())
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
+                                                    contentDescription = null,
+                                                    tint = if (liked) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                                )
+                                            }
+                                        }
+
+                                        if (editable) {
+                                            IconButton(
+                                                onClick = { showEditDialog = true }
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Edit,
+                                                    contentDescription = null
+                                                )
+                                            }
                                         }
 
                                         if (playlist.playlist.browseId != null) {
                                             IconButton(
                                                 onClick = {
                                                     coroutineScope.launch(Dispatchers.IO) {
-                                                        val playlistPage = YouTube.playlist(playlist.playlist.browseId).completed().getOrNull() ?: return@launch
-                                                        database.transaction {
-                                                            clearPlaylist(playlist.id)
-                                                            playlistPage.songs
-                                                                .map(SongItem::toMediaMetadata)
-                                                                .onEach(::insert)
-                                                                .mapIndexed { position, song ->
-                                                                    PlaylistSongMap(
-                                                                        songId = song.id,
-                                                                        playlistId = playlist.id,
-                                                                        position = position
-                                                                    )
-                                                                }
-                                                                .forEach(::insert)
-                                                        }
+                                                        syncUtils.syncPlaylist(playlist.playlist.browseId, playlist.id)
                                                         snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
                                                     }
                                                 }
@@ -532,14 +619,16 @@ fun LocalPlaylistScreen(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            IconButton(
-                                onClick = { locked = !locked },
-                                modifier = Modifier.padding(horizontal = 6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                                    contentDescription = null
-                                )
+                            if (editable) {
+                                IconButton(
+                                    onClick = { locked = !locked },
+                                    modifier = Modifier.padding(horizontal = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (locked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                        contentDescription = null
+                                    )
+                                }
                             }
                         }
                     }
@@ -563,11 +652,10 @@ fun LocalPlaylistScreen(
                             if (dismissValue == SwipeToDismissBoxValue.EndToStart || dismissValue == SwipeToDismissBoxValue.StartToEnd) {
                                 database.transaction {
                                     coroutineScope.launch {
-                                        playlist?.playlist?.browseId?.let { it1 ->
-                                            var setVideoId = getSetVideoId(currentItem.map.songId)
-                                            if (setVideoId?.setVideoId != null) {
+                                        playlist?.playlist?.browseId?.let { playlistId ->
+                                            if (currentItem.map.setVideoId != null) {
                                                 YouTube.removeFromPlaylist(
-                                                    it1, currentItem.map.songId, setVideoId.setVideoId!!
+                                                    playlistId, currentItem.map.songId, currentItem.map.setVideoId!!
                                                 )
                                             }
                                         }
@@ -618,7 +706,7 @@ fun LocalPlaylistScreen(
                                     )
                                 }
 
-                                if (sortType == PlaylistSongSortType.CUSTOM && !locked) {
+                                if (sortType == PlaylistSongSortType.CUSTOM && !locked && editable) {
                                     IconButton(
                                         onClick = { },
                                         modifier = Modifier.detectReorder(reorderableState)
@@ -648,7 +736,7 @@ fun LocalPlaylistScreen(
                         )
                     }
 
-                    if (locked) {
+                    if (locked || !editable) {
                         content()
                     } else {
                         setOf(SwipeToDismissBoxValue.EndToStart,

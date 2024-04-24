@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -61,6 +62,14 @@ fun LibrarySongsScreen(
 
     val songs by viewModel.allSongs.collectAsState()
 
+    LaunchedEffect(Unit) {
+        when (filter) {
+            SongFilter.LIKED -> viewModel.syncLikedSongs()
+            SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
+            else -> return@LaunchedEffect
+        }
+    }
+
     val lazyListState = rememberLazyListState()
 
     Box(
@@ -81,7 +90,11 @@ fun LibrarySongsScreen(
                         SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
                     ),
                     currentValue = filter,
-                    onValueUpdate = { filter = it }
+                    onValueUpdate = {
+                        filter = it
+                        if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
+                        else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+                    }
                 )
             }
 

@@ -52,8 +52,7 @@ class MusicDatabase(
         FormatEntity::class,
         LyricsEntity::class,
         Event::class,
-        RelatedSongMap::class,
-        SetVideoIdEntity::class
+        RelatedSongMap::class
     ],
     views = [
         SortedSongArtistMap::class,

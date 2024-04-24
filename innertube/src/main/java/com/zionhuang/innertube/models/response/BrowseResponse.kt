@@ -2,7 +2,9 @@ package com.zionhuang.innertube.models.response
 
 import com.zionhuang.innertube.models.Button
 import com.zionhuang.innertube.models.Continuation
+import com.zionhuang.innertube.models.GridRenderer
 import com.zionhuang.innertube.models.Menu
+import com.zionhuang.innertube.models.MusicResponsiveListItemRenderer
 import com.zionhuang.innertube.models.MusicShelfRenderer
 import com.zionhuang.innertube.models.ResponseContext
 import com.zionhuang.innertube.models.Runs
@@ -10,6 +12,7 @@ import com.zionhuang.innertube.models.SectionListRenderer
 import com.zionhuang.innertube.models.SubscriptionButton
 import com.zionhuang.innertube.models.Tabs
 import com.zionhuang.innertube.models.ThumbnailRenderer
+import com.zionhuang.innertube.pages.LibraryContinuationPage
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,6 +33,8 @@ data class BrowseResponse(
     data class ContinuationContents(
         val sectionListContinuation: SectionListContinuation?,
         val musicPlaylistShelfContinuation: MusicPlaylistShelfContinuation?,
+        val gridContinuation: GridRenderer?,
+        val musicShelfContinuation: MusicShelfRenderer?,
     ) {
         @Serializable
         data class SectionListContinuation(

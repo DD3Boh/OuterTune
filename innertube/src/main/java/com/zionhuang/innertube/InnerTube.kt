@@ -332,11 +332,24 @@ class InnerTube {
                 context = client.toContext(locale, visitorData),
                 playlistId = playlistId.removePrefix("VL"),
                 actions = listOf(
-                    EditPlaylistBody.Action(
-                        playlistName = null,
-                        action = "ACTION_ADD_VIDEO",
-                        addedVideoId = videoId
-                    )
+                    Action.AddVideoAction(addedVideoId = videoId)
+                )
+            )
+        )
+    }
+
+    suspend fun addPlaylistToPlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        addPlaylistId: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId.removePrefix("VL"),
+                actions = listOf(
+                    Action.AddPlaylistAction(addedFullListId = addPlaylistId)
                 )
             )
         )
@@ -354,13 +367,79 @@ class InnerTube {
                 context = client.toContext(locale, visitorData),
                 playlistId = playlistId.removePrefix("VL"),
                 actions = listOf(
-                    EditPlaylistBody.Action(
-                        playlistName = null,
-                        action = "ACTION_REMOVE_VIDEO",
+                    Action.RemoveVideoAction(
                         removedVideoId = videoId,
                         setVideoId = setVideoId,
                     )
                 )
+            )
+        )
+    }
+
+    suspend fun moveSongPlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        setVideoId: String,
+        successorSetVideoId: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId,
+                actions = listOf(
+                    Action.MoveVideoAction(
+                        movedSetVideoIdSuccessor = successorSetVideoId,
+                        setVideoId = setVideoId,
+                    )
+                )
+
+            )
+        )
+    }
+
+    suspend fun createPlaylist(
+        client: YouTubeClient,
+        title: String,
+    ) = httpClient.post("playlist/create") {
+        ytClient(client, true)
+        setBody(
+            CreatePlaylistBody(
+                context = client.toContext(locale, visitorData),
+                title = title
+            )
+        )
+    }
+
+    suspend fun renamePlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+        name: String,
+    ) = httpClient.post("browse/edit_playlist") {
+        ytClient(client, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId,
+                actions = listOf(
+                    Action.RenamePlaylistAction(
+                        playlistName = name
+                    )
+                )
+            )
+        )
+    }
+
+    suspend fun deletePlaylist(
+        client: YouTubeClient,
+        playlistId: String,
+    ) = httpClient.post("playlist/delete") {
+        println("deleting $playlistId")
+        ytClient(client, setLogin = true)
+        setBody(
+            PlaylistDeleteBody(
+                context = client.toContext(locale, visitorData),
+                playlistId = playlistId
             )
         )
     }

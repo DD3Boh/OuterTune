@@ -14,12 +14,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
@@ -29,6 +31,10 @@ import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.ListItem
 import com.dd3boh.outertune.ui.component.PlaylistListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.zionhuang.innertube.YouTube
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @Composable
 fun AddToPlaylistDialog(
@@ -37,6 +43,7 @@ fun AddToPlaylistDialog(
     onDismiss: () -> Unit,
 ) {
     val database = LocalDatabase.current
+    val coroutineScope = rememberCoroutineScope()
     var playlists by remember {
         mutableStateOf(emptyList<Playlist>())
     }
@@ -45,7 +52,7 @@ fun AddToPlaylistDialog(
     }
 
     LaunchedEffect(Unit) {
-        database.playlistsByCreateDateAsc().collect {
+        database.editablePlaylistsByCreateDateAsc().collect {
             playlists = it.asReversed()
         }
     }
@@ -89,12 +96,18 @@ fun AddToPlaylistDialog(
             title = { Text(text = stringResource(R.string.create_playlist)) },
             onDismiss = { showCreatePlaylistDialog = false },
             onDone = { playlistName ->
-                database.query {
-                    insert(
-                        PlaylistEntity(
-                            name = playlistName
+                coroutineScope.launch(Dispatchers.IO) {
+                    val browseId = YouTube.createPlaylist(playlistName).getOrNull()
+
+                    database.query {
+                        insert(
+                            PlaylistEntity(
+                                name = playlistName,
+                                browseId = browseId,
+                                bookmarkedAt = LocalDateTime.now()
+                            )
                         )
-                    )
+                    }
                 }
             }
         )

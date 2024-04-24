@@ -32,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,6 +65,8 @@ import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.YouTubeListItem
 import com.dd3boh.outertune.utils.reportException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun YouTubeAlbumMenu(
@@ -76,6 +79,7 @@ fun YouTubeAlbumMenu(
     val downloadUtil = LocalDownloadUtil.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val album by database.albumWithSongs(albumItem.id).collectAsState(initial = null)
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         database.album(albumItem.id).collect { album ->
@@ -119,6 +123,13 @@ fun YouTubeAlbumMenu(
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
         onAdd = { playlist ->
+            coroutineScope.launch(Dispatchers.IO) {
+                playlist.playlist.browseId?.let { playlistId ->
+                    album?.album?.playlistId?.let { addPlaylistId ->
+                        YouTube.addPlaylistToPlaylist(playlistId, addPlaylistId)
+                    }
+                }
+            }
             var position = playlist.songCount
             database.transaction {
                 album?.songs?.forEach { song ->
