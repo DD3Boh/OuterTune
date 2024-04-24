@@ -20,6 +20,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.Cached
+import androidx.compose.material.icons.rounded.Equalizer
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.SlowMotionVideo
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -160,7 +175,7 @@ fun PlayerMenu(
             .padding(top = 24.dp, bottom = 6.dp)
     ) {
         Icon(
-            painter = painterResource(R.drawable.volume_up),
+            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
             contentDescription = null,
             modifier = Modifier.size(28.dp)
         )
@@ -181,14 +196,14 @@ fun PlayerMenu(
         )
     ) {
         GridMenuItem(
-            icon = R.drawable.radio,
+            icon = Icons.Rounded.Radio,
             title = R.string.start_radio
         ) {
             playerConnection.service.startRadioSeamlessly()
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.playlist_add,
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
@@ -242,7 +257,7 @@ fun PlayerMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.share,
+            icon = Icons.Rounded.Share,
             title = R.string.share
         ) {
             val intent = Intent().apply {
@@ -254,14 +269,14 @@ fun PlayerMenu(
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.info,
+            icon = Icons.Rounded.Info,
             title = R.string.details
         ) {
             onShowDetailsDialog()
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.equalizer,
+            icon = Icons.Rounded.Equalizer,
             title = R.string.equalizer
         ) {
             val intent = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
@@ -275,7 +290,7 @@ fun PlayerMenu(
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.tune,
+            icon = Icons.Rounded.Tune,
             title = R.string.advanced
         ) {
             showPitchTempoDialog = true
@@ -322,7 +337,7 @@ fun PitchTempoDialog(
         text = {
             Column {
                 ValueAdjuster(
-                    icon = R.drawable.slow_motion_video,
+                    icon = Icons.Rounded.SlowMotionVideo,
                     currentValue = tempo,
                     values = listOf(0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f),
                     onValueUpdate = {
@@ -333,7 +348,7 @@ fun PitchTempoDialog(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
                 ValueAdjuster(
-                    icon = R.drawable.discover_tune,
+                    icon = Icons.Rounded.Tune,
                     currentValue = transposeValue,
                     values = (-12..12).toList(),
                     onValueUpdate = {
@@ -349,7 +364,7 @@ fun PitchTempoDialog(
 
 @Composable
 fun <T> ValueAdjuster(
-    @DrawableRes icon: Int,
+    icon: ImageVector,
     currentValue: T,
     values: List<T>,
     onValueUpdate: (T) -> Unit,
@@ -362,7 +377,7 @@ fun <T> ValueAdjuster(
         modifier = modifier
     ) {
         Icon(
-            painter = painterResource(icon),
+            imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(28.dp)
         )
@@ -374,7 +389,7 @@ fun <T> ValueAdjuster(
             }
         ) {
             Icon(
-                painter = painterResource(R.drawable.remove),
+                imageVector = Icons.Rounded.RemoveCircleOutline,
                 contentDescription = null
             )
         }
@@ -393,7 +408,7 @@ fun <T> ValueAdjuster(
             }
         ) {
             Icon(
-                painter = painterResource(R.drawable.add),
+                imageVector = Icons.Rounded.AddCircleOutline,
                 contentDescription = null
             )
         }

@@ -24,6 +24,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Explicit
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -33,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -256,7 +261,7 @@ fun SongListItem(
             val download by LocalDownloadUtil.current.getDownload(song.id).collectAsState(initial = null)
             when (download?.state) {
                 STATE_COMPLETED -> Icon(
-                    painter = painterResource(R.drawable.offline),
+                    imageVector = Icons.Rounded.OfflinePin,
                     contentDescription = null,
                     modifier = Modifier
                         .size(18.dp)
@@ -414,7 +419,7 @@ fun AlbumListItem(
         }
 
         var downloadState by remember {
-            mutableStateOf(Download.STATE_STOPPED)
+            mutableIntStateOf(Download.STATE_STOPPED)
         }
 
         LaunchedEffect(songs) {
@@ -436,7 +441,7 @@ fun AlbumListItem(
 
         if (showLikedIcon && album.album.bookmarkedAt != null) {
             Icon(
-                painter = painterResource(R.drawable.favorite),
+                imageVector = Icons.Rounded.Favorite,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier
@@ -447,7 +452,7 @@ fun AlbumListItem(
 
         when (downloadState) {
             STATE_COMPLETED -> Icon(
-                painter = painterResource(R.drawable.offline),
+                imageVector = Icons.Rounded.OfflinePin,
                 contentDescription = null,
                 modifier = Modifier
                     .size(18.dp)
@@ -568,7 +573,7 @@ fun AlbumGridItem(
 
         when (downloadState) {
             STATE_COMPLETED -> Icon(
-                painter = painterResource(R.drawable.offline),
+                imageVector = Icons.Rounded.OfflinePin,
                 contentDescription = null,
                 modifier = Modifier
                     .size(18.dp)
@@ -849,7 +854,7 @@ fun YouTubeListItem(
         }
         if (item.explicit) {
             Icon(
-                painter = painterResource(R.drawable.explicit),
+                imageVector = Icons.Rounded.Explicit,
                 contentDescription = null,
                 modifier = Modifier
                     .size(18.dp)
@@ -869,7 +874,7 @@ fun YouTubeListItem(
             val downloads by LocalDownloadUtil.current.downloads.collectAsState()
             when (downloads[item.id]?.state) {
                 STATE_COMPLETED -> Icon(
-                    painter = painterResource(R.drawable.offline),
+                    imageVector = Icons.Rounded.OfflinePin,
                     contentDescription = null,
                     modifier = Modifier
                         .size(18.dp)
@@ -967,7 +972,7 @@ fun YouTubeGridItem(
         }
         if (item.explicit) {
             Icon(
-                painter = painterResource(R.drawable.explicit),
+                imageVector = Icons.Rounded.Explicit,
                 contentDescription = null,
                 modifier = Modifier
                     .size(18.dp)
@@ -987,7 +992,7 @@ fun YouTubeGridItem(
             val downloads by LocalDownloadUtil.current.downloads.collectAsState()
             when (downloads[item.id]?.state) {
                 STATE_COMPLETED -> Icon(
-                    painter = painterResource(R.drawable.offline),
+                    imageVector = Icons.Rounded.OfflinePin,
                     contentDescription = null,
                     modifier = Modifier
                         .size(18.dp)

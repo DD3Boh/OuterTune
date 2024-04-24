@@ -13,7 +13,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.LibraryAddCheck
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -209,7 +223,7 @@ fun YouTubeSongMenu(
         }
     )
 
-    Divider()
+    HorizontalDivider()
 
     GridMenu(
         contentPadding = PaddingValues(
@@ -220,21 +234,21 @@ fun YouTubeSongMenu(
         )
     ) {
         GridMenuItem(
-            icon = R.drawable.radio,
+            icon = Icons.Rounded.Radio,
             title = R.string.start_radio
         ) {
             playerConnection.playQueue(YouTubeQueue(WatchEndpoint(videoId = song.id), song.toMediaMetadata()))
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.playlist_play,
+            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
             title = R.string.play_next
         ) {
             playerConnection.playNext(song.toMediaItem())
             onDismiss()
         }
         GridMenuItem(
-            icon = R.drawable.queue_music,
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
             playerConnection.addToQueue((song.toMediaItem()))
@@ -242,7 +256,7 @@ fun YouTubeSongMenu(
         }
         if (librarySong?.song?.inLibrary != null) {
             GridMenuItem(
-                icon = R.drawable.library_add_check,
+                icon = Icons.Rounded.LibraryAddCheck,
                 title = R.string.remove_from_library
             ) {
                 database.query {
@@ -251,7 +265,7 @@ fun YouTubeSongMenu(
             }
         } else {
             GridMenuItem(
-                icon = R.drawable.library_add,
+                icon = Icons.Rounded.LibraryAdd,
                 title = R.string.add_to_library
             ) {
                 database.transaction {
@@ -261,7 +275,7 @@ fun YouTubeSongMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.playlist_add,
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
@@ -294,7 +308,7 @@ fun YouTubeSongMenu(
         )
         if (artists.isNotEmpty()) {
             GridMenuItem(
-                icon = R.drawable.artist,
+                icon = Icons.Rounded.Person,
                 title = R.string.view_artist
             ) {
                 if (artists.size == 1) {
@@ -307,7 +321,7 @@ fun YouTubeSongMenu(
         }
         song.album?.let { album ->
             GridMenuItem(
-                icon = R.drawable.album,
+                icon = Icons.Rounded.Album,
                 title = R.string.view_album
             ) {
                 navController.navigate("album/${album.id}")
@@ -315,7 +329,7 @@ fun YouTubeSongMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.share,
+            icon = Icons.Rounded.Share,
             title = R.string.share
         ) {
             val intent = Intent().apply {

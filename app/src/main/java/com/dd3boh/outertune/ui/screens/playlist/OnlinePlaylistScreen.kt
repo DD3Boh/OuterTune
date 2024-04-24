@@ -20,6 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Input
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Input
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -225,7 +233,7 @@ fun OnlinePlaylistScreen(
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.input),
+                                                Icons.AutoMirrored.Rounded.Input,
                                                 contentDescription = null
                                             )
                                         }
@@ -243,7 +251,7 @@ fun OnlinePlaylistScreen(
                                             }
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.more_vert),
+                                                Icons.Rounded.MoreVert,
                                                 contentDescription = null
                                             )
                                         }
@@ -262,7 +270,7 @@ fun OnlinePlaylistScreen(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.shuffle),
+                                        Icons.Rounded.Shuffle,
                                         contentDescription = null,
                                         modifier = Modifier.size(ButtonDefaults.IconSize)
                                     )
@@ -279,7 +287,7 @@ fun OnlinePlaylistScreen(
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Icon(
-                                            painter = painterResource(R.drawable.radio),
+                                            Icons.Rounded.Radio,
                                             contentDescription = null,
                                             modifier = Modifier.size(ButtonDefaults.IconSize)
                                         )
@@ -311,7 +319,7 @@ fun OnlinePlaylistScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }
@@ -378,7 +386,7 @@ fun OnlinePlaylistScreen(
                     onLongClick = navController::backToMain
                 ) {
                     Icon(
-                        painterResource(R.drawable.arrow_back),
+                        Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = null
                     )
                 }

@@ -4,6 +4,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -73,12 +79,12 @@ fun ContentSettings(
                 accountEmail.takeIf { it.isNotEmpty() }
                     ?: accountChannelHandle.takeIf { it.isNotEmpty() }
             } else null,
-            icon = { Icon(painterResource(R.drawable.person), null) },
+            icon = { Icon(Icons.Rounded.Person, null) },
             onClick = { navController.navigate("login") }
         )
         ListPreference(
             title = { Text(stringResource(R.string.content_language)) },
-            icon = { Icon(painterResource(R.drawable.language), null) },
+            icon = { Icon(Icons.Rounded.Language, null) },
             selectedValue = contentLanguage,
             values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
             valueText = {
@@ -90,7 +96,7 @@ fun ContentSettings(
         )
         ListPreference(
             title = { Text(stringResource(R.string.content_country)) },
-            icon = { Icon(painterResource(R.drawable.location_on), null) },
+            icon = { Icon(Icons.Rounded.LocationOn, null) },
             selectedValue = contentCountry,
             values = listOf(SYSTEM_DEFAULT) + CountryCodeToName.keys.toList(),
             valueText = {
@@ -135,7 +141,7 @@ fun ContentSettings(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

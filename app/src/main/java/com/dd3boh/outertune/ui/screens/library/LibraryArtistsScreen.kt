@@ -16,6 +16,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -89,12 +93,11 @@ fun LibraryArtistsScreen(
                 modifier = Modifier.padding(end = 6.dp)
             ) {
                 Icon(
-                    painter = painterResource(
-                        when (viewType) {
-                            LibraryViewType.LIST -> R.drawable.list
-                            LibraryViewType.GRID -> R.drawable.grid_view
-                        }
-                    ),
+                    imageVector =
+                    when (viewType) {
+                        LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
+                        LibraryViewType.GRID -> Icons.Rounded.GridView
+                    },
                     contentDescription = null
                 )
             }
@@ -173,7 +176,7 @@ fun LibraryArtistsScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }

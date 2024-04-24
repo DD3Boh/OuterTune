@@ -12,12 +12,12 @@ plugins {
 
 android {
     namespace = "com.dd3boh.outertune"
-    compileSdk = 33
-    buildToolsVersion = "34.0.0"
+    compileSdk = 34
+
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
-        minSdk = 24
-        targetSdk = 33
+        minSdk = 21
+        targetSdk = 34
         versionCode = 19
         versionName = "0.5.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -32,6 +32,7 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -41,23 +42,26 @@ android {
     }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin {
-        jvmToolchain(11)
+        jvmToolchain(17)
     }
     kotlinOptions {
         freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.isReturnDefaultValues = true
     }
+
     lint {
         disable += "MissingTranslation"
     }
+
 }
 
 ksp {
@@ -80,8 +84,8 @@ dependencies {
     implementation(libs.compose.ui.util)
     implementation(libs.compose.ui.tooling)
     implementation(libs.compose.animation)
-    implementation(libs.compose.animation.graphics)
     implementation(libs.compose.reorderable)
+    implementation(libs.compose.icons.extended)
 
     implementation(libs.viewmodel)
     implementation(libs.viewmodel.compose)

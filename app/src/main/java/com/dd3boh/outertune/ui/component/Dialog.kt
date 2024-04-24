@@ -171,7 +171,7 @@ fun TextFieldDialog(
             placeholder = placeholder,
             singleLine = singleLine,
             maxLines = maxLines,
-            colors = TextFieldDefaults.outlinedTextFieldColors(),
+            colors = OutlinedTextFieldDefaults.colors(),
             keyboardOptions = KeyboardOptions(imeAction = if (singleLine) ImeAction.Done else ImeAction.None),
             keyboardActions = KeyboardActions(
                 onDone = {

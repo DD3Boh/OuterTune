@@ -5,7 +5,15 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -106,7 +113,7 @@ fun PlaylistMenu(
 
     if (showEditDialog) {
         TextFieldDialog(
-            icon = { Icon(painter = painterResource(R.drawable.edit), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Edit, contentDescription = null) },
             title = { Text(text = stringResource(R.string.edit_playlist)) },
             onDismiss = { showEditDialog = false },
             initialTextFieldValue = TextFieldValue(
@@ -215,7 +222,7 @@ fun PlaylistMenu(
         }
     )
 
-    Divider()
+    HorizontalDivider()
 
     GridMenu(
         contentPadding = PaddingValues(
@@ -226,7 +233,7 @@ fun PlaylistMenu(
         )
     ) {
         GridMenuItem(
-            icon = R.drawable.play,
+            icon = Icons.Rounded.PlayArrow,
             title = R.string.play
         ) {
             onDismiss()
@@ -237,7 +244,7 @@ fun PlaylistMenu(
         }
 
         GridMenuItem(
-            icon = R.drawable.shuffle,
+            icon = Icons.Rounded.Shuffle,
             title = R.string.shuffle
         ) {
             onDismiss()
@@ -248,7 +255,7 @@ fun PlaylistMenu(
         }
 
         GridMenuItem(
-            icon = R.drawable.queue_music,
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
             onDismiss()
@@ -256,7 +263,7 @@ fun PlaylistMenu(
         }
 
         GridMenuItem(
-            icon = R.drawable.edit,
+            icon = Icons.Rounded.Edit,
             title = R.string.edit
         ) {
             showEditDialog = true
@@ -284,7 +291,7 @@ fun PlaylistMenu(
         )
 
         GridMenuItem(
-            icon = R.drawable.delete,
+            icon = Icons.Rounded.Delete,
             title = R.string.delete
         ) {
             showDeletePlaylistDialog = true
@@ -292,7 +299,7 @@ fun PlaylistMenu(
 
         if (playlist.playlist.browseId != null) {
             GridMenuItem(
-                icon = R.drawable.sync,
+                icon = Icons.Rounded.Sync,
                 title = R.string.sync
             ) {
                 onDismiss()

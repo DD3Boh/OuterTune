@@ -23,6 +23,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -175,7 +184,7 @@ fun ArtistScreen(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.shuffle),
+                                        imageVector = Icons.Rounded.Shuffle,
                                         contentDescription = null,
                                         modifier = Modifier.size(ButtonDefaults.IconSize)
                                     )
@@ -195,7 +204,7 @@ fun ArtistScreen(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.radio),
+                                        imageVector = Icons.Rounded.Radio,
                                         contentDescription = null,
                                         modifier = Modifier.size(ButtonDefaults.IconSize)
                                     )
@@ -238,7 +247,7 @@ fun ArtistScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        imageVector = Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }
@@ -291,7 +300,7 @@ fun ArtistScreen(
                                         }
                                     ) {
                                         Icon(
-                                            painter = painterResource(R.drawable.more_vert),
+                                            imageVector = Icons.Rounded.MoreVert,
                                             contentDescription = null
                                         )
                                     }
@@ -423,7 +432,7 @@ fun ArtistScreen(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }
@@ -451,7 +460,7 @@ fun ArtistScreen(
                 }
             ) {
                 Icon(
-                    painter = painterResource(if (libraryArtist?.artist?.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border),
+                    imageVector = if (libraryArtist?.artist?.bookmarkedAt != null) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                     tint = if (libraryArtist?.artist?.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current,
                     contentDescription = null
                 )
@@ -470,7 +479,7 @@ fun ArtistScreen(
                 }
             ) {
                 Icon(
-                    painterResource(R.drawable.share),
+                    Icons.Rounded.Share,
                     contentDescription = null
                 )
             }

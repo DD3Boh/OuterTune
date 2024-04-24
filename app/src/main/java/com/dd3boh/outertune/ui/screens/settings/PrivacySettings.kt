@@ -5,6 +5,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ManageSearch
+import androidx.compose.material.icons.rounded.ClearAll
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.ManageSearch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -123,29 +130,29 @@ fun PrivacySettings(
     ) {
         SwitchPreference(
             title = { Text(stringResource(R.string.pause_listen_history)) },
-            icon = { Icon(painterResource(R.drawable.history), null) },
+            icon = { Icon(Icons.Rounded.History, null) },
             checked = pauseListenHistory,
             onCheckedChange = onPauseListenHistoryChange
         )
         PreferenceEntry(
             title = { Text(stringResource(R.string.clear_listen_history)) },
-            icon = { Icon(painterResource(R.drawable.clear_all), null) },
+            icon = { Icon(Icons.Rounded.ClearAll, null) },
             onClick = { showClearListenHistoryDialog = true }
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.pause_search_history)) },
-            icon = { Icon(painterResource(R.drawable.manage_search), null) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.ManageSearch, null) },
             checked = pauseSearchHistory,
             onCheckedChange = onPauseSearchHistoryChange
         )
         PreferenceEntry(
             title = { Text(stringResource(R.string.clear_search_history)) },
-            icon = { Icon(painterResource(R.drawable.clear_all), null) },
+            icon = { Icon(Icons.Rounded.ClearAll, null) },
             onClick = { showClearSearchHistoryDialog = true }
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.enable_kugou)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
             checked = enableKugou,
             onCheckedChange = onEnableKugouChange
         )
@@ -159,7 +166,7 @@ fun PrivacySettings(
                 onLongClick = navController::backToMain
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

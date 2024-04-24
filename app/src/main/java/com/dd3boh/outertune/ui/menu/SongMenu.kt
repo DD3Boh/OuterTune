@@ -13,7 +13,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -88,7 +100,7 @@ fun SongMenu(
 
     if (showEditDialog) {
         TextFieldDialog(
-            icon = { Icon(painter = painterResource(R.drawable.edit), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Edit, contentDescription = null) },
             title = { Text(text = stringResource(R.string.edit_song)) },
             onDismiss = { showEditDialog = false },
             initialTextFieldValue = TextFieldValue(song.song.title, TextRange(song.song.title.length)),
@@ -207,7 +219,7 @@ fun SongMenu(
         }
     )
 
-    Divider()
+    HorizontalDivider()
 
     GridMenu(
         contentPadding = PaddingValues(
@@ -218,34 +230,34 @@ fun SongMenu(
         )
     ) {
         GridMenuItem(
-            icon = R.drawable.radio,
+            icon = Icons.Rounded.Radio,
             title = R.string.start_radio
         ) {
             onDismiss()
             playerConnection.playQueue(YouTubeQueue(WatchEndpoint(videoId = song.id), song.toMediaMetadata()))
         }
         GridMenuItem(
-            icon = R.drawable.playlist_play,
+            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
             title = R.string.play_next
         ) {
             onDismiss()
             playerConnection.playNext(song.toMediaItem())
         }
         GridMenuItem(
-            icon = R.drawable.queue_music,
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
             onDismiss()
             playerConnection.addToQueue((song.toMediaItem()))
         }
         GridMenuItem(
-            icon = R.drawable.edit,
+            icon = Icons.Rounded.Edit,
             title = R.string.edit
         ) {
             showEditDialog = true
         }
         GridMenuItem(
-            icon = R.drawable.playlist_add,
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
@@ -286,7 +298,7 @@ fun SongMenu(
         }
         if (song.song.albumId != null) {
             GridMenuItem(
-                icon = R.drawable.album,
+                icon = Icons.Rounded.Album,
                 title = R.string.view_album
             ) {
                 onDismiss()
@@ -294,7 +306,7 @@ fun SongMenu(
             }
         }
         GridMenuItem(
-            icon = R.drawable.share,
+            icon = Icons.Rounded.Share,
             title = R.string.share
         ) {
             onDismiss()
@@ -326,7 +338,7 @@ fun SongMenu(
         }
         if (event != null) {
             GridMenuItem(
-                icon = R.drawable.delete,
+                icon = Icons.Rounded.Delete,
                 title = R.string.remove_from_history
             ) {
                 onDismiss()

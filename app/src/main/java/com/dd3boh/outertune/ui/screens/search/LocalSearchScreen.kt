@@ -11,6 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.NavigateNext
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NavigateNext
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -131,7 +136,7 @@ fun LocalSearchScreen(
                             )
 
                             Icon(
-                                painter = painterResource(R.drawable.navigate_next),
+                                Icons.AutoMirrored.Rounded.NavigateNext,
                                 contentDescription = null
                             )
                         }
@@ -163,7 +168,7 @@ fun LocalSearchScreen(
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.more_vert),
+                                        Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
                                 }
@@ -227,7 +232,7 @@ fun LocalSearchScreen(
                     key = "no_result"
                 ) {
                     EmptyPlaceholder(
-                        icon = R.drawable.search,
+                        icon = Icons.Rounded.Search,
                         text = stringResource(R.string.no_results_found)
                     )
                 }

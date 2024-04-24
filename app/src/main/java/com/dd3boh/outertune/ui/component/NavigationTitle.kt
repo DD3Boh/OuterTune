@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,7 +50,7 @@ fun NavigationTitle(
 
         if (onClick != null) {
             Icon(
-                painter = painterResource(R.drawable.arrow_forward),
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
