@@ -255,9 +255,18 @@ object YouTube {
             browseId = "VL$playlistId",
             setLogin = true
         ).body<BrowseResponse>()
+
+        if (response.header != null)
+            playlistOld(playlistId, response)
+        else
+            playlistNew(playlistId, response)
+    }
+
+    private fun playlistOld(playlistId: String, response: BrowseResponse): PlaylistPage {
         val header = response.header?.musicDetailHeaderRenderer ?: response.header?.musicEditablePlaylistDetailHeaderRenderer?.header?.musicDetailHeaderRenderer!!
         val editable = response.header?.musicEditablePlaylistDetailHeaderRenderer != null
-        PlaylistPage(
+
+        return PlaylistPage(
             playlist = PlaylistItem(
                 id = playlistId,
                 title = header.title.runs?.firstOrNull()?.text!!,
@@ -289,6 +298,50 @@ object YouTube {
                 ?.musicPlaylistShelfRenderer?.continuations?.getContinuation(),
             continuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()
                 ?.tabRenderer?.content?.sectionListRenderer?.continuations?.getContinuation()
+        )
+    }
+
+    private fun playlistNew(playlistId: String, response: BrowseResponse): PlaylistPage {
+        val header = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer
+            ?: response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicEditablePlaylistDetailHeaderRenderer?.header?.musicResponsiveHeaderRenderer
+
+        val editable = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+            ?.musicEditablePlaylistDetailHeaderRenderer != null
+
+        return PlaylistPage(
+            playlist = PlaylistItem(
+                id = playlistId,
+                title = header?.title?.runs?.firstOrNull()?.text!!,
+                author = header.straplineTextOne?.runs?.firstOrNull()?.let {
+                    Artist(
+                        name = it.text,
+                        id = it.navigationEndpoint?.browseEndpoint?.browseId
+                    )
+                },
+                songCountText = header.secondSubtitle?.runs?.firstOrNull()?.text,
+                thumbnail = response.background?.musicThumbnailRenderer?.getThumbnailUrl(),
+                playEndpoint = header.buttons.getOrNull(1)?.musicPlayButtonRenderer
+                    ?.playNavigationEndpoint?.watchEndpoint,
+                shuffleEndpoint = header.buttons.getOrNull(2)?.menuRenderer?.items?.find {
+                    it.menuNavigationItemRenderer?.icon?.iconType == "MUSIC_SHUFFLE"
+                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
+                radioEndpoint = header.buttons.getOrNull(2)?.menuRenderer?.items?.find {
+                    it.menuNavigationItemRenderer?.icon?.iconType == "MIX"
+                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
+                isEditable = editable
+            ),
+            songs = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
+                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents?.mapNotNull {
+                    PlaylistPage.fromMusicResponsiveListItemRenderer(it.musicResponsiveListItemRenderer)
+                }!!,
+            songsContinuation = response.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer
+                .contents.firstOrNull()?.musicPlaylistShelfRenderer?.continuations?.getContinuation(),
+            continuation = response.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer
+                .continuations?.getContinuation()
         )
     }
 

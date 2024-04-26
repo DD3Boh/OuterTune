@@ -1,5 +1,7 @@
 package com.zionhuang.innertube.models.response
 
+import MusicDetailHeaderRenderer
+import MusicEditablePlaylistDetailHeaderRenderer
 import com.zionhuang.innertube.models.Button
 import com.zionhuang.innertube.models.Continuation
 import com.zionhuang.innertube.models.GridRenderer
@@ -12,6 +14,7 @@ import com.zionhuang.innertube.models.SectionListRenderer
 import com.zionhuang.innertube.models.SubscriptionButton
 import com.zionhuang.innertube.models.Tabs
 import com.zionhuang.innertube.models.ThumbnailRenderer
+import com.zionhuang.innertube.models.TwoColumnBrowseResultsRenderer
 import com.zionhuang.innertube.pages.LibraryContinuationPage
 import kotlinx.serialization.Serializable
 
@@ -22,11 +25,13 @@ data class BrowseResponse(
     val header: Header?,
     val microformat: Microformat?,
     val responseContext: ResponseContext,
+    val background: ThumbnailRenderer?
 ) {
     @Serializable
     data class Contents(
         val singleColumnBrowseResultsRenderer: Tabs?,
         val sectionListRenderer: SectionListRenderer?,
+        val twoColumnBrowseResultsRenderer: TwoColumnBrowseResultsRenderer?,
     )
 
     @Serializable
@@ -67,26 +72,6 @@ data class BrowseResponse(
             val subscriptionButton: SubscriptionButton?,
             val menu: Menu,
         )
-
-        @Serializable
-        data class MusicDetailHeaderRenderer(
-            val title: Runs,
-            val subtitle: Runs,
-            val secondSubtitle: Runs,
-            val description: Runs?,
-            val thumbnail: ThumbnailRenderer,
-            val menu: Menu,
-        )
-
-        @Serializable
-        data class MusicEditablePlaylistDetailHeaderRenderer(
-            val header: Header,
-        ) {
-            @Serializable
-            data class Header(
-                val musicDetailHeaderRenderer: MusicDetailHeaderRenderer,
-            )
-        }
 
         @Serializable
         data class MusicVisualHeaderRenderer(
