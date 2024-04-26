@@ -148,7 +148,6 @@ fun LocalPlaylistScreen(
     val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
-    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
@@ -316,12 +315,37 @@ fun LocalPlaylistScreen(
                 mutableSongs.move(from.index - headerItems, to.index - headerItems)
             }
         },
-        onDragEnd = { fromIndex, toIndex ->
+        onDragEnd = { initialFromIndex, initialToIndex ->
             viewModel.viewModelScope.launch(Dispatchers.IO) {
                 val playlistSongMap = database.playlistSongMaps(viewModel.playlistId, 0)
 
-                playlistSongMap[fromIndex - headerItems].setVideoId?.let { setVideoId ->
-                    playlistSongMap[toIndex - headerItems + 1].setVideoId?.let { successorSetVideoId ->
+                var fromIndex = initialFromIndex - headerItems
+                val toIndex = initialToIndex - headerItems
+
+                var successorIndex = if (fromIndex > toIndex) toIndex else toIndex + 1
+
+                /*
+                * Because of how YouTube Music handles playlist changes, you necessarily need to
+                * have the SetVideoId of the successor when trying to move a song inside of a
+                * playlist.
+                * For this reason, if we are trying to move a song to the last element of a playlist,
+                * we need to first move it as penultimate and then move the last element before it.
+                */
+                if (successorIndex >= playlistSongMap.size) {
+                    playlistSongMap[fromIndex].setVideoId?.let { setVideoId ->
+                        playlistSongMap[toIndex].setVideoId?.let { successorSetVideoId ->
+                            viewModel.playlist.first()?.playlist?.browseId?.let { browseId ->
+                                YouTube.moveSongPlaylist(browseId, setVideoId, successorSetVideoId)
+                            }
+                        }
+                    }
+
+                    successorIndex = fromIndex
+                    fromIndex = toIndex
+                }
+
+                playlistSongMap[fromIndex].setVideoId?.let { setVideoId ->
+                    playlistSongMap[successorIndex].setVideoId?.let { successorSetVideoId ->
                         viewModel.playlist.first()?.playlist?.browseId?.let { browseId ->
                             YouTube.moveSongPlaylist(browseId, setVideoId, successorSetVideoId)
                         }
@@ -329,7 +353,7 @@ fun LocalPlaylistScreen(
                 }
 
                 database.transaction {
-                    move(viewModel.playlistId, fromIndex - headerItems, toIndex - headerItems)
+                    move(viewModel.playlistId, initialFromIndex - headerItems, initialToIndex - headerItems)
                 }
             }
         }
