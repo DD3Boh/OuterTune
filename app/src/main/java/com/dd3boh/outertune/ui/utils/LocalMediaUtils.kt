@@ -70,6 +70,11 @@ class DirectoryTree(path: String) {
     }
 
 
+    fun insert(song: Song) {
+        // worry about errors later
+        return insert(song.song.title, song)
+    }
+
     fun insert(path: String, song: Song) {
 //        println("curr path =" + path)
 
@@ -110,6 +115,58 @@ class DirectoryTree(path: String) {
 
 
     /**
+     * Get the name of the file from full path, without any extensions
+     */
+    private fun getFileName(path: String?): String? {
+        if (path == null) {
+            return null
+        }
+        return path.substringAfterLast('/').substringBefore('.')
+    }
+
+    /**
+     * Retrieves song object at path
+     *
+     * @return song at path, or null if it does not exist
+     */
+    fun getSong(path: String): Song? {
+        Log.d(TAG, "Searching for song, at path --> $path")
+
+        // search for song in current dir
+        if (path.indexOf('/') == -1) {
+            val foundSong: Song = files.first { getFileName(it.song.localPath) == getFileName(path) }
+            Log.d(TAG, "Searching for song, found? --> " + foundSong?.id + " name: " + foundSong?.song?.title)
+            return foundSong
+        }
+
+        // there is still subdirs to process
+        var tmppath = path
+        if (path[path.length - 1] == '/') {
+            tmppath = path.substring(0, path.length - 1)
+        }
+
+        // the first directory before the .
+        val subdirPath = tmppath.substringBefore('/')
+
+        // scan for matching subdirectory
+        var existingSubdir: DirectoryTree? = null
+        subdirs.forEach { subdir ->
+            if (subdir.currentDir == subdirPath) {
+                existingSubdir = subdir
+                return@forEach
+            }
+        }
+
+        // explore the subdirectory if it exists in
+        if (existingSubdir == null) {
+            return null
+        } else {
+            return existingSubdir!!.getSong(tmppath.substringAfter('/'))
+        }
+    }
+
+
+    /**
      * Retrieve a list of all the songs
      */
     fun toList(): List<Song> {
@@ -132,6 +189,77 @@ class DirectoryTree(path: String) {
 data class ExtraMetadataWrapper(val artists: String, val genres: String, val date: String)
 
 
+/**
+ * ==========================
+ * Actual local scanner utils
+ * ==========================
+ */
+
+
+/**
+ * Dev uses
+ */
+fun refreshLocal(context: Context, database: MusicDatabase) =
+    refreshLocal(context, database, testScanPaths)
+
+
+// so here is the thing right, if your files move around, that's on you to re run the full scanner.
+// so here is the other other thing right, if the metadata changes, that's also on you to re run the full scanner.
+/**
+ * Quickly rebuild a skeleton directory tree of local files based on the database
+ *
+ * @param context Context
+ * @param scanPaths List of whitelist paths to scan under. This assumes
+ * the current directory is /storage/emulated/0/ a.k.a, /sdcard.
+ * For example, to scan under Music and Documents/songs --> ("Music", Documents/songs)
+ */
+fun refreshLocal(
+    context: Context,
+    database: MusicDatabase,
+    scanPaths: ArrayList<String>
+): MutableStateFlow<DirectoryTree> {
+    val directoryStructure = DirectoryTree("/storage/emulated/0/")
+
+    // get songs from db
+    var existingSongs: List<Song>
+    runBlocking(Dispatchers.IO) {
+        existingSongs = database.allLocalSongsData().first()
+    }
+
+    // Query for audio files
+    val contentResolver: ContentResolver = context.contentResolver
+    val cursor = contentResolver.query(
+        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DATA} LIKE ?",
+        scanPaths.map { "/storage/emulated/0/$it%" }.toTypedArray(), // whitelist paths
+        null
+    )
+    Log.d(TAG, "------------------------------------------")
+    cursor?.use { cursor ->
+        // Columns indices
+        val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+        val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
+
+        while (cursor.moveToNext()) {
+            val name = cursor.getString(nameColumn) // file name
+            val path = cursor.getString(pathColumn)
+
+            Log.d(TAG, "Quick scanner: PATH: $path")
+
+            // Build directory tree with existing files
+            val possibleMatch = existingSongs.firstOrNull() { it.song.localPath == "$path$name" }
+
+            if (possibleMatch != null) {
+                directoryStructure.insert(possibleMatch)
+            }
+
+        }
+    }
+
+    cachedDirectoryTree = directoryStructure
+    return MutableStateFlow(directoryStructure)
+}
 
 /**
  * Dev uses
@@ -342,16 +470,7 @@ fun syncDB(
 //            println("search for " + song.song.title.substringBeforeLast('.'))
             val querySong = database.searchSongs(song.song.title.substringBeforeLast('.'))
 
-            /**
-             * Check if artists are the same
-             */
-            fun compareArtist(a: List<ArtistEntity>): Boolean {
-                val matchingArtists = a.filter { artist ->
-                    song.artists.any { it.name == artist.name }
-                }
 
-                return matchingArtists.size == a.size
-            }
 
             CoroutineScope(Dispatchers.IO).launch {
 
@@ -364,17 +483,9 @@ fun syncDB(
                     ) {
                         return@filter false
                     }
+//                    println("song here:: " + it.song.title)
 
-                    // rest of metadata
-                    when (matchStrength) {
-                        ScannerSensitivity.LEVEL_1 -> it.song.title == song.song.title
-                        ScannerSensitivity.LEVEL_2 -> it.song.title == song.song.title &&
-                            compareArtist(it.artists)
-
-                        ScannerSensitivity.LEVEL_3 -> it.song.title.compareTo(song.song.title) == 1 && compareArtist(
-                            it.artists
-                        ) && true
-                    }
+                    return@filter compareSong(it, song, matchStrength, strictFileNames)
                 }
 
 
@@ -394,6 +505,55 @@ fun syncDB(
     }
 
 }
+
+/**
+ * Check if artists are the same
+ *
+ *  * Both null == same artists
+ *  * Either null == different artists
+ */
+fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
+
+    if (a == null && b == null) {
+        return true
+    } else if (a == null || b == null) {
+        return false
+    }
+
+    // compare entries
+    val matchingArtists = a.filter { artist ->
+        b.any { it.name == artist.name }
+    }
+
+    return matchingArtists.size == a.size
+}
+
+/**
+ * Check the similarity of a song
+ *
+ * @param a
+ * @param b
+ * @param matchStrength How lax should the scanner be
+ * @param strictFileNames Whether to consider file names
+ */
+fun compareSong(a: Song, b: Song, matchStrength: ScannerSensitivity, strictFileNames: Boolean): Boolean {
+    if (strictFileNames &&
+        (a.song.localPath?.substringBeforeLast('/') !=
+                b.song.localPath?.substringBeforeLast('/'))
+    ) {
+        return false
+    }
+
+    return when (matchStrength) {
+        ScannerSensitivity.LEVEL_1 -> a.song.title == b.song.title
+        ScannerSensitivity.LEVEL_2 -> a.song.title == b.song.title &&
+                compareArtist(a.artists, b.artists)
+
+        ScannerSensitivity.LEVEL_3 -> a.song.title == b.song.title &&
+                compareArtist(a.artists, b.artists) && true // album compare go here
+    }
+}
+
 
 object CachedBitmap {
     var path: String? = null

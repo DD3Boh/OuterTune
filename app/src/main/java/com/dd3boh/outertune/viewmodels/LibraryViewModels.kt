@@ -18,6 +18,7 @@ import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.ui.utils.DirectoryTree
+import com.dd3boh.outertune.ui.utils.refreshLocal
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.ui.utils.scanLocal
 import com.dd3boh.outertune.ui.utils.syncDB
@@ -53,7 +54,7 @@ class LibrarySongsViewModel @Inject constructor(
     val allSongs = syncAllSongs(context, database, downloadUtil)
 
     // In the future, build this based on paths from database, and the metadata gets filled in on the fly
-    val localSongDirectoryTree = scanLocal(context, database)
+    val localSongDirectoryTree = refreshLocal(context, database)
 
     fun syncLibrarySongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
@@ -70,7 +71,7 @@ class LibrarySongsViewModel @Inject constructor(
      * @return DirectoryTree
      */
     fun syncLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
-        val directoryStructure = scanLocal(context, database).value
+        val directoryStructure = refreshLocal(context, database).value
 
         syncDB(database, directoryStructure.toList())
         return MutableStateFlow(directoryStructure)
