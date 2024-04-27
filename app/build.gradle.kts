@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 34
         versionCode = 19
         versionName = "0.5.3"
@@ -120,4 +120,12 @@ dependencies {
     coreLibraryDesugaring(libs.desugaring)
 
     implementation(libs.timber)
+
+//    *** ffmpeg-kit remote lib
+//    implementation(libs.ffmpegkit)
+
+//    *** ffmpeg-kit self-compiled lib
+    implementation (libs.smartException)
+    // version 6.0-2
+    implementation (files("libs/ffmpeg-kit-release.aar"))
 }

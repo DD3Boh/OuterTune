@@ -73,5 +73,12 @@ junit = { group = "junit", name = "junit", version = "4.13.2" }
 
 timber = { group = "com.jakewharton.timber", name = "timber", version = "5.0.1" }
 
+# ffmpeg-kit remote lib
+# ffmpegkit = { group = "com.arthenica", name = "ffmpeg-kit-min", version = "6.0-2"}
+
+# ffmpeg-kit dependency required for self-compiled
+smartException = { group = "com.arthenica", name = "smart-exception-java", version = "0.2.1"}
+
+
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
