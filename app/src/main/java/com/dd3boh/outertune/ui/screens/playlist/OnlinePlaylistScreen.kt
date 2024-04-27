@@ -95,6 +95,7 @@ import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.FontSizeRange
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.component.YouTubeListItem
 import com.dd3boh.outertune.ui.component.shimmer.ButtonPlaceholder
 import com.dd3boh.outertune.ui.component.shimmer.ListItemPlaceHolder
@@ -474,42 +475,48 @@ fun OnlinePlaylistScreen(
                     items(
                         items = songs
                     ) { song ->
-                        YouTubeListItem(
-                            item = song,
-                            isActive = mediaMetadata?.id == song.id,
-                            isPlaying = isPlaying,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            YouTubeSongMenu(
-                                                song = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
+                        SwipeToQueueBox(
+                            item = song.toMediaItem(),
+                            content = {
+                                YouTubeListItem(
+                                    item = song,
+                                    isActive = mediaMetadata?.id == song.id,
+                                    isPlaying = isPlaying,
+                                    trailingContent = {
+                                        IconButton(
+                                            onClick = {
+                                                menuState.show {
+                                                    YouTubeSongMenu(
+                                                        song = song,
+                                                        navController = navController,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.MoreVert,
+                                                contentDescription = null
                                             )
                                         }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
+                                    },
+                                    modifier = Modifier
+                                        .clickable {
+                                            if (song.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    YouTubeQueue(
+                                                        song.endpoint ?: WatchEndpoint(videoId = song.id),
+                                                        song.toMediaMetadata()
+                                                    )
+                                                )
+                                            }
+                                        }
+                                        .animateItemPlacement()
+                                )
                             },
-                            modifier = Modifier
-                                .clickable {
-                                    if (song.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
-                                    } else {
-                                        playerConnection.playQueue(
-                                            YouTubeQueue(
-                                                song.endpoint ?: WatchEndpoint(videoId = song.id),
-                                                song.toMediaMetadata()
-                                            )
-                                        )
-                                    }
-                                }
-                                .animateItemPlacement()
+                            snackbarHostState = snackbarHostState
                         )
                     }
                 } else {

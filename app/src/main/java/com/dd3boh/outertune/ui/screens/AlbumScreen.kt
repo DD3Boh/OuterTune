@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -80,6 +83,7 @@ import com.dd3boh.outertune.ui.component.FontSizeRange
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongListItem
+import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.component.shimmer.ButtonPlaceholder
 import com.dd3boh.outertune.ui.component.shimmer.ListItemPlaceHolder
 import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
@@ -104,6 +108,8 @@ fun AlbumScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val albumWithSongs by viewModel.albumWithSongs.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val downloadUtil = LocalDownloadUtil.current
     var downloadState by remember {
@@ -347,45 +353,51 @@ fun AlbumScreen(
                 items = albumWithSongsLocal.songs,
                 key = { _, song -> song.id }
             ) { index, song ->
-                SongListItem(
-                    song = song,
-                    albumIndex = index + 1,
-                    isActive = song.id == mediaMetadata?.id,
-                    isPlaying = isPlaying,
-                    showInLibraryIcon = true,
-                    trailingContent = {
-                        IconButton(
-                            onClick = {
-                                menuState.show {
-                                    SongMenu(
-                                        originalSong = song,
-                                        navController = navController,
-                                        onDismiss = menuState::dismiss
+                SwipeToQueueBox(
+                    item = song.toMediaItem(),
+                    content = {
+                        SongListItem(
+                            song = song,
+                            albumIndex = index + 1,
+                            isActive = song.id == mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                            showInLibraryIcon = true,
+                            trailingContent = {
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            SongMenu(
+                                                originalSong = song,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = null
                                     )
                                 }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Rounded.MoreVert,
-                                contentDescription = null
-                            )
-                        }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable {
+                                    if (song.id == mediaMetadata?.id) {
+                                        playerConnection.player.togglePlayPause()
+                                    } else {
+                                        playerConnection.playQueue(
+                                            ListQueue(
+                                                title = albumWithSongsLocal.album.title,
+                                                items = albumWithSongsLocal.songs.map { it.toMediaItem() },
+                                                startIndex = index
+                                            )
+                                        )
+                                    }
+                                }
+                        )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable {
-                            if (song.id == mediaMetadata?.id) {
-                                playerConnection.player.togglePlayPause()
-                            } else {
-                                playerConnection.playQueue(
-                                    ListQueue(
-                                        title = albumWithSongsLocal.album.title,
-                                        items = albumWithSongsLocal.songs.map { it.toMediaItem() },
-                                        startIndex = index
-                                    )
-                                )
-                            }
-                        }
+                    snackbarHostState = snackbarHostState
                 )
             }
         } else {
@@ -444,5 +456,11 @@ fun AlbumScreen(
             }
         },
         scrollBehavior = scrollBehavior
+    )
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     )
 }

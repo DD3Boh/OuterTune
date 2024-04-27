@@ -1,12 +1,12 @@
 package com.dd3boh.outertune.ui.screens.playlist
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,9 +30,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,18 +40,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SwipeToDismiss
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,7 +55,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,13 +81,10 @@ import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.utils.completed
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
-import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.PlaylistEditLockKey
@@ -105,11 +93,9 @@ import com.dd3boh.outertune.constants.PlaylistSongSortType
 import com.dd3boh.outertune.constants.PlaylistSongSortTypeKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistSong
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
-import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
@@ -120,17 +106,16 @@ import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
+import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.component.TextFieldDialog
 import com.dd3boh.outertune.ui.menu.PlaylistMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
-import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableItem
@@ -364,8 +349,6 @@ fun LocalPlaylistScreen(
             reorderableState.listState.firstVisibleItemIndex > 0
         }
     }
-
-    var dismissJob: Job? by remember { mutableStateOf(null) }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -705,117 +688,67 @@ fun LocalPlaylistScreen(
                     reorderableState = reorderableState,
                     key = song.map.id
                 ) {
-                    val currentItem by rememberUpdatedState(song)
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        positionalThreshold = { totalDistance ->
-                            totalDistance
-                        },
-                        confirmValueChange = { dismissValue ->
-                            if (dismissValue == SwipeToDismissBoxValue.EndToStart || dismissValue == SwipeToDismissBoxValue.StartToEnd) {
-                                database.transaction {
-                                    coroutineScope.launch {
-                                        playlist?.playlist?.browseId?.let { playlistId ->
-                                            if (currentItem.map.setVideoId != null) {
-                                                YouTube.removeFromPlaylist(
-                                                    playlistId, currentItem.map.songId, currentItem.map.setVideoId!!
+                    SwipeToQueueBox(
+                        item = song.song.toMediaItem(),
+                        content = {
+                            SongListItem(
+                                song = song.song,
+                                isActive = song.song.id == mediaMetadata?.id,
+                                isPlaying = isPlaying,
+                                showInLibraryIcon = true,
+
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song.song,
+                                                    playlistSong = song,
+                                                    playlistBrowseId = playlist?.playlist?.browseId,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
                                                 )
                                             }
                                         }
-                                    }
-                                    move(currentItem.map.playlistId, currentItem.map.position, Int.MAX_VALUE)
-                                    delete(currentItem.map.copy(position = Int.MAX_VALUE))
-                                }
-                                dismissJob?.cancel()
-                                dismissJob = coroutineScope.launch {
-                                    val snackbarResult = snackbarHostState.showSnackbar(
-                                        message = context.getString(R.string.removed_song_from_playlist, currentItem.song.song.title),
-                                        actionLabel = context.getString(R.string.undo),
-                                        duration = SnackbarDuration.Short
-                                    )
-                                    if (snackbarResult == SnackbarResult.ActionPerformed) {
-                                        database.transaction {
-                                            insert(currentItem.map.copy(position = playlistLength))
-                                            move(currentItem.map.playlistId, playlistLength, currentItem.map.position)
-                                        }
-                                    }
-                                }
-                            }
-                            true
-                        }
-                    )
-
-                    val content: @Composable () -> Unit = {
-                        SongListItem(
-                            song = song.song,
-                            isActive = song.song.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            showInLibraryIcon = true,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = song.song,
-                                                playlistSong = song,
-                                                playlistBrowseId = playlist?.playlist?.browseId,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
-
-                                if (sortType == PlaylistSongSortType.CUSTOM && !locked && editable) {
-                                    IconButton(
-                                        onClick = { },
-                                        modifier = Modifier.detectReorder(reorderableState)
                                     ) {
                                         Icon(
-                                            Icons.Rounded.DragHandle,
+                                            Icons.Rounded.MoreVert,
                                             contentDescription = null
                                         )
                                     }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable {
-                                    if (song.song.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
-                                    } else {
-                                        playerConnection.playQueue(
-                                            ListQueue(
-                                                title = playlist!!.playlist.name,
-                                                items = songs.map { it.song.toMediaItem() },
-                                                startIndex = index
+
+                                    if (sortType == PlaylistSongSortType.CUSTOM && !locked && editable) {
+                                        IconButton(
+                                            onClick = { },
+                                            modifier = Modifier.detectReorder(reorderableState)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.DragHandle,
+                                                contentDescription = null
                                             )
-                                        )
+                                        }
                                     }
-                                }
-                        )
-                    }
-
-                    if (locked || !editable) {
-                        content()
-                    } else {
-                        setOf(SwipeToDismissBoxValue.EndToStart,
-                            SwipeToDismissBoxValue.StartToEnd
-                        )
-                        SwipeToDismissBox(state = dismissState,
-                            backgroundContent = {
-
-                            },
-                            enableDismissFromStartToEnd = true,
-                            enableDismissFromEndToStart = true,
-                            content = {
-                                content()
-                            })
-                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .combinedClickable {
+                                        if (song.song.id == mediaMetadata?.id) {
+                                            playerConnection.player.togglePlayPause()
+                                        } else {
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    title = playlist!!.playlist.name,
+                                                    items = songs.map { it.song.toMediaItem() },
+                                                    startIndex = index
+                                                )
+                                            )
+                                        }
+                                    }
+                            )
+                        },
+                        snackbarHostState = snackbarHostState
+                    )
                 }
             }
         }
