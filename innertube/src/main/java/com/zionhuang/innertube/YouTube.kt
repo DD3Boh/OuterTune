@@ -158,24 +158,58 @@ object YouTube {
         )
     }
 
-    suspend fun album(browseId: String, withSongs: Boolean = true): Result<AlbumPage> = runCatching {
+    suspend fun album(browseId: String): Result<AlbumPage> = runCatching {
         val response = innerTube.browse(WEB_REMIX, browseId).body<BrowseResponse>()
+
+        if (response.header != null) albumOld(browseId, response)
+        else albumNew(browseId, response)
+    }
+
+    private suspend fun albumOld(browseId: String, response: BrowseResponse): AlbumPage {
         val playlistId = response.microformat?.microformatDataRenderer?.urlCanonical?.substringAfterLast('=')!!
-        AlbumPage(
+
+        val artists = response.header?.musicDetailHeaderRenderer?.subtitle?.runs?.splitBySeparator()?.getOrNull(1)?.oddElements()?.map {
+            Artist(
+                name = it.text,
+                id = it.navigationEndpoint?.browseEndpoint?.browseId
+            )
+        }!!
+
+        return AlbumPage(
             album = AlbumItem(
                 browseId = browseId,
                 playlistId = playlistId,
-                title = response.header?.musicDetailHeaderRenderer?.title?.runs?.firstOrNull()?.text!!,
-                artists = response.header.musicDetailHeaderRenderer.subtitle.runs?.splitBySeparator()?.getOrNull(1)?.oddElements()?.map {
-                    Artist(
-                        name = it.text,
-                        id = it.navigationEndpoint?.browseEndpoint?.browseId
-                    )
-                }!!,
+                title = response.header.musicDetailHeaderRenderer.title.runs?.firstOrNull()?.text!!,
+                artists = artists,
                 year = response.header.musicDetailHeaderRenderer.subtitle.runs.lastOrNull()?.text?.toIntOrNull(),
                 thumbnail = response.header.musicDetailHeaderRenderer.thumbnail.croppedSquareThumbnailRenderer?.getThumbnailUrl()!!
             ),
-            songs = if (withSongs) albumSongs(playlistId).getOrThrow() else emptyList()
+            songs = albumSongs(playlistId).getOrNull() ?: emptyList()
+        )
+    }
+
+    private suspend fun albumNew(browseId: String, response: BrowseResponse): AlbumPage {
+        val header = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer
+            ?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer
+        val playlistId = response.microformat?.microformatDataRenderer?.urlCanonical?.substringAfterLast('=')!!
+
+        val artists = header?.straplineTextOne?.runs?.oddElements()?.map {
+            Artist(
+                name = it.text,
+                id = it.navigationEndpoint?.browseEndpoint?.browseId
+            )
+        }!!
+
+        return AlbumPage(
+            album = AlbumItem(
+                browseId = browseId,
+                playlistId = playlistId,
+                title = header.title.runs?.firstOrNull()?.text!!,
+                artists = artists,
+                year = header.subtitle.runs?.lastOrNull()?.text?.toIntOrNull(),
+                thumbnail = response.background?.musicThumbnailRenderer?.getThumbnailUrl()!!
+            ),
+            songs = albumSongs(playlistId).getOrNull() ?: emptyList()
         )
     }
 

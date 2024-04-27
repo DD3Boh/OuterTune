@@ -20,6 +20,7 @@ data class TwoColumnBrowseResultsRenderer(
         @Serializable
         data class Content(
             val musicPlaylistShelfRenderer: MusicPlaylistShelfRenderer?,
+            val musicShelfRenderer: MusicShelfRenderer?
         )
     }
 }
