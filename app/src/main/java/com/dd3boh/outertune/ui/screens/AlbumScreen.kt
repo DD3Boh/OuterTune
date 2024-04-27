@@ -4,10 +4,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -458,9 +460,14 @@ fun AlbumScreen(
         scrollBehavior = scrollBehavior
     )
 
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier
-            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-    )
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                .align(Alignment.BottomCenter)
+        )
+    }
 }

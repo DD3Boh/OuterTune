@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -530,9 +531,14 @@ fun ArtistScreen(
         }
     )
 
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier
-            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-    )
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                .align(Alignment.BottomCenter)
+        )
+    }
 }
