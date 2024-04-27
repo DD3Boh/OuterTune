@@ -13,11 +13,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.FolderCopy
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -42,6 +44,7 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
+import com.dd3boh.outertune.constants.FlatSubfoldersKey
 import com.dd3boh.outertune.constants.ScannerSensitivity
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
@@ -80,6 +83,7 @@ fun ExperimentalSettings(
     )
     val (strictExtensions, onStrictExtensionsChange) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val (autoScan, onAutoScanChange) = rememberPreference(AutomaticScannerKey, defaultValue = false)
+    val (flatSubfolders, onFlatSubfoldersChange) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
 
     Column(
         Modifier
@@ -209,6 +213,23 @@ fun ExperimentalSettings(
             icon = { Icon(Icons.Rounded.TextFields, null) },
             checked = strictExtensions,
             onCheckedChange = onStrictExtensionsChange
+        )
+
+
+        // next section
+        VerticalDivider(
+            thickness = DividerDefaults.Thickness,
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 10.dp)
+        )
+
+
+        // strict file ext
+        SwitchPreference(
+            title = { Text(stringResource(R.string.flat_subfolders_title)) },
+            description = stringResource(R.string.flat_subfolders_description),
+            icon = { Icon(Icons.Rounded.FolderCopy, null) },
+            checked = flatSubfolders,
+            onCheckedChange = onFlatSubfoldersChange
         )
     }
 

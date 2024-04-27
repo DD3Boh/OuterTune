@@ -63,6 +63,7 @@ fun LibrarySongsFolderScreen(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val folderStack = remember { viewModel.folderPositionStack }
+    val (flatSubfolders) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
@@ -80,7 +81,9 @@ fun LibrarySongsFolderScreen(
     }
 
     // content to load for this page
-    var currDir by remember { mutableStateOf(folderStack.peek()) }
+    var currDir by remember { mutableStateOf(
+        if (flatSubfolders) folderStack.peek().toFlattenedTree() else folderStack.peek()
+        )}
 
 
     Box(
@@ -159,13 +162,13 @@ fun LibrarySongsFolderScreen(
                 items = currDir.subdirs,
                 key = { _, item -> item.uid },
                 contentType = { _, _ -> CONTENT_TYPE_SONG }
-            ) { index, song ->
+            ) { index, folder ->
                 SongFolderItem(
-                    folderTitle = song.currentDir,
+                    folderTitle = folder.currentDir,
                     modifier = Modifier
                         .combinedClickable {
                             // navigate to next page
-                            currDir = folderStack.push(song)
+                            currDir = folderStack.push(folder)
                         }
                         .animateItemPlacement()
                 )

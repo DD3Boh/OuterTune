@@ -70,6 +70,13 @@ class DirectoryTree(path: String) {
         directoryUID++
     }
 
+    /**
+     * Instantiate a directory tree directly
+     */
+    constructor(path: String, files: ArrayList<Song>) : this(path) {
+        this.files = files
+    }
+
     fun insert(path: String, song: Song) {
 //        println("curr path =" + path)
 
@@ -175,6 +182,31 @@ class DirectoryTree(path: String) {
         traverseHELPME(this, songs)
 
         return songs
+    }
+
+    /**
+     * Retrieves a modified version of this DirectoryTree.
+     * All folders are recognized to be top level folders
+     */
+    fun toFlattenedTree(): DirectoryTree {
+        val result = DirectoryTree(sdcardRoot)
+        getSubdirsRecursive(this, result.subdirs)
+        return result
+    }
+
+    /**
+     * Crawl the directory tree, add the subdirectories with songs to the list
+     * @param it
+     * @param result
+     */
+    private fun getSubdirsRecursive(it: DirectoryTree, result: ArrayList<DirectoryTree>) {
+        if (it.files.size > 0) {
+            result.add(DirectoryTree(it.currentDir, it.files))
+        }
+
+        if (it.subdirs.size > 0) {
+            it.subdirs.forEach { getSubdirsRecursive(it, result) }
+        }
     }
 }
 

@@ -290,4 +290,8 @@
     <string name="scanner_sensitivity_L2">Match title and artists</string>
     <string name="scanner_sensitivity_L3">Match title, artists, albums</string>
 
+<!--Folders-->
+    <string name="flat_subfolders_title">Flatten subfolders</string>
+    <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
+
 </resources>
