@@ -165,6 +165,7 @@
     <string name="removed_song_from_playlist">Removed \"%s\" from playlist</string>
     <string name="playlist_synced">Playlist synced</string>
     <string name="undo">Undo</string>
+    <string name="song_added_to_queue">\"%s\" added to queue</string>
 
     <!-- Player -->
     <string name="lyrics_not_found">Lyrics not found</string>
