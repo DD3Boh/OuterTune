@@ -215,12 +215,17 @@ object YouTube {
 
     suspend fun albumSongs(playlistId: String): Result<List<SongItem>> = runCatching {
         val response = innerTube.browse(WEB_REMIX, "VL$playlistId").body<BrowseResponse>()
-        response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
-            ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
-            ?.musicPlaylistShelfRenderer?.contents
-            ?.mapNotNull {
-                AlbumPage.fromMusicResponsiveListItemRenderer(it.musicResponsiveListItemRenderer)
-            }!!
+
+        val contents =
+            response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicPlaylistShelfRenderer?.contents ?:
+            response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
+                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents
+
+            contents?.mapNotNull {
+                    AlbumPage.fromMusicResponsiveListItemRenderer(it.musicResponsiveListItemRenderer)
+                }!!
     }
 
     suspend fun artist(browseId: String): Result<ArtistPage> = runCatching {
