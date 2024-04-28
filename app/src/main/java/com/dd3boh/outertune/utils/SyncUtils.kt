@@ -42,6 +42,8 @@ class SyncUtils @Inject constructor(
                 }
             }
         }
+
+        //getRecentActivity()
     }
 
     suspend fun syncLibrarySongs() {
@@ -170,6 +172,15 @@ class SyncUtils @Inject constructor(
                     )
                 }
                 .forEach(::insert)
+        }
+    }
+
+    suspend fun getRecentActivity() {
+        println("running get recent activity")
+        YouTube.libraryRecentActivity().onSuccess { page ->
+            page.items.forEach {
+                println(it.title)
+            }
         }
     }
 }

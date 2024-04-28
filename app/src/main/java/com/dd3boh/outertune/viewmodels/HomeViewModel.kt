@@ -6,13 +6,18 @@ import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.pages.ExplorePage
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Artist
+import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.reportException
+import com.zionhuang.innertube.models.PlaylistItem
+import com.zionhuang.innertube.models.YTItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,9 +30,25 @@ class HomeViewModel @Inject constructor(
 
     val quickPicks = MutableStateFlow<List<Song>?>(null)
     val explorePage = MutableStateFlow<ExplorePage?>(null)
+    val recentActivity = MutableStateFlow<List<YTItem>?>(null)
+    val recentPlaylistsDb = MutableStateFlow<List<Playlist>?>(null)
 
     private suspend fun load() {
         quickPicks.value = database.quickPicks().first().shuffled().take(20)
+
+        YouTube.libraryRecentActivity().onSuccess { page ->
+            recentActivity.value = page.items.take(9).drop(1)
+
+            recentActivity.value!!.filterIsInstance<PlaylistItem>().forEach { item ->
+                val playlist = database.playlistByBrowseId(item.id).firstOrNull()
+                if (playlist != null) {
+                    recentPlaylistsDb.update { list ->
+                        list?.plusElement(playlist) ?: listOf(playlist)
+                    }
+                }
+            }
+        }
+
         YouTube.explore().onSuccess { page ->
             val artists: Set<String>
             val favouriteArtists: Set<String>

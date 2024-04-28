@@ -43,12 +43,16 @@ import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.NavigationTile
 import com.dd3boh.outertune.ui.component.NavigationTitle
 import com.dd3boh.outertune.ui.component.SongListItem
+import com.dd3boh.outertune.ui.component.YouTubeCardItem
 import com.dd3boh.outertune.ui.component.YouTubeGridItem
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.ui.menu.YouTubeAlbumMenu
 import com.dd3boh.outertune.ui.utils.SnapLayoutInfoProvider
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.HomeViewModel
+import com.zionhuang.innertube.models.AlbumItem
+import com.zionhuang.innertube.models.ArtistItem
+import com.zionhuang.innertube.models.PlaylistItem
 import kotlin.random.Random
 
 @Suppress("DEPRECATION")
@@ -66,9 +70,12 @@ fun HomeScreen(
 
     val quickPicks by viewModel.quickPicks.collectAsState()
     val explorePage by viewModel.explorePage.collectAsState()
+    val recentActivity by viewModel.recentActivity.collectAsState()
+    val recentPlaylistsDb by viewModel.recentPlaylistsDb.collectAsState()
 
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val mostPlayedLazyGridState = rememberLazyGridState()
+    val recentActivityGridState = rememberLazyGridState()
 
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val isLoggedIn = remember(innerTubeCookie) {
@@ -128,6 +135,54 @@ fun HomeScreen(
                             },
                             modifier = Modifier.weight(1f)
                         )
+                    }
+                }
+
+                if (isLoggedIn && !recentActivity.isNullOrEmpty()) {
+                    NavigationTitle(
+                        title = stringResource(R.string.recent_activity)
+                    )
+
+                    LazyHorizontalGrid(
+                        state = recentActivityGridState,
+                        rows = GridCells.Fixed(4),
+                        flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider),
+                        contentPadding = WindowInsets.systemBars
+                            .only(WindowInsetsSides.Horizontal)
+                            .asPaddingValues(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp * 4)
+                    ) {
+                        items(
+                            items = recentActivity!!,
+                            key = { it.id }
+                        ) { item ->
+                            YouTubeCardItem(
+                                item,
+                                onClick = {
+                                    when (item) {
+                                        is PlaylistItem -> {
+                                            val playlistDb = recentPlaylistsDb
+                                                ?.firstOrNull { it.playlist.browseId == item.id }
+
+                                            println(recentPlaylistsDb)
+
+                                            if (playlistDb != null && playlistDb.songCount != 0)
+                                                navController.navigate("local_playlist/${playlistDb.id}")
+                                            else
+                                                navController.navigate("online_playlist/${item.id}")
+                                        }
+
+                                        is AlbumItem -> navController.navigate("album/${item.id}")
+
+                                        is ArtistItem -> navController.navigate("artist/${item.id}")
+
+                                        else -> {}
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -195,7 +250,12 @@ fun HomeScreen(
                                             if (song!!.id == mediaMetadata?.id) {
                                                 playerConnection.player.togglePlayPause()
                                             } else {
-                                                playerConnection.playQueue(YouTubeQueue(WatchEndpoint(videoId = song!!.id), song!!.toMediaMetadata()))
+                                                playerConnection.playQueue(
+                                                    YouTubeQueue(
+                                                        WatchEndpoint(videoId = song!!.id),
+                                                        song!!.toMediaMetadata()
+                                                    )
+                                                )
                                             }
                                         }
                                 )
