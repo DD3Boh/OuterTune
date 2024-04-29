@@ -69,7 +69,7 @@ class DownloadUtil @Inject constructor(
 
         val playedFormat = runBlocking(Dispatchers.IO) { database.format(mediaId).first() }
         val playerResponse = runBlocking(Dispatchers.IO) {
-            YouTube.player(mediaId)
+            YouTube.player(mediaId, registerPlayback = false)
         }.getOrThrow()
         if (playerResponse.playabilityStatus.status != "OK") {
             throw PlaybackException(playerResponse.playabilityStatus.reason, null, PlaybackException.ERROR_CODE_REMOTE_ERROR)
@@ -103,7 +103,8 @@ class DownloadUtil @Inject constructor(
                     bitrate = format.bitrate,
                     sampleRate = format.audioSampleRate,
                     contentLength = format.contentLength!!,
-                    loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb
+                    loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb,
+                    playbackUrl = playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl!!
                 )
             )
         }

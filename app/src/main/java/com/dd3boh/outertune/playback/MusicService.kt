@@ -367,13 +367,25 @@ class MusicService : MediaLibraryService(),
     }
 
     private suspend fun recoverSong(mediaId: String, playerResponse: PlayerResponse? = null) {
+        var playbackUrl = database.format(mediaId).first()?.playbackUrl
+
+        if (playbackUrl == null) {
+            playbackUrl = if (playerResponse?.playbackTracking?.videostatsPlaybackUrl?.baseUrl == null)
+                YouTube.player(mediaId, registerPlayback = false).getOrNull()?.playbackTracking
+                    ?.videostatsPlaybackUrl?.baseUrl!!
+            else
+                playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+        }
+
+        playbackUrl?.let { YouTube.registerPlayback(null, playbackUrl) }
+
         val song = database.song(mediaId).first()
         val mediaMetadata = withContext(Dispatchers.Main) {
             player.findNextMediaItemById(mediaId)?.metadata
         } ?: return
         val duration = song?.song?.duration?.takeIf { it != -1 }
             ?: mediaMetadata.duration.takeIf { it != -1 }
-            ?: (playerResponse ?: YouTube.player(mediaId).getOrNull())?.videoDetails?.lengthSeconds?.toInt()
+            ?: (playerResponse ?: YouTube.player(mediaId, registerPlayback = false).getOrNull())?.videoDetails?.lengthSeconds?.toInt()
             ?: -1
         database.query {
             if (song == null) insert(mediaMetadata.copy(duration = duration))
@@ -636,7 +648,8 @@ class MusicService : MediaLibraryService(),
                         bitrate = format.bitrate,
                         sampleRate = format.audioSampleRate,
                         contentLength = format.contentLength!!,
-                        loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb
+                        loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb,
+                        playbackUrl = playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl!!
                     )
                 )
             }

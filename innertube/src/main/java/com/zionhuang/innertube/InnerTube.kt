@@ -142,6 +142,19 @@ class InnerTube {
         )
     }
 
+    suspend fun registerPlayback(url: String, cpn: String, playlistId: String?)
+            = httpClient.get(url) {
+        ytClient(YouTubeClient.ANDROID_MUSIC, true)
+        parameter("ver", "2")
+        parameter("c", "ANDROID_MUSIC")
+        parameter("cpn", cpn)
+
+        if (playlistId != null) {
+            parameter("list", playlistId)
+            parameter("referrer", "https://music.youtube.com/playlist?list=$playlistId")
+        }
+    }
+
     suspend fun pipedStreams(videoId: String) =
         httpClient.get("https://pipedapi.kavin.rocks/streams/${videoId}") {
             contentType(ContentType.Application.Json)
