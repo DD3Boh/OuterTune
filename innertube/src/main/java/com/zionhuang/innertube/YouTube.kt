@@ -38,6 +38,7 @@ import com.zionhuang.innertube.pages.ArtistItemsPage
 import com.zionhuang.innertube.pages.ArtistPage
 import com.zionhuang.innertube.pages.BrowseResult
 import com.zionhuang.innertube.pages.ExplorePage
+import com.zionhuang.innertube.pages.HistoryPage
 import com.zionhuang.innertube.pages.LibraryContinuationPage
 import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.MoodAndGenres
@@ -524,6 +525,22 @@ object YouTube {
                 )
             }
         }
+    }
+
+    suspend fun musicHistory() = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            browseId = "FEmusic_history",
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        HistoryPage(
+            sections = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents
+                ?.mapNotNull { it.musicShelfRenderer?.let { musicShelfRenderer ->
+                    HistoryPage.fromMusicShelfRenderer(musicShelfRenderer)
+                }}
+        )
     }
 
     suspend fun likeVideo(videoId: String, like: Boolean) = runCatching {
