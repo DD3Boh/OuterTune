@@ -155,6 +155,7 @@ class MusicService : MediaLibraryService(),
 
     private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
+    private var queuePlaylistId: String? = null
 
     val currentMediaMetadata = MutableStateFlow<com.dd3boh.outertune.models.MediaMetadata?>(null)
 
@@ -309,7 +310,8 @@ class MusicService : MediaLibraryService(),
                         title = queue.title,
                         items = queue.items.map { it.toMediaItem() },
                         startIndex = queue.mediaItemIndex,
-                        position = queue.position
+                        position = queue.position,
+                        playlistId = queue.playlistId
                     ),
                     playWhenReady = false
                 )
@@ -377,7 +379,7 @@ class MusicService : MediaLibraryService(),
                 playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl
         }
 
-        playbackUrl?.let { YouTube.registerPlayback(null, playbackUrl) }
+        playbackUrl?.let { YouTube.registerPlayback(queuePlaylistId, playbackUrl) }
 
         val song = database.song(mediaId).first()
         val mediaMetadata = withContext(Dispatchers.Main) {
@@ -412,6 +414,7 @@ class MusicService : MediaLibraryService(),
     fun playQueue(queue: Queue, playWhenReady: Boolean = true) {
         currentQueue = queue
         queueTitle = null
+        queuePlaylistId = queue.playlistId
         player.shuffleModeEnabled = false
         if (queue.preloadItem != null) {
             player.setMediaItem(queue.preloadItem!!.toMediaItem())
@@ -602,7 +605,7 @@ class MusicService : MediaLibraryService(),
             // There may be inconsistent between the downloaded file and the displayed info if user change audio quality frequently
             val playedFormat = runBlocking(Dispatchers.IO) { database.format(mediaId).first() }
             val playerResponse = runBlocking(Dispatchers.IO) {
-                YouTube.player(mediaId)
+                YouTube.player(mediaId, registerPlayback = false)
             }.getOrElse { throwable ->
                 when (throwable) {
                     is ConnectException, is UnknownHostException -> {
@@ -715,7 +718,8 @@ class MusicService : MediaLibraryService(),
             title = queueTitle,
             items = player.mediaItems.mapNotNull { it.metadata },
             mediaItemIndex = player.currentMediaItemIndex,
-            position = player.currentPosition
+            position = player.currentPosition,
+            playlistId = queuePlaylistId
         )
         runCatching {
             filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->

@@ -299,7 +299,8 @@ fun PlaylistMenu(
             onDismiss()
             playerConnection.playQueue(ListQueue(
                 title = playlist.playlist.name,
-                items = songs.map { it.toMediaItem() }
+                items = songs.map { it.toMediaItem() },
+                playlistId = playlist.playlist.browseId
             ))
         }
 
@@ -310,7 +311,8 @@ fun PlaylistMenu(
             onDismiss()
             playerConnection.playQueue(ListQueue(
                 title = playlist.playlist.name,
-                items = songs.shuffled().map { it.toMediaItem() }
+                items = songs.shuffled().map { it.toMediaItem() },
+                playlistId = playlist.playlist.browseId
             ))
         }
 
@@ -322,7 +324,7 @@ fun PlaylistMenu(
                 ) {
                     playerConnection.playQueue(YouTubeQueue(WatchEndpoint(
                         playlistId = "RDAMPL$browseId",
-                        params = radioEndpointParams
+                        params = radioEndpointParams,
                     )))
                     onDismiss()
                 }

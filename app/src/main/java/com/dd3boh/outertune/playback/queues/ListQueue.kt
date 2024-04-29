@@ -4,6 +4,7 @@ import androidx.media3.common.MediaItem
 import com.dd3boh.outertune.models.MediaMetadata
 
 class ListQueue(
+    override val playlistId: String? = null,
     val title: String? = null,
     val items: List<MediaItem>,
     val startIndex: Int = 0,

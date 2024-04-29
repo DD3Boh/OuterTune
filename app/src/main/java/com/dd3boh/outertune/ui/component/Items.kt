@@ -664,7 +664,8 @@ fun AlbumGridItem(
                                     playerConnection.playQueue(
                                         ListQueue(
                                             title = album.album.title,
-                                            items = it
+                                            items = it,
+                                            playlistId = album.album.playlistId
                                         )
                                     )
                                 }
@@ -1120,10 +1121,18 @@ fun YouTubeGridItem(
                                 }
                                 songs?.let {
                                     withContext(Dispatchers.Main) {
+                                        val playlistId: String? = when (item) {
+                                            is AlbumItem -> item.playlistId
+                                            is PlaylistItem -> item.id
+
+                                            else -> null
+                                        }
+
                                         playerConnection.playQueue(
                                             ListQueue(
                                                 title = item.title,
-                                                items = it
+                                                items = it,
+                                                playlistId = playlistId
                                             )
                                         )
                                     }

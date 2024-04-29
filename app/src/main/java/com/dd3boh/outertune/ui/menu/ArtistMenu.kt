@@ -91,7 +91,8 @@ fun ArtistMenu(
                     playerConnection.playQueue(
                         ListQueue(
                             title = artist.artist.name,
-                            items = songs
+                            items = songs,
+                            playlistId = null // TODO Artist
                         )
                     )
                 }
@@ -110,7 +111,8 @@ fun ArtistMenu(
                     playerConnection.playQueue(
                         ListQueue(
                             title = artist.artist.name,
-                            items = songs
+                            items = songs,
+                            playlistId = null // TODO Artist
                         )
                     )
                 }

@@ -161,7 +161,8 @@ fun ArtistSongsScreen(
                                             ListQueue(
                                                 title = context.getString(R.string.queue_all_songs),
                                                 items = songs.map { it.toMediaItem() },
-                                                startIndex = index
+                                                startIndex = index,
+                                                playlistId = null // TODO
                                             )
                                         )
                                     }
@@ -198,6 +199,7 @@ fun ArtistSongsScreen(
                     ListQueue(
                         title = artist?.artist?.name,
                         items = songs.shuffled().map { it.toMediaItem() },
+                        playlistId = null,
                     )
                 )
             }

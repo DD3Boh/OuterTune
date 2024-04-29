@@ -309,7 +309,8 @@ fun AlbumScreen(
                                 playerConnection.playQueue(
                                     ListQueue(
                                         title = albumWithSongsLocal.album.title,
-                                        items = albumWithSongsLocal.songs.map(Song::toMediaItem)
+                                        items = albumWithSongsLocal.songs.map(Song::toMediaItem),
+                                        playlistId = albumWithSongsLocal.album.playlistId
                                     )
                                 )
                             },
@@ -332,7 +333,8 @@ fun AlbumScreen(
                                 playerConnection.playQueue(
                                     ListQueue(
                                         title = albumWithSongsLocal.album.title,
-                                        items = albumWithSongsLocal.songs.shuffled().map(Song::toMediaItem)
+                                        items = albumWithSongsLocal.songs.shuffled().map(Song::toMediaItem),
+                                        playlistId = albumWithSongsLocal.album.playlistId
                                     )
                                 )
                             },
@@ -392,7 +394,8 @@ fun AlbumScreen(
                                             ListQueue(
                                                 title = albumWithSongsLocal.album.title,
                                                 items = albumWithSongsLocal.songs.map { it.toMediaItem() },
-                                                startIndex = index
+                                                startIndex = index,
+                                                playlistId = albumWithSongsLocal.album.playlistId
                                             )
                                         )
                                     }
