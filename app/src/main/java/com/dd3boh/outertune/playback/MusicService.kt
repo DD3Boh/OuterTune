@@ -155,7 +155,7 @@ class MusicService : MediaLibraryService(),
 
     private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
-    private var queuePlaylistId: String? = null
+    var queuePlaylistId: String? = null
 
     val currentMediaMetadata = MutableStateFlow<com.dd3boh.outertune.models.MediaMetadata?>(null)
 

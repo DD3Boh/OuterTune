@@ -67,6 +67,7 @@ fun HomeScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val queuePlaylistId by playerConnection.queuePlaylistId.collectAsState()
 
     val quickPicks by viewModel.quickPicks.collectAsState()
     val explorePage by viewModel.explorePage.collectAsState()
@@ -180,7 +181,14 @@ fun HomeScreen(
 
                                         else -> {}
                                     }
-                                }
+                                },
+                                isPlaying = when (item) {
+                                    is PlaylistItem -> queuePlaylistId == item.id
+                                    is AlbumItem -> queuePlaylistId == item.playlistId
+                                    is ArtistItem -> (queuePlaylistId == item.radioEndpoint?.playlistId ||
+                                                    queuePlaylistId == item.shuffleEndpoint?.playlistId)
+                                    else -> false
+                                },
                             )
                         }
                     }

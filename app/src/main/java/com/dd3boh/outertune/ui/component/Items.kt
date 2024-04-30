@@ -1198,6 +1198,7 @@ fun YouTubeGridItem(
 fun YouTubeCardItem(
     item: YTItem,
     modifier: Modifier = Modifier,
+    isPlaying: Boolean,
     onClick: () -> Unit,
 ) {
     val configuration = LocalConfiguration.current
@@ -1249,5 +1250,17 @@ fun YouTubeCardItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
+
+        PlayingIndicatorBox(
+            isActive = isPlaying,
+            playWhenReady = isPlaying,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(6.dp)
+                .background(
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(ThumbnailCornerRadius)
+                )
+        )
     }
 }
