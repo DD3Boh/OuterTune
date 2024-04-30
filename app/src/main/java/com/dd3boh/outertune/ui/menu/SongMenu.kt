@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Divider
@@ -64,6 +65,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Event
+import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
@@ -82,6 +84,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SongMenu(
     originalSong: Song,
+    playlistSong: PlaylistSong? = null,
+    playlistBrowseId: String? = null,
     event: Event? = null,
     navController: NavController,
     onDismiss: () -> Unit,
@@ -252,6 +256,30 @@ fun SongMenu(
         ) {
             showChoosePlaylistDialog = true
         }
+
+        if (playlistSong != null) {
+            GridMenuItem(
+                icon = Icons.Rounded.PlaylistRemove,
+                title = R.string.remove_from_playlist
+            ) {
+                database.transaction {
+                    coroutineScope.launch {
+                        playlistBrowseId?.let { playlistId ->
+                            if (playlistSong.map.setVideoId != null) {
+                                YouTube.removeFromPlaylist(
+                                    playlistId, playlistSong.map.songId, playlistSong.map.setVideoId
+                                )
+                            }
+                        }
+                    }
+                    move(playlistSong.map.playlistId, playlistSong.map.position, Int.MAX_VALUE)
+                    delete(playlistSong.map.copy(position = Int.MAX_VALUE))
+                }
+
+                onDismiss()
+            }
+        }
+
         DownloadGridMenu(
             state = download?.state,
             onDownload = {
