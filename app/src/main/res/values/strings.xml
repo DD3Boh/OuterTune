@@ -269,4 +269,25 @@
     <string name="about">About</string>
     <string name="app_version">App version</string>
 
+
+    <string name="experimental_settings_title">Experimental</string>
+
+<!--scanner page settings-->
+    <string name="local_scanner_title">Local scanner</string>
+
+    <string name="auto_scanner_title">Scan automatically</string>
+    <string name="auto_scanner_description">Automatically scan for songs when opening the app</string>
+
+    <string name="manual_scanner_title">Manual scanner</string>
+    <string name="scanner_warning">Depending on the size of your library, it make take a while. It is highly recommend to wait until the scanner to finish before proceeding. Don\'t say I didn\'t warn you!</string>
+
+<!--scanner additional settings-->
+    <string name="scanner_settings_title">Additional scanner settings</string>
+    <string name="scanner_strict_file_name_title">Strict file names</string>
+    <string name="scanner_strict_file_name_description">When enabled extensions will NOT be ignored. Ex. "Song.ogg" will be a different song from "Song.flac"</string>
+    <string name="scanner_sensitivity_title">Configure scanner sensitivity</string>
+    <string name="scanner_sensitivity_L1">Match title</string>
+    <string name="scanner_sensitivity_L2">Match title and artists</string>
+    <string name="scanner_sensitivity_L3">Match title, artists, albums</string>
+
 </resources>

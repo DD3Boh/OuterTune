@@ -20,8 +20,6 @@ import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.ui.utils.DirectoryTree
 import com.dd3boh.outertune.ui.utils.refreshLocal
 import com.dd3boh.outertune.utils.SyncUtils
-import com.dd3boh.outertune.ui.utils.scanLocal
-import com.dd3boh.outertune.ui.utils.syncDB
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,11 +47,9 @@ class LibrarySongsViewModel @Inject constructor(
      */
     val folderPositionStack = Stack<DirectoryTree>()
     val databseLink = database
-    val downloadUtilLink = downloadUtil
 
     val allSongs = syncAllSongs(context, database, downloadUtil)
 
-    // In the future, build this based on paths from database, and the metadata gets filled in on the fly
     val localSongDirectoryTree = refreshLocal(context, database)
 
     fun syncLibrarySongs() {
@@ -66,14 +62,12 @@ class LibrarySongsViewModel @Inject constructor(
 
 
     /**
-     * Rescan local songs
+     * Get local songs
      *
      * @return DirectoryTree
      */
-    fun syncLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
+    fun getLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
         val directoryStructure = refreshLocal(context, database).value
-
-        syncDB(database, directoryStructure.toList())
         return MutableStateFlow(directoryStructure)
     }
 

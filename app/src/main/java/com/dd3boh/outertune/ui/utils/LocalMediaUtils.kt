@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import android.util.Log
+import com.dd3boh.outertune.constants.ScannerSensitivity
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
@@ -67,12 +68,6 @@ class DirectoryTree(path: String) {
     init {
         // increment uid
         directoryUID++
-    }
-
-
-    fun insert(song: Song) {
-        // worry about errors later
-        return insert(song.song.title, song)
     }
 
     fun insert(path: String, song: Song) {
@@ -218,7 +213,7 @@ fun refreshLocal(
     database: MusicDatabase,
     scanPaths: ArrayList<String>
 ): MutableStateFlow<DirectoryTree> {
-    val directoryStructure = DirectoryTree("/storage/emulated/0/")
+    val newDirectoryStructure = DirectoryTree(sdcardRoot)
 
     // get songs from db
     var existingSongs: List<Song>
@@ -232,7 +227,7 @@ fun refreshLocal(
         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
         projection,
         "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DATA} LIKE ?",
-        scanPaths.map { "/storage/emulated/0/$it%" }.toTypedArray(), // whitelist paths
+        scanPaths.map { "$sdcardRoot$it%" }.toTypedArray(), // whitelist paths
         null
     )
     Log.d(TAG, "------------------------------------------")
@@ -248,17 +243,17 @@ fun refreshLocal(
             Log.d(TAG, "Quick scanner: PATH: $path")
 
             // Build directory tree with existing files
-            val possibleMatch = existingSongs.firstOrNull() { it.song.localPath == "$path$name" }
+            val possibleMatch = existingSongs.firstOrNull() { it.song.localPath == "$sdcardRoot$path$name" }
 
             if (possibleMatch != null) {
-                directoryStructure.insert(possibleMatch)
+                newDirectoryStructure.insert("$path$name", possibleMatch)
             }
 
         }
     }
 
-    cachedDirectoryTree = directoryStructure
-    return MutableStateFlow(directoryStructure)
+    cachedDirectoryTree = newDirectoryStructure
+    return MutableStateFlow(newDirectoryStructure)
 }
 
 /**
@@ -428,22 +423,6 @@ fun scanLocal(
 
     cachedDirectoryTree = newDirectoryStructure
     return MutableStateFlow(newDirectoryStructure)
-}
-
-
-/**
- * Specify how strict the metadata scanner should be
- */
-enum class ScannerSensitivity {
-    LEVEL_1, // Title only
-    LEVEL_2, // Title and artists
-    LEVEL_3, // Title, artists, albums
-
-}
-
-
-fun syncDB(database: MusicDatabase, directoryStructure: List<Song>) {
-    syncDB(database, directoryStructure, ScannerSensitivity.LEVEL_2, true)
 }
 
 /**

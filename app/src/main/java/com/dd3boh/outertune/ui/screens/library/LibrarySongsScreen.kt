@@ -1,6 +1,5 @@
 package com.dd3boh.outertune.ui.screens.library
 
-import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -10,7 +9,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +40,7 @@ import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
@@ -145,43 +144,28 @@ fun LibrarySongsScreen(
                 }
             }
 
-
-            // temp button to force re scan of DB
-            item (
-                key = "weh"
-            ) {
-                IconButton(
-                    onClick = {
-                        Toast.makeText(context, "SCANNING DATABASE...", Toast.LENGTH_SHORT).show()
-                        viewModel.syncLocalSongs(context, viewModel.databseLink)
-                        viewModel.syncAllSongs(context, viewModel.databseLink, viewModel.downloadUtilLink)
-                    }
+            // Only show under library filter, subject to change
+            if (filter == SongFilter.LIBRARY)
+                item (
+                    key = "song_folders"
                 ) {
-                    Icon(
-                       Icons.Rounded.Replay,
-                        contentDescription = null
+                    // enter folders page
+                    SongFolderItem(
+                        folderTitle = "Internal Storage",
+                        modifier = Modifier
+                            .combinedClickable {
+                                // navigate to next page
+                                navController.navigate("songs_folders_screen")
+                            }
+                            .animateItemPlacement()
                     )
                 }
-
-                // show folders
-                IconButton(
-                    onClick = {
-                        navController.navigate("songs_folders_screen")
-                    }
-                ) {
-                    Icon(
-                        Icons.Rounded.Folder,
-                        contentDescription = null
-                    )
-                }
-            }
 
             itemsIndexed(
                 items = songs,
                 key = { _, item -> item.id },
                 contentType = { _, _ -> CONTENT_TYPE_SONG }
             ) { index, song ->
-
                 SwipeToQueueBox(
                     item = song.toMediaItem(),
                     content = {
@@ -205,14 +189,6 @@ fun LibrarySongsScreen(
                                         Icons.Rounded.MoreVert,
                                         contentDescription = null
                                     )
-
-                                    // local song indicator
-                                    if (song.song.isLocal == true) {
-                                        return@IconButton Icon(
-                                            Icons.Rounded.Folder,
-                                            contentDescription = null
-                                        )
-                                    }
                                 }
                             },
                             modifier = Modifier

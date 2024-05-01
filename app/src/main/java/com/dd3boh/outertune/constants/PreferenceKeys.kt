@@ -133,6 +133,21 @@ val AccountNameKey = stringPreferencesKey("accountName")
 val AccountEmailKey = stringPreferencesKey("accountEmail")
 val AccountChannelHandleKey = stringPreferencesKey("accountChannelHandle")
 
+//  local playback
+val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
+
+/**
+ * Specify how strict the metadata scanner should be
+ */
+enum class ScannerSensitivity {
+    LEVEL_1, // Title only
+    LEVEL_2, // Title and artists
+    LEVEL_3, // Title, artists, albums
+}
+
+val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
+val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
+
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",
     "az" to "Azərbaycan",

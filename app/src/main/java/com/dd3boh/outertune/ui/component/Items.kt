@@ -6,8 +6,10 @@ import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
@@ -17,17 +19,22 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.FolderCopy
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -97,6 +104,7 @@ import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.screens.MoodAndGenresButtonHeight
 import com.dd3boh.outertune.ui.theme.extractThemeColor
+import com.dd3boh.outertune.ui.utils.DirectoryTree
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
@@ -298,6 +306,17 @@ fun SongListItem(
                 else -> {}
             }
         }
+
+        // local song indicator
+        if (song.song.isLocal == true) {
+            Icon(
+                Icons.Rounded.FolderCopy,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
     },
     isActive: Boolean = false,
     isPlaying: Boolean = false,
@@ -354,6 +373,36 @@ fun SongListItem(
     trailingContent = trailingContent,
     modifier = modifier,
     isActive = isActive
+)
+@Composable
+fun SongFolderItem(
+    folderTitle: String,
+    modifier: Modifier = Modifier,
+) = ListItem( title = folderTitle, thumbnailContent = { Icon(
+        Icons.Rounded.Folder,
+        contentDescription = null,
+        modifier = modifier.size(48.dp)
+    )
+},
+    trailingContent = {
+        androidx.compose.material3.IconButton(
+            onClick = {
+//                menuState.show {
+//                    SongMenu(
+//                        originalSong = song,
+//                        navController = navController,
+//                        onDismiss = menuState::dismiss
+//                    )
+//                }
+            }
+        ) {
+            Icon(
+                Icons.Rounded.MoreVert,
+                contentDescription = null
+            )
+        }
+    },
+    modifier = modifier
 )
 
 @Composable

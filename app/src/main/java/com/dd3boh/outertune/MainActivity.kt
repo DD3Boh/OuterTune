@@ -104,8 +104,6 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
-import com.dd3boh.outertune.ui.utils.backToMain
-import com.dd3boh.outertune.ui.utils.canNavigateUp
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
@@ -690,6 +688,9 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable("settings/backup_restore") {
                                     BackupAndRestore(navController, scrollBehavior)
+                                }
+                                composable("settings/experimental") {
+                                    ExperimentalSettings(navController, scrollBehavior, this@MainActivity, database)
                                 }
                                 composable("settings/about") {
                                     AboutScreen(navController, scrollBehavior)

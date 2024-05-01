@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens.library
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -10,7 +11,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,14 +40,17 @@ import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.ui.utils.getDirectorytree
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun LibrarySongsFolderScreen(
@@ -56,6 +62,7 @@ fun LibrarySongsFolderScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val folderStack = remember { viewModel.folderPositionStack }
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
@@ -63,17 +70,17 @@ fun LibrarySongsFolderScreen(
     val lazyListState = rememberLazyListState()
 
     // initialize with first directory
-    if (viewModel.folderPositionStack.isEmpty()) {
+    if (folderStack.isEmpty()) {
         val cachedTree = getDirectorytree()
         if (cachedTree == null) {
-            viewModel.syncLocalSongs(context, viewModel.databseLink)
+            viewModel.getLocalSongs(context, viewModel.databseLink)
         }
 
-        viewModel.folderPositionStack.push(viewModel.localSongDirectoryTree.value)
+        folderStack.push(viewModel.localSongDirectoryTree.value)
     }
 
     // content to load for this page
-    var currDir by remember { mutableStateOf(viewModel.folderPositionStack.peek()) }
+    var currDir by remember { mutableStateOf(folderStack.peek()) }
 
 
     Box(
@@ -120,17 +127,20 @@ fun LibrarySongsFolderScreen(
 
 
                 TopAppBar(
-                    title = { if (viewModel.folderPositionStack.size > 1) Text(currDir.currentDir) else "Music Folders" },
+                    title = {
+                        if (viewModel.folderPositionStack.size > 1) Text(currDir.currentDir)
+                        else Text("Internal Storage")
+                    },
                     navigationIcon = {
                         IconButton(
                             onClick = {
                                 // go back to songs screen when backing out of root
-                                if (viewModel.folderPositionStack.size <= 1) {
-                                    navController.navigate("songs_folders_screen")
+                                if (folderStack.size == 0) {
+                                    navController.navigate(Screens.Songs.route)
+                                    return@IconButton
                                 }
-                                currDir = viewModel.folderPositionStack.pop()
+                                currDir = folderStack.pop()
                             }
-
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.ArrowBack,
@@ -150,25 +160,29 @@ fun LibrarySongsFolderScreen(
                 key = { _, item -> item.uid },
                 contentType = { _, _ -> CONTENT_TYPE_SONG }
             ) { index, song ->
+                SongFolderItem(
+                    folderTitle = song.currentDir,
+                    modifier = Modifier
+                        .combinedClickable {
+                            // navigate to next page
+                            currDir = folderStack.push(song)
+                        }
+                        .animateItemPlacement()
+                )
+            }
 
-                Text(text = song.currentDir)
+            // separator
+            if (currDir.subdirs.size > 0 && currDir.files.size > 0) {
+                item(
+                    key = "folder_songs_divider",
 
-                IconButton(
-                    onClick = {
-//                        println("current is " + page.currentDir)
-//                        println("next we go is " + song.currentDir)
-
-                        // navigate to next page
-                        currDir = viewModel.folderPositionStack.push(song)
-                    }
                 ) {
-                    Icon(
-                        Icons.Rounded.Folder,
-                        contentDescription = null
+                    HorizontalDivider(
+                        thickness = DividerDefaults.Thickness,
+                        modifier = Modifier.padding(20.dp)
                     )
                 }
             }
-
 
             // all songs get listed here
             itemsIndexed(
@@ -196,14 +210,6 @@ fun LibrarySongsFolderScreen(
                                 Icons.Rounded.MoreVert,
                                 contentDescription = null
                             )
-
-                            // local song indicator
-                            if (song.song.isLocal == true) {
-                                return@IconButton Icon(
-                                    Icons.Rounded.Folder,
-                                    contentDescription = null
-                                )
-                            }
                         }
                     },
                     modifier = Modifier
