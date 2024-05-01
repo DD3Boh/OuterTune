@@ -40,7 +40,7 @@ class LibrarySongsViewModel @Inject constructor(
 ) : ViewModel() {
 
     // scan for local songs
-    val localSongs = syncDB(database, scanLocal(context).toList())
+    val localSongs = syncDB(database, scanLocal(context, database).value.toList())
     val databseLink = database
 
     val allSongs = context.dataStore.data

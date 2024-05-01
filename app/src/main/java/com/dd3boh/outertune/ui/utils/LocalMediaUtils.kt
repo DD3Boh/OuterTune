@@ -8,14 +8,42 @@ import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import android.util.Log
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.utils.getExtraMetadata
+import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.YouTube.search
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.time.LocalDateTime
+
+// stuff to make this work
+const val sdcardRoot = "/storage/emulated/0/"
+val testScanPaths = arrayListOf("Music")
+
+
+// useful metadata
+val projection = arrayOf(
+    MediaStore.Audio.Media._ID,
+    MediaStore.Audio.Media.DISPLAY_NAME,
+    MediaStore.Audio.Media.TITLE,
+    MediaStore.Audio.Media.DURATION,
+    MediaStore.Audio.Media.ARTIST,
+    MediaStore.Audio.Media.ARTIST_ID,
+    MediaStore.Audio.Media.ALBUM,
+    MediaStore.Audio.Media.ALBUM_ID,
+    MediaStore.Audio.Media.RELATIVE_PATH,
+)
 
 
 /**
@@ -84,99 +112,179 @@ class DirectoryTree(path: String) {
     }
 }
 
+/**
+ * A wrapper containing extra raw metadata that MediaStore fails to read properly
+ */
+data class ExtraMetadataWrapper(val artists: String, val genres: String, val date: String)
 
-val testScanPaths = arrayListOf("Music")
+
 
 /**
  * Dev uses
  */
-fun scanLocal(context: Context) = scanLocal(context, testScanPaths)
+fun scanLocal(context: Context, database: MusicDatabase) =
+    scanLocal(context, database, testScanPaths)
 
 /**
  * Scan MediaStore for songs given a list of paths to scan for.
+ * This will replace all data in the database for a given song.
  *
  * @param context Context
  * @param scanPaths List of whitelist paths to scan under. This assumes
  * the current directory is /storage/emulated/0/ a.k.a, /sdcard.
  * For example, to scan under Music and Documents/songs --> ("Music", Documents/songs)
  */
-fun scanLocal(context: Context, scanPaths: ArrayList<String>): DirectoryTree {
-    val directoryStructure = DirectoryTree("/storage/emulated/0/")
+fun scanLocal(
+    context: Context,
+    database: MusicDatabase,
+    scanPaths: ArrayList<String>
+): MutableStateFlow<DirectoryTree> {
+    val newDirectoryStructure = DirectoryTree(sdcardRoot)
     val contentResolver: ContentResolver = context.contentResolver
-
-    // useful metadata
-    val projection = arrayOf(
-        MediaStore.Audio.Media._ID,
-        MediaStore.Audio.Media.DISPLAY_NAME,
-        MediaStore.Audio.Media.TITLE,
-        MediaStore.Audio.Media.DURATION,
-        MediaStore.Audio.Media.ARTIST,
-        MediaStore.Audio.Media.ARTIST_ID,
-        MediaStore.Audio.Media.ALBUM,
-        MediaStore.Audio.Media.ALBUM_ID,
-        MediaStore.Audio.Media.RELATIVE_PATH,
-    )
 
     // Query for audio files
     val cursor = contentResolver.query(
         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
         projection,
         "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DATA} LIKE ?",
-        scanPaths.map { "/storage/emulated/0/$it%" }.toTypedArray(), // whitelist paths
+        scanPaths.map { "$sdcardRoot$it%" }.toTypedArray(), // whitelist paths
         null
     )
     Log.d("WTF", "------------------------------------------")
-    cursor?.use { cursor ->
-        // Columns indices
-        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-        val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
-        val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-        val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
-        val artistIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
-        val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-        val albumIDColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
-        val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
-        val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
 
-        while (cursor.moveToNext()) {
-            val id = cursor.getLong(idColumn)
-            val name = cursor.getString(nameColumn) // file name
-            val title = cursor.getString(titleColumn) // song title
-            val duration = cursor.getInt(durationColumn)
-            val artist = cursor.getString(artistColumn)
-            val artistID = cursor.getString(artistIdColumn)
-            val albumID = cursor.getString(albumIDColumn)
-            val album = cursor.getString(albumColumn)
-            val path = cursor.getString(pathColumn)
+    val scannerJobs = ArrayList<Deferred<Song>>()
+    runBlocking {
+        // MediaStore is our "basic" scanner
+        cursor?.use { cursor ->
+            // Columns indices
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+            val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val artistIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val albumIDColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+            val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+            val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
 
-            Log.d("WTF", "ID: $id, Name: $name, ARTITST: $artist\" , PATH: $path")
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val name = cursor.getString(nameColumn) // file name
+                val title = cursor.getString(titleColumn) // song title
+                val duration = cursor.getInt(durationColumn)
+                val artist = cursor.getString(artistColumn)
+                val artistID = cursor.getString(artistIdColumn)
+                val albumID = cursor.getString(albumIDColumn)
+                val album = cursor.getString(albumColumn)
+                val path = cursor.getString(pathColumn)
 
-            // append song to list
-            // media store doesn't support multi artists...
-            // do not link artist and album (and whatever id) with youtube yet, figure that out later
-            val artists = ArrayList<ArtistEntity>()
-            artists.add(ArtistEntity(artistID, artist, isLocal = true)) // placeholder
+                Log.d("WTF", "ID: $id, Name: $name, ARTITST: $artist\" , PATH: $path")
 
-            directoryStructure.insert(
-                "$path$name",
-                Song(
-                    SongEntity(
-                        id.toString(),
-                        title,
-                        (duration / 1000), // we use seconds for duration
-                        albumId = albumID,
-                        albumName = album,
-                        isLocal = true,
-                        localPath = "/storage/emulated/0/$path$name"
-                    ),
-                    artists,
-//                worry about album later
-                )
+                // append song to list
+                // media store doesn't support multi artists...
+                // do not link album (and whatever song id) with youtube yet, figure that out later
+
+                /**
+                 * Compiles a song with all it's necessary metadata. Unlike MediaStore,
+                 * this also supports, multiple genres (TBD), and a few extra details (TBD).
+                 */
+                fun advancedScan(): Song {
+                    var artists = ArrayList<ArtistEntity>()
+//                    var generes
+//                    var year: String? = null
+
+                    try {
+                        val artistString = getExtraMetadata("$sdcardRoot$path$name")
+
+                        // parse the data
+                        artistString.artists.split(';').forEach { artistVal ->
+
+                            // check if this artist exists in DB already
+                            val databaseArtistMatch =
+                                runBlocking(Dispatchers.IO) {
+                                    database.searchArtists(artistVal).first().filter { artist ->
+                                        return@filter artist.artist.name == artistVal
+                                    }
+                                }
+
+                            Log.d("WTF", "ARTIST FOUND IN DB???" + databaseArtistMatch.size)
+
+                            if (databaseArtistMatch.isEmpty()) {
+
+                                // hit up YouTube for artist
+                                runBlocking(Dispatchers.IO) {
+                                    search(artistVal, YouTube.SearchFilter.FILTER_ARTIST).onSuccess { result ->
+
+                                        val foundArtist = result.items.first()
+                                        artists.add(
+                                            ArtistEntity(
+                                                // I pray the first search result will always be the correct one
+                                                foundArtist.id,
+                                                foundArtist.title,
+                                                foundArtist.thumbnail
+                                            )
+                                        )
+                                        Log.d("WTF", "WHO TF IS THIS" + result.items.first().title)
+
+                                    }.onFailure {
+                                        // create temporary artists
+                                        Log.w("WTF", "FAILED TO ADD ARTIST, genrtaing one ")
+                                        artists.add(ArtistEntity(ArtistEntity.generateArtistId(), artistVal))
+                                    }
+                                }
+                            } else {
+                                artists.add(
+                                    databaseArtistMatch.first().artist
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // fallback on media store
+                        Log.d(
+                            "WTF",
+                            "ERROR READING ARTIST METADATA, ${e.message} falling back on MediaStore for $path$name"
+                        )
+                        e.printStackTrace()
+
+                        artists.add(ArtistEntity(artistID, artist, isLocal = true))
+                    }
+
+                    return Song(
+                        SongEntity(
+                            id.toString(),
+                            title,
+                            (duration / 1000), // we use seconds for duration
+                            albumId = albumID,
+                            albumName = album,
+                            isLocal = true,
+                            inLibrary = LocalDateTime.now(),
+                            localPath = "$sdcardRoot$path$name"
+                        ),
+                        artists,
+                        // album not working
+                        AlbumEntity(albumID, title = album, duration = 0, songCount = 1)
+                    )
+                }
+
+                scannerJobs.add(async(Dispatchers.IO) { advancedScan() })
+            }
+        }
+
+        scannerJobs.awaitAll()
+    }
+
+    // build the tree
+    scannerJobs.forEach {
+        val song = it.getCompleted()
+
+        song.song.localPath?.let { it ->
+            newDirectoryStructure.insert(
+                it.substringAfter(sdcardRoot), song
             )
         }
     }
 
-    return directoryStructure
+    return MutableStateFlow(newDirectoryStructure)
 }
 
 
