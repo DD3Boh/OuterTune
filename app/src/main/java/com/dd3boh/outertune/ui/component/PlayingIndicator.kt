@@ -58,7 +58,7 @@ fun PlayingIndicator(
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(barWidth * 1.5f),
         verticalAlignment = Alignment.Bottom,
         modifier = modifier
     ) {
