@@ -38,6 +38,7 @@ fun PlayingIndicator(
     bars: Int = 3,
     barWidth: Dp = 4.dp,
     cornerRadius: Dp = ThumbnailCornerRadius,
+    isPlaying: Boolean = true
 ) {
     val animatables = remember {
         List(bars) {
@@ -45,12 +46,14 @@ fun PlayingIndicator(
         }
     }
 
-    LaunchedEffect(Unit) {
-        delay(300)
+    LaunchedEffect(isPlaying) {
         animatables.forEach { animatable ->
             launch {
                 while (true) {
-                    animatable.animateTo(Random.nextFloat() * 0.9f + 0.1f)
+                    if (isPlaying)
+                        animatable.animateTo(Random.nextFloat() * 0.9f + 0.1f)
+                    else
+                        animatable.animateTo(0.15f)
                     delay(50)
                 }
             }
@@ -58,7 +61,7 @@ fun PlayingIndicator(
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(barWidth * 1.5f),
         verticalAlignment = Alignment.Bottom,
         modifier = modifier
     ) {

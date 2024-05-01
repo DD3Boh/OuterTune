@@ -164,6 +164,7 @@ class InnerTube {
         client: YouTubeClient,
         browseId: String? = null,
         params: String? = null,
+        browseContinuation: String? = null,
         continuation: String? = null,
         setLogin: Boolean = false,
     ) = httpClient.post("browse") {
@@ -172,7 +173,8 @@ class InnerTube {
             BrowseBody(
                 context = client.toContext(locale, visitorData),
                 browseId = browseId,
-                params = params
+                params = params,
+                continuation = browseContinuation
             )
         )
         parameter("continuation", continuation)
