@@ -155,6 +155,7 @@ class MusicService : MediaLibraryService(),
 
     private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
+    private var queuePlaylistId: String? = null
 
     val currentMediaMetadata = MutableStateFlow<com.dd3boh.outertune.models.MediaMetadata?>(null)
 
@@ -309,7 +310,8 @@ class MusicService : MediaLibraryService(),
                         title = queue.title,
                         items = queue.items.map { it.toMediaItem() },
                         startIndex = queue.mediaItemIndex,
-                        position = queue.position
+                        position = queue.position,
+                        playlistId = queue.playlistId
                     ),
                     playWhenReady = false
                 )
@@ -367,13 +369,25 @@ class MusicService : MediaLibraryService(),
     }
 
     private suspend fun recoverSong(mediaId: String, playerResponse: PlayerResponse? = null) {
+        var playbackUrl = database.format(mediaId).first()?.playbackUrl
+
+        if (playbackUrl == null) {
+            playbackUrl = if (playerResponse?.playbackTracking?.videostatsPlaybackUrl?.baseUrl == null)
+                YouTube.player(mediaId, registerPlayback = false).getOrNull()?.playbackTracking
+                    ?.videostatsPlaybackUrl?.baseUrl!!
+            else
+                playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+        }
+
+        playbackUrl?.let { YouTube.registerPlayback(queuePlaylistId, playbackUrl) }
+
         val song = database.song(mediaId).first()
         val mediaMetadata = withContext(Dispatchers.Main) {
             player.findNextMediaItemById(mediaId)?.metadata
         } ?: return
         val duration = song?.song?.duration?.takeIf { it != -1 }
             ?: mediaMetadata.duration.takeIf { it != -1 }
-            ?: (playerResponse ?: YouTube.player(mediaId).getOrNull())?.videoDetails?.lengthSeconds?.toInt()
+            ?: (playerResponse ?: YouTube.player(mediaId, registerPlayback = false).getOrNull())?.videoDetails?.lengthSeconds?.toInt()
             ?: -1
         database.query {
             if (song == null) insert(mediaMetadata.copy(duration = duration))
@@ -400,6 +414,7 @@ class MusicService : MediaLibraryService(),
     fun playQueue(queue: Queue, playWhenReady: Boolean = true) {
         currentQueue = queue
         queueTitle = null
+        queuePlaylistId = queue.playlistId
         player.shuffleModeEnabled = false
         if (queue.preloadItem != null) {
             player.setMediaItem(queue.preloadItem!!.toMediaItem())
@@ -590,7 +605,7 @@ class MusicService : MediaLibraryService(),
             // There may be inconsistent between the downloaded file and the displayed info if user change audio quality frequently
             val playedFormat = runBlocking(Dispatchers.IO) { database.format(mediaId).first() }
             val playerResponse = runBlocking(Dispatchers.IO) {
-                YouTube.player(mediaId)
+                YouTube.player(mediaId, registerPlayback = false)
             }.getOrElse { throwable ->
                 when (throwable) {
                     is ConnectException, is UnknownHostException -> {
@@ -636,7 +651,8 @@ class MusicService : MediaLibraryService(),
                         bitrate = format.bitrate,
                         sampleRate = format.audioSampleRate,
                         contentLength = format.contentLength!!,
-                        loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb
+                        loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb,
+                        playbackUrl = playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl!!
                     )
                 )
             }
@@ -702,7 +718,8 @@ class MusicService : MediaLibraryService(),
             title = queueTitle,
             items = player.mediaItems.mapNotNull { it.metadata },
             mediaItemIndex = player.currentMediaItemIndex,
-            position = player.currentPosition
+            position = player.currentPosition,
+            playlistId = queuePlaylistId
         )
         runCatching {
             filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->

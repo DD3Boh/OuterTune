@@ -590,7 +590,8 @@ fun LocalPlaylistScreen(
                                         playerConnection.playQueue(
                                             ListQueue(
                                                 title = playlist.playlist.name,
-                                                items = songs.map { it.song.toMediaItem() }
+                                                items = songs.map { it.song.toMediaItem() },
+                                                playlistId = playlist.playlist.browseId
                                             )
                                         )
                                     },
@@ -612,7 +613,8 @@ fun LocalPlaylistScreen(
                                             ListQueue(
                                                 title = playlist.playlist.name,
                                                 items = songs.shuffled()
-                                                    .map { it.song.toMediaItem() }
+                                                    .map { it.song.toMediaItem() },
+                                                playlistId = playlist.playlist.browseId
                                             )
                                         )
                                     },
@@ -740,7 +742,8 @@ fun LocalPlaylistScreen(
                                                 ListQueue(
                                                     title = playlist!!.playlist.name,
                                                     items = songs.map { it.song.toMediaItem() },
-                                                    startIndex = index
+                                                    startIndex = index,
+                                                    playlistId = playlist?.playlist?.browseId
                                                 )
                                             )
                                         }

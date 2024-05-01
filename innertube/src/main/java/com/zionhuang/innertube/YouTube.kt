@@ -38,6 +38,7 @@ import com.zionhuang.innertube.pages.ArtistItemsPage
 import com.zionhuang.innertube.pages.ArtistPage
 import com.zionhuang.innertube.pages.BrowseResult
 import com.zionhuang.innertube.pages.ExplorePage
+import com.zionhuang.innertube.pages.HistoryPage
 import com.zionhuang.innertube.pages.LibraryContinuationPage
 import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.MoodAndGenres
@@ -54,11 +55,13 @@ import com.zionhuang.innertube.pages.SearchSummary
 import com.zionhuang.innertube.pages.SearchSummaryPage
 import io.ktor.client.call.body
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import java.net.Proxy
+import kotlin.random.Random
 
 /**
  * Parse useful data with [InnerTube] sending requests.
@@ -524,6 +527,22 @@ object YouTube {
         }
     }
 
+    suspend fun musicHistory() = runCatching {
+        val response = innerTube.browse(
+            client = WEB_REMIX,
+            browseId = "FEmusic_history",
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        HistoryPage(
+            sections = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents
+                ?.mapNotNull { it.musicShelfRenderer?.let { musicShelfRenderer ->
+                    HistoryPage.fromMusicShelfRenderer(musicShelfRenderer)
+                }}
+        )
+    }
+
     suspend fun likeVideo(videoId: String, like: Boolean) = runCatching {
         if (like)
             innerTube.likeVideo(WEB_REMIX, videoId)
@@ -580,11 +599,16 @@ object YouTube {
         innerTube.deletePlaylist(WEB_REMIX, playlistId)
     }
 
-    suspend fun player(videoId: String, playlistId: String? = null): Result<PlayerResponse> = runCatching {
+    suspend fun player(videoId: String, playlistId: String? = null, registerPlayback: Boolean = true): Result<PlayerResponse> = runCatching {
         val playerResponse = innerTube.player(ANDROID_MUSIC, videoId, playlistId).body<PlayerResponse>()
+
         if (playerResponse.playabilityStatus.status == "OK") {
+            if (registerPlayback)
+                registerPlayback(playlistId, playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl!!)
+
             return@runCatching playerResponse
         }
+
         val safePlayerResponse = innerTube.player(TVHTML5, videoId, playlistId).body<PlayerResponse>()
         if (safePlayerResponse.playabilityStatus.status != "OK") {
             return@runCatching playerResponse
@@ -600,6 +624,26 @@ object YouTube {
                     }
                 }
             )
+        )
+    }
+
+    suspend fun registerPlayback(playlistId: String? = null, playbackTracking: String) {
+        val cpn = (1..16).map {
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"[Random.Default.nextInt(
+                0,
+                64
+            )]
+        }.joinToString("")
+
+        val playbackUrl = playbackTracking.replace(
+            "https://s.youtube.com",
+            "https://music.youtube.com",
+        )
+
+        innerTube.registerPlayback(
+            url = playbackUrl,
+            playlistId = playlistId,
+            cpn = cpn
         )
     }
 

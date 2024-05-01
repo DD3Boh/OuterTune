@@ -5,6 +5,7 @@ import com.dd3boh.outertune.models.MediaMetadata
 
 interface Queue {
     val preloadItem: MediaMetadata?
+    val playlistId: String?
     suspend fun getInitialStatus(): Status
     fun hasNextPage(): Boolean
     suspend fun nextPage(): List<MediaItem>

@@ -30,6 +30,7 @@ import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.ArtistListItem
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
+import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -88,10 +89,16 @@ fun ArtistMenu(
                         database.artistSongs(artist.id, ArtistSongSortType.CREATE_DATE, true).first()
                             .map { it.toMediaItem() }
                     }
+
+                    val playlistId = withContext(Dispatchers.IO) {
+                        YouTube.artist(artist.id).getOrNull()?.artist?.shuffleEndpoint?.playlistId
+                    }
+
                     playerConnection.playQueue(
                         ListQueue(
                             title = artist.artist.name,
-                            items = songs
+                            items = songs,
+                            playlistId = playlistId
                         )
                     )
                 }
@@ -107,10 +114,16 @@ fun ArtistMenu(
                             .map { it.toMediaItem() }
                             .shuffled()
                     }
+
+                    val playlistId = withContext(Dispatchers.IO) {
+                        YouTube.artist(artist.id).getOrNull()?.artist?.shuffleEndpoint?.playlistId
+                    }
+
                     playerConnection.playQueue(
                         ListQueue(
                             title = artist.artist.name,
-                            items = songs
+                            items = songs,
+                            playlistId = playlistId
                         )
                     )
                 }
