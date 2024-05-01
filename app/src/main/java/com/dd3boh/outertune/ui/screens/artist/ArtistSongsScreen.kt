@@ -157,25 +157,36 @@ fun ArtistSongsScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .combinedClickable {
-                                    if (song.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
-                                    } else {
-                                        viewModel.viewModelScope.launch(Dispatchers.IO) {
-                                            val playlistId = YouTube.artist(artist?.id!!).getOrNull()
-                                                ?.artist?.shuffleEndpoint?.playlistId
+                                .combinedClickable(
+                                    onClick = {
+                                        if (song.id == mediaMetadata?.id) {
+                                            playerConnection.player.togglePlayPause()
+                                        } else {
+                                            viewModel.viewModelScope.launch(Dispatchers.IO) {
+                                                val playlistId = YouTube.artist(artist?.id!!).getOrNull()
+                                                    ?.artist?.shuffleEndpoint?.playlistId
 
-                                            playerConnection.playQueue(
-                                                ListQueue(
-                                                    title = context.getString(R.string.queue_all_songs),
-                                                    items = songs.map { it.toMediaItem() },
-                                                    startIndex = index,
-                                                    playlistId = playlistId
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = context.getString(R.string.queue_all_songs),
+                                                        items = songs.map { it.toMediaItem() },
+                                                        startIndex = index,
+                                                        playlistId = playlistId
+                                                    )
                                                 )
+                                            }
+                                        }
+                                    },
+                                    onLongClick = {
+                                        menuState.show {
+                                            SongMenu(
+                                                originalSong = song,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss
                                             )
                                         }
                                     }
-                                }
+                                )
                                 .animateItemPlacement()
                         )
                     },

@@ -386,20 +386,31 @@ fun AlbumScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .combinedClickable {
-                                    if (song.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
-                                    } else {
-                                        playerConnection.playQueue(
-                                            ListQueue(
-                                                title = albumWithSongsLocal.album.title,
-                                                items = albumWithSongsLocal.songs.map { it.toMediaItem() },
-                                                startIndex = index,
-                                                playlistId = albumWithSongsLocal.album.playlistId
+                                .combinedClickable(
+                                    onClick = {
+                                        if (song.id == mediaMetadata?.id) {
+                                            playerConnection.player.togglePlayPause()
+                                        } else {
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    title = albumWithSongsLocal.album.title,
+                                                    items = albumWithSongsLocal.songs.map { it.toMediaItem() },
+                                                    startIndex = index,
+                                                    playlistId = albumWithSongsLocal.album.playlistId
+                                                )
                                             )
-                                        )
+                                        }
+                                    },
+                                    onLongClick = {
+                                        menuState.show {
+                                            SongMenu(
+                                                originalSong = song,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss
+                                            )
+                                        }
                                     }
-                                }
+                                )
                         )
                     },
                     snackbarHostState = snackbarHostState

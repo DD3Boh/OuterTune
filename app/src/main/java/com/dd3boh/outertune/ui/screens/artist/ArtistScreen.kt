@@ -329,19 +329,30 @@ fun ArtistScreen(
                                             }
                                         },
                                         modifier = Modifier
-                                            .clickable {
-                                                if (song.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
-                                                } else {
-                                                    val endpoint = song.endpoint ?: WatchEndpoint(videoId = song.id)
-                                                    playerConnection.playQueue(
-                                                        YouTubeQueue(
-                                                            endpoint,
-                                                            song.toMediaMetadata()
+                                            .combinedClickable(
+                                                onClick = {
+                                                    if (song.id == mediaMetadata?.id) {
+                                                        playerConnection.player.togglePlayPause()
+                                                    } else {
+                                                        val endpoint = song.endpoint ?: WatchEndpoint(videoId = song.id)
+                                                        playerConnection.playQueue(
+                                                            YouTubeQueue(
+                                                                endpoint,
+                                                                song.toMediaMetadata()
+                                                            )
                                                         )
-                                                    )
+                                                    }
+                                                },
+                                                onLongClick = {
+                                                    menuState.show {
+                                                        YouTubeSongMenu(
+                                                            song = song,
+                                                            navController = navController,
+                                                            onDismiss = menuState::dismiss
+                                                        )
+                                                    }
                                                 }
-                                            }
+                                            )
                                             .animateItemPlacement()
                                     )
                                 },

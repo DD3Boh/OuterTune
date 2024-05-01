@@ -734,20 +734,33 @@ fun LocalPlaylistScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.background)
-                                    .combinedClickable {
-                                        if (song.song.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(
-                                                ListQueue(
-                                                    title = playlist!!.playlist.name,
-                                                    items = songs.map { it.song.toMediaItem() },
-                                                    startIndex = index,
-                                                    playlistId = playlist?.playlist?.browseId
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (song.song.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = playlist!!.playlist.name,
+                                                        items = songs.map { it.song.toMediaItem() },
+                                                        startIndex = index,
+                                                        playlistId = playlist?.playlist?.browseId
+                                                    )
                                                 )
-                                            )
+                                            }
+                                        },
+                                        onLongClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song.song,
+                                                    playlistSong = song,
+                                                    playlistBrowseId = playlist?.playlist?.browseId,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
                                         }
-                                    }
+                                    )
                             )
                         },
                         snackbarHostState = snackbarHostState

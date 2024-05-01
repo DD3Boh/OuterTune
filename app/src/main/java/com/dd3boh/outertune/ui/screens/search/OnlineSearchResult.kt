@@ -2,6 +2,7 @@ package com.dd3boh.outertune.ui.screens.search
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -155,26 +156,41 @@ fun OnlineSearchResult(
                     }
                 },
                 modifier = Modifier
-                    .clickable {
-                        when (item) {
-                            is SongItem -> {
-                                if (item.id == mediaMetadata?.id) {
-                                    playerConnection.player.togglePlayPause()
-                                } else {
-                                    playerConnection.playQueue(
-                                        YouTubeQueue(
-                                            WatchEndpoint(videoId = item.id),
-                                            item.toMediaMetadata()
+                    .combinedClickable(
+                        onClick = {
+                            when (item) {
+                                is SongItem -> {
+                                    if (item.id == mediaMetadata?.id) {
+                                        playerConnection.player.togglePlayPause()
+                                    } else {
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(
+                                                WatchEndpoint(videoId = item.id),
+                                                item.toMediaMetadata()
+                                            )
                                         )
+                                    }
+                                }
+
+                                is AlbumItem -> navController.navigate("album/${item.id}")
+                                is ArtistItem -> navController.navigate("artist/${item.id}")
+                                is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+                            }
+                        },
+                        onLongClick = {
+                            menuState.show {
+                                when (item) {
+                                    is SongItem -> YouTubeSongMenu(
+                                        song = item,
+                                        navController = navController,
+                                        onDismiss = menuState::dismiss
                                     )
+
+                                    else -> {}
                                 }
                             }
-
-                            is AlbumItem -> navController.navigate("album/${item.id}")
-                            is ArtistItem -> navController.navigate("artist/${item.id}")
-                            is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
                         }
-                    }
+                    )
                     .animateItemPlacement()
             )
         }

@@ -256,18 +256,29 @@ fun HomeScreen(
                                     },
                                     modifier = Modifier
                                         .width(horizontalLazyGridItemWidth)
-                                        .clickable {
-                                            if (song!!.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    YouTubeQueue(
-                                                        WatchEndpoint(videoId = song!!.id),
-                                                        song!!.toMediaMetadata()
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (song!!.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
+                                                } else {
+                                                    playerConnection.playQueue(
+                                                        YouTubeQueue(
+                                                            WatchEndpoint(videoId = song!!.id),
+                                                            song!!.toMediaMetadata()
+                                                        )
                                                     )
-                                                )
+                                                }
+                                            },
+                                            onLongClick = {
+                                                menuState.show {
+                                                    SongMenu(
+                                                        originalSong = song!!,
+                                                        navController = navController,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
                                             }
-                                        }
+                                        )
                                 )
                             }
                         }

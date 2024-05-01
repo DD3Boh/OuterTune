@@ -3,6 +3,7 @@ package com.dd3boh.outertune.ui.screens.playlist
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -501,18 +502,29 @@ fun OnlinePlaylistScreen(
                                         }
                                     },
                                     modifier = Modifier
-                                        .clickable {
-                                            if (song.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    YouTubeQueue(
-                                                        song.endpoint ?: WatchEndpoint(videoId = song.id),
-                                                        song.toMediaMetadata()
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (song.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
+                                                } else {
+                                                    playerConnection.playQueue(
+                                                        YouTubeQueue(
+                                                            song.endpoint ?: WatchEndpoint(videoId = song.id),
+                                                            song.toMediaMetadata()
+                                                        )
                                                     )
-                                                )
+                                                }
+                                            },
+                                            onLongClick = {
+                                                menuState.show {
+                                                    YouTubeSongMenu(
+                                                        song = song,
+                                                        navController = navController,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
                                             }
-                                        }
+                                        )
                                         .animateItemPlacement()
                                 )
                             },
