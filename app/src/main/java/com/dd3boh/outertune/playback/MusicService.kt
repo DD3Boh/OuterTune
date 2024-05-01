@@ -524,6 +524,7 @@ class MusicService : MediaLibraryService(),
         if (playbackState == STATE_IDLE) {
             currentQueue = EmptyQueue
             player.shuffleModeEnabled = false
+            queuePlaylistId = null
             queueTitle = null
         }
     }
