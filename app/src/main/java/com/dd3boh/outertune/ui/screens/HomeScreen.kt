@@ -186,7 +186,8 @@ fun HomeScreen(
                                     is PlaylistItem -> queuePlaylistId == item.id
                                     is AlbumItem -> queuePlaylistId == item.playlistId
                                     is ArtistItem -> (queuePlaylistId == item.radioEndpoint?.playlistId ||
-                                                    queuePlaylistId == item.shuffleEndpoint?.playlistId)
+                                                    queuePlaylistId == item.shuffleEndpoint?.playlistId ||
+                                                    queuePlaylistId == item.playEndpoint?.playlistId)
                                     else -> false
                                 },
                             )
