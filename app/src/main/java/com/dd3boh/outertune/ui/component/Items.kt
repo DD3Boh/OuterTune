@@ -1198,6 +1198,7 @@ fun YouTubeGridItem(
 fun YouTubeCardItem(
     item: YTItem,
     modifier: Modifier = Modifier,
+    isActive: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
 ) {
@@ -1251,16 +1252,25 @@ fun YouTubeCardItem(
             )
         }
 
-        PlayingIndicatorBox(
-            isActive = isPlaying,
-            playWhenReady = isPlaying,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .padding(6.dp)
-                .background(
+        AnimatedVisibility(
+            visible = isActive,
+            enter = fadeIn(tween(500)),
+            exit = fadeOut(tween(500))
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.padding(8.dp).background(
                     color = Color.Transparent,
                     shape = RoundedCornerShape(ThumbnailCornerRadius)
+                ).size(20.dp)
+            ) {
+                PlayingIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.height(18.dp),
+                    barWidth = 3.dp,
+                    isPlaying = isPlaying
                 )
-        )
+            }
+        }
     }
 }

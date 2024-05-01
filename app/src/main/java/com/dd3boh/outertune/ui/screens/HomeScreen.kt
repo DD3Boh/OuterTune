@@ -182,7 +182,8 @@ fun HomeScreen(
                                         else -> {}
                                     }
                                 },
-                                isPlaying = when (item) {
+                                isPlaying = isPlaying,
+                                isActive = when (item) {
                                     is PlaylistItem -> queuePlaylistId == item.id
                                     is AlbumItem -> queuePlaylistId == item.playlistId
                                     is ArtistItem -> (queuePlaylistId == item.radioEndpoint?.playlistId ||
