@@ -603,30 +603,32 @@ var bitmapCache = ArrayList<CachedBitmap>()
  *
  * @param path Full path of audio file
  */
-fun getLocalThumbnail(path: String?): Bitmap? {
-    if (path == null) {
-        return null
+fun getLocalThumbnail(path: String?): Deferred<Bitmap?> {
+    return CoroutineScope(Dispatchers.IO).async {
+        if (path == null) {
+            return@async null
+        }
+
+        // get cached image
+        try {
+            return@async CachedBitmap.retrieveImage(path)
+        } catch (_: NoSuchElementException) {
+        }
+
+
+        val mData = MediaMetadataRetriever()
+        mData.setDataSource(path)
+
+        val image: Bitmap? = try {
+            val art = mData.embeddedPicture
+            BitmapFactory.decodeByteArray(art, 0, art!!.size)
+        } catch (e: Exception) {
+            null
+        }
+
+        CachedBitmap.cache(path, image)
+        return@async image
     }
-
-    // get cached image
-    try {
-        return CachedBitmap.retrieveImage(path)
-    } catch (_: NoSuchElementException) {
-    }
-
-
-    val mData = MediaMetadataRetriever()
-    mData.setDataSource(path)
-
-    val image: Bitmap? = try {
-        val art = mData.embeddedPicture
-        BitmapFactory.decodeByteArray(art, 0, art!!.size)
-    } catch (e: Exception) {
-        null
-    }
-
-    CachedBitmap.cache(path, image)
-    return image
 }
 
 

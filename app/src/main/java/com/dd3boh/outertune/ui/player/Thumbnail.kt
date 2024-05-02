@@ -25,6 +25,7 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
+import com.dd3boh.outertune.ui.component.AsyncLocalImage
 import com.dd3boh.outertune.ui.component.Lyrics
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.rememberPreference
@@ -64,25 +65,25 @@ fun Thumbnail(
                     .fillMaxSize()
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
-                AsyncImage(
-                    model = if (mediaMetadata?.isLocal == true) getLocalThumbnail(mediaMetadata!!.localPath)
-                            else mediaMetadata?.thumbnailUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(ThumbnailCornerRadius * 2))
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = { offset ->
-                                    if (offset.x < size.width / 2) {
-                                        playerConnection.player.seekBack()
-                                    } else {
-                                        playerConnection.player.seekForward()
-                                    }
-                                }
-                            )
-                        }
-                )
+                if (mediaMetadata?.isLocal == true) {
+                    // local thumbnail arts
+                    AsyncLocalImage(
+                        image = { getLocalThumbnail(mediaMetadata!!.localPath) },
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    )
+                } else {
+                    // YTM thumbnail arts
+                    AsyncImage(
+                        model = mediaMetadata?.thumbnailUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    )
+                }
             }
         }
 
