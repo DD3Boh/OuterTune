@@ -28,6 +28,7 @@ import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
+import com.dd3boh.outertune.constants.NewInterfaceKey
 import com.dd3boh.outertune.constants.PureBlackKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
@@ -47,6 +48,7 @@ fun AppearanceSettings(
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(DefaultOpenTabKey, defaultValue = NavigationTab.HOME)
     val (lyricsPosition, onLyricsPositionChange) = rememberEnumPreference(LyricsTextPositionKey, defaultValue = LyricsPosition.CENTER)
+    val (newInterfaceStyle, onNewInterfaceStyleChange) = rememberPreference(key = NewInterfaceKey, defaultValue = true)
 
     Column(
         Modifier
@@ -77,6 +79,12 @@ fun AppearanceSettings(
             icon = { Icon(Icons.Rounded.Contrast, null) },
             checked = pureBlack,
             onCheckedChange = onPureBlackChange
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.new_interface)) },
+            icon = { Icon(Icons.Rounded.Palette, null) },
+            checked = newInterfaceStyle,
+            onCheckedChange = onNewInterfaceStyleChange
         )
         EnumListPreference(
             title = { Text(stringResource(R.string.default_open_tab)) },
