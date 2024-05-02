@@ -692,9 +692,9 @@ class MainActivity : ComponentActivity() {
                                 composable("settings/player/local") {
                                     LocalPlayerSettings(navController, scrollBehavior, this@MainActivity, database)
                                 }
-//                                composable("settings/experimental") {
-//                                    ExperimentalSettings(navController, scrollBehavior, this@MainActivity, database)
-//                                }
+                                composable("settings/experimental") {
+                                    ExperimentalSettings(navController, scrollBehavior, this@MainActivity, database)
+                                }
                                 composable("settings/about") {
                                     AboutScreen(navController, scrollBehavior)
                                 }
