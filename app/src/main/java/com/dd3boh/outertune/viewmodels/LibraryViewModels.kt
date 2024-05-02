@@ -192,6 +192,12 @@ class LibraryPlaylistsViewModel @Inject constructor(
 }
 
 @HiltViewModel
+class LibraryViewModel @Inject constructor(
+    @ApplicationContext context: Context,
+    database: MusicDatabase,
+) : ViewModel() {}
+
+@HiltViewModel
 class ArtistSongsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,

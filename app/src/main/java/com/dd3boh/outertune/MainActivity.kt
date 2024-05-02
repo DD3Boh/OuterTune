@@ -87,6 +87,7 @@ import com.dd3boh.outertune.ui.screens.artist.ArtistSongsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
+import com.dd3boh.outertune.ui.screens.library.LibraryScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.OnlinePlaylistScreen
@@ -160,6 +161,7 @@ class MainActivity : ComponentActivity() {
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
+            val newInterfaceStyle by rememberPreference(NewInterfaceKey, defaultValue = true)
             val isSystemInDarkTheme = isSystemInDarkTheme()
             val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
                 if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
@@ -211,7 +213,7 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
-                    val navigationItems = remember { Screens.MainScreens }
+                    val navigationItems = if (!newInterfaceStyle) Screens.MainScreens else Screens.MainScreensNew
                     val defaultOpenTab = remember {
                         dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
                     }
@@ -485,6 +487,9 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable(Screens.Playlists.route) {
                                     LibraryPlaylistsScreen(navController)
+                                }
+                                composable(Screens.Library.route) {
+                                    LibraryScreen(navController)
                                 }
                                 composable("history") {
                                     HistoryScreen(navController)
