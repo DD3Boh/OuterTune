@@ -272,6 +272,8 @@
 
     <string name="experimental_settings_title">Experimental</string>
 
+
+    <string name="local_player_settings_title">Local Player</string>
 <!--scanner page settings-->
     <string name="local_scanner_title">Local scanner</string>
 

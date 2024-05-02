@@ -689,9 +689,12 @@ class MainActivity : ComponentActivity() {
                                 composable("settings/backup_restore") {
                                     BackupAndRestore(navController, scrollBehavior)
                                 }
-                                composable("settings/experimental") {
-                                    ExperimentalSettings(navController, scrollBehavior, this@MainActivity, database)
+                                composable("settings/player/local") {
+                                    LocalPlayerSettings(navController, scrollBehavior, this@MainActivity, database)
                                 }
+//                                composable("settings/experimental") {
+//                                    ExperimentalSettings(navController, scrollBehavior, this@MainActivity, database)
+//                                }
                                 composable("settings/about") {
                                     AboutScreen(navController, scrollBehavior)
                                 }
