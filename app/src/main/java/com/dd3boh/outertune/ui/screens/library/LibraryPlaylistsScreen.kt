@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -53,6 +54,7 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.CONTENT_TYPE_PLAYLIST
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
+import com.dd3boh.outertune.constants.LibraryViewTypeKey
 import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSortType
 import com.dd3boh.outertune.constants.PlaylistSortTypeKey
@@ -81,13 +83,18 @@ import kotlinx.coroutines.launch
 fun LibraryPlaylistsScreen(
     navController: NavController,
     viewModel: LibraryPlaylistsViewModel = hiltViewModel(),
+    libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
 
     val coroutineScope = rememberCoroutineScope()
 
-    var viewType by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
+    val viewTypeLocal by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
+    val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+
+    var viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSortTypeKey, PlaylistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSortDescendingKey, true)
 
@@ -152,20 +159,24 @@ fun LibraryPlaylistsScreen(
                 color = MaterialTheme.colorScheme.secondary
             )
 
-            IconButton(
-                onClick = {
-                    viewType = viewType.toggle()
-                },
-                modifier = Modifier.padding(start = 6.dp, end = 6.dp)
-            ) {
-                Icon(
-                    imageVector =
-                    when (viewType) {
-                        LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
-                        LibraryViewType.GRID -> Icons.Rounded.GridView
+            if (libraryFilterContent == null) {
+                IconButton(
+                    onClick = {
+                        viewType = viewType.toggle()
                     },
-                    contentDescription = null
-                )
+                    modifier = Modifier.padding(start = 6.dp, end = 6.dp)
+                ) {
+                    Icon(
+                        imageVector =
+                        when (viewType) {
+                            LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
+                            LibraryViewType.GRID -> Icons.Rounded.GridView
+                        },
+                        contentDescription = null
+                    )
+                }
+            } else {
+                Spacer(Modifier.size(16.dp))
             }
         }
     }
@@ -179,6 +190,13 @@ fun LibraryPlaylistsScreen(
                     state = lazyListState,
                     contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
                 ) {
+                    item(
+                        key = "filter",
+                        contentType = CONTENT_TYPE_HEADER
+                    ) {
+                        libraryFilterContent?.let { it() }
+                    }
+
                     item(
                         key = "header",
                         contentType = CONTENT_TYPE_HEADER
@@ -261,6 +279,14 @@ fun LibraryPlaylistsScreen(
                     columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
                     contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
                 ) {
+                    item(
+                        key = "filter",
+                        span = { GridItemSpan(maxLineSpan) },
+                        contentType = CONTENT_TYPE_HEADER
+                    ) {
+                        libraryFilterContent?.let { it() }
+                    }
+
                     item(
                         key = "header",
                         span = { GridItemSpan(maxLineSpan) },

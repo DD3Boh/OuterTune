@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -27,6 +30,7 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
+import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryFilter
 import com.dd3boh.outertune.constants.LibraryFilterKey
 import com.dd3boh.outertune.constants.LibraryViewType
@@ -66,20 +70,22 @@ fun LibraryScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            IconButton(
-                onClick = {
-                    viewType = viewType.toggle()
-                },
-                modifier = Modifier.padding(end = 6.dp)
-            ) {
-                Icon(
-                    imageVector =
-                    when (viewType) {
-                        LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
-                        LibraryViewType.GRID -> Icons.Rounded.GridView
+            if (filter != LibraryFilter.SONGS) {
+                IconButton(
+                    onClick = {
+                        viewType = viewType.toggle()
                     },
-                    contentDescription = null
-                )
+                    modifier = Modifier.padding(end = 6.dp)
+                ) {
+                    Icon(
+                        imageVector =
+                        when (viewType) {
+                            LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
+                            LibraryViewType.GRID -> Icons.Rounded.GridView
+                        },
+                        contentDescription = null
+                    )
+                }
             }
         }
     }
@@ -87,16 +93,63 @@ fun LibraryScreen(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            state = lazyListState,
-            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
-        ) {
-            item(
-                key = "filter",
-                contentType = CONTENT_TYPE_HEADER
-            ) {
-                filterContent()
-            }
+        when (filter) {
+            LibraryFilter.ALBUMS ->
+                LibraryAlbumsScreen(
+                    navController,
+                    libraryFilterContent = filterContent
+                )
+
+            LibraryFilter.ARTISTS ->
+                LibraryArtistsScreen(
+                    navController,
+                    libraryFilterContent = filterContent
+                )
+
+            LibraryFilter.PLAYLISTS ->
+                LibraryPlaylistsScreen(
+                    navController,
+                    libraryFilterContent = filterContent
+                )
+
+            LibraryFilter.SONGS ->
+                LibrarySongsScreen(
+                    navController,
+                    libraryFilterContent = filterContent
+                )
+
+            LibraryFilter.ALL ->
+                when (viewType) {
+                    LibraryViewType.LIST -> {
+                        LazyColumn(
+                            state = lazyListState,
+                            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+                        ) {
+                            item(
+                                key = "filter",
+                                contentType = CONTENT_TYPE_HEADER
+                            ) {
+                                filterContent()
+                            }
+                        }
+                    }
+
+                    LibraryViewType.GRID -> {
+                        LazyVerticalGrid(
+                            state = lazyGridState,
+                            columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
+                            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+                        ) {
+                            item(
+                                key = "filter",
+                                span = { GridItemSpan(maxLineSpan) },
+                                contentType = CONTENT_TYPE_HEADER
+                            ) {
+                                filterContent()
+                            }
+                        }
+                    }
+                }
         }
     }
 }

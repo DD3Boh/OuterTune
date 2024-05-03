@@ -50,6 +50,8 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_ARTIST
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
+import com.dd3boh.outertune.constants.LibraryViewTypeKey
+import com.dd3boh.outertune.constants.PlaylistViewTypeKey
 import com.dd3boh.outertune.ui.component.ArtistGridItem
 import com.dd3boh.outertune.ui.component.ArtistListItem
 import com.dd3boh.outertune.ui.component.ChipsRow
@@ -65,10 +67,16 @@ import com.dd3boh.outertune.viewmodels.LibraryArtistsViewModel
 fun LibraryArtistsScreen(
     navController: NavController,
     viewModel: LibraryArtistsViewModel = hiltViewModel(),
+    libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
     val menuState = LocalMenuState.current
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
-    var viewType by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
+
+    val viewTypeLocal by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
+    val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+
+    var viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
 
@@ -149,7 +157,7 @@ fun LibraryArtistsScreen(
                         key = "filter",
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        filterContent()
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(
@@ -204,7 +212,7 @@ fun LibraryArtistsScreen(
                         span = { GridItemSpan(maxLineSpan) },
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        filterContent()
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(

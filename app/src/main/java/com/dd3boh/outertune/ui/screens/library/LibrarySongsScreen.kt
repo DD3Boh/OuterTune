@@ -52,6 +52,7 @@ import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
 fun LibrarySongsScreen(
     navController: NavController,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
+    libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val menuState = LocalMenuState.current
@@ -74,6 +75,22 @@ fun LibrarySongsScreen(
         }
     }
 
+    val filterContent = @Composable {
+        ChipsRow(
+            chips = listOf(
+                SongFilter.LIKED to stringResource(R.string.filter_liked),
+                SongFilter.LIBRARY to stringResource(R.string.filter_library),
+                SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
+            ),
+            currentValue = filter,
+            onValueUpdate = {
+                filter = it
+                if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
+                else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+            }
+        )
+    }
+
     val lazyListState = rememberLazyListState()
 
     Box(
@@ -87,19 +104,7 @@ fun LibrarySongsScreen(
                 key = "filter",
                 contentType = CONTENT_TYPE_HEADER
             ) {
-                ChipsRow(
-                    chips = listOf(
-                        SongFilter.LIKED to stringResource(R.string.filter_liked),
-                        SongFilter.LIBRARY to stringResource(R.string.filter_library),
-                        SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
-                    ),
-                    currentValue = filter,
-                    onValueUpdate = {
-                        filter = it
-                        if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
-                        else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
-                    }
-                )
+                libraryFilterContent?.let { it() } ?: filterContent()
             }
 
             item(

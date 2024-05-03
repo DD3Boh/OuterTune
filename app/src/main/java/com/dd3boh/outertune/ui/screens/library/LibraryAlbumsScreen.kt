@@ -58,6 +58,7 @@ import com.dd3boh.outertune.viewmodels.LibraryAlbumsViewModel
 fun LibraryAlbumsScreen(
     navController: NavController,
     viewModel: LibraryAlbumsViewModel = hiltViewModel(),
+    libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -65,7 +66,12 @@ fun LibraryAlbumsScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIKED)
-    var viewType by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
+
+    val viewTypeLocal by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
+    val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+
+    var viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+
     val (sortType, onSortTypeChange) = rememberEnumPreference(AlbumSortTypeKey, AlbumSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(AlbumSortDescendingKey, true)
 
@@ -150,7 +156,7 @@ fun LibraryAlbumsScreen(
                         key = "filter",
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        filterContent()
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(
@@ -207,7 +213,7 @@ fun LibraryAlbumsScreen(
                         span = { GridItemSpan(maxLineSpan) },
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        filterContent()
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(
