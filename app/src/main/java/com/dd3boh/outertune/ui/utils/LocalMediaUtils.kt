@@ -20,6 +20,7 @@ import com.zionhuang.innertube.YouTube.search
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,18 @@ import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 
 const val TAG = "LocalMediaUtils"
+
+/**
+ * TODO: Implement a proper, much faster scanner
+ * Currently ffmpeg-kit will fail if you hit it with too many calls too quickly.
+ * You can try more than 8 jobs, but good luck.
+ * For easier debugging, uncomment SCANNER_CRASH_AT_FIRST_ERROR to stop at first error
+ */
+const val SCANNER_CRASH_AT_FIRST_ERROR = false
+const val SYNC_SCANNER = false // true will not use multithreading for scanner
+const val MAX_CONCURRENT_JOBS = 8
+@OptIn(ExperimentalCoroutinesApi::class)
+val scannerSession = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_JOBS)
 
 // stuff to make this work
 const val sdcardRoot = "/storage/emulated/0/"
@@ -303,6 +316,7 @@ fun scanLocal(context: Context, database: MusicDatabase) =
  * the current directory is /storage/emulated/0/ a.k.a, /sdcard.
  * For example, to scan under Music and Documents/songs --> ("Music", Documents/songs)
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 fun scanLocal(
     context: Context,
     database: MusicDatabase,
@@ -362,60 +376,47 @@ fun scanLocal(
 //                    var generes
 //                    var year: String? = null
 
-                    try {
-                        val artistString = getExtraMetadata("$sdcardRoot$path$name")
+                    var retries: Int = 0
+                    while (retries < 2) {
 
-                        // parse the data
-                        artistString.artists.split(';').forEach { artistVal ->
+                        try {
+                            val artistString = getExtraMetadata("$sdcardRoot$path$name")
+                            // parse data
+                            artistString.artists.split(';').forEach { artistVal ->
 
-                            // check if this artist exists in DB already
-                            val databaseArtistMatch =
-                                runBlocking(Dispatchers.IO) {
-                                    database.searchArtists(artistVal).first().filter { artist ->
-                                        return@filter artist.artist.name == artistVal
+                                // check if this artist exists in DB already
+                                val databaseArtistMatch =
+                                    runBlocking(Dispatchers.IO) {
+                                        database.searchArtists(artistVal).first().filter { artist ->
+                                            return@filter artist.artist.name == artistVal
+                                        }
                                     }
+
+                                Log.d("WTF", "ARTIST FOUND IN DB???" + databaseArtistMatch.size)
+
+                                if (databaseArtistMatch.isEmpty()) {
+                                    youtubeArtistLookup(artistVal)?.let { artists.add(it) }
+                                } else {
+                                    artists.add(
+                                        databaseArtistMatch.first().artist
+                                    )
                                 }
-
-                            Log.d("WTF", "ARTIST FOUND IN DB???" + databaseArtistMatch.size)
-
-                            if (databaseArtistMatch.isEmpty()) {
-
-                                // hit up YouTube for artist
-                                runBlocking(Dispatchers.IO) {
-                                    search(artistVal, YouTube.SearchFilter.FILTER_ARTIST).onSuccess { result ->
-
-                                        val foundArtist = result.items.first()
-                                        artists.add(
-                                            ArtistEntity(
-                                                // I pray the first search result will always be the correct one
-                                                foundArtist.id,
-                                                foundArtist.title,
-                                                foundArtist.thumbnail
-                                            )
-                                        )
-                                        Log.d("WTF", "WHO TF IS THIS" + result.items.first().title)
-
-                                    }.onFailure {
-                                        // create temporary artists
-                                        Log.w("WTF", "FAILED TO ADD ARTIST, genrtaing one ")
-                                        artists.add(ArtistEntity(ArtistEntity.generateArtistId(), artistVal))
-                                    }
-                                }
-                            } else {
-                                artists.add(
-                                    databaseArtistMatch.first().artist
-                                )
                             }
-                        }
-                    } catch (e: Exception) {
-                        // fallback on media store
-                        Log.d(
-                            "WTF",
-                            "ERROR READING ARTIST METADATA, ${e.message} falling back on MediaStore for $path$name"
-                        )
-                        e.printStackTrace()
+                        } catch (e: Exception) {
+                            if (SCANNER_CRASH_AT_FIRST_ERROR) {
+                                throw Exception("HALTING AT FIRST SCANNER ERROR " + e.message) // debug
+                            }
+                            // fallback on media store
+                            Log.d(
+                                "WTF",
+                                "ERROR READING ARTIST METADATA, ${e.message} falling back on MediaStore for $path$name"
+                            )
+                            e.printStackTrace()
 
-                        artists.add(ArtistEntity(artistID, artist, isLocal = true))
+                            artists.add(ArtistEntity(artistID, artist, isLocal = true))
+                        }
+
+                    retries += 1
                     }
 
                     return Song(
@@ -435,11 +436,19 @@ fun scanLocal(
                     )
                 }
 
-                scannerJobs.add(async(Dispatchers.IO) { advancedScan() })
+                if (!SYNC_SCANNER) {
+                    scannerJobs.add(
+                        async(scannerSession) { advancedScan() }
+                    )
+                } else {
+                    advancedScan()
+                }
             }
         }
 
-        scannerJobs.awaitAll()
+        if (!SYNC_SCANNER) {
+            scannerJobs.awaitAll()
+        }
     }
 
     // build the tree
@@ -455,6 +464,41 @@ fun scanLocal(
 
     cachedDirectoryTree = newDirectoryStructure
     return MutableStateFlow(newDirectoryStructure)
+}
+
+/**
+ * Search for an artist on YouTube Music.
+ *
+ * If no artist is found, create one locally
+ */
+fun youtubeArtistLookup(query: String): ArtistEntity? {
+    var ytmResult: ArtistEntity? = null
+
+    // hit up YouTube for artist
+    runBlocking(Dispatchers.IO) {
+        try {
+            search(query, YouTube.SearchFilter.FILTER_ARTIST).onSuccess { result ->
+
+                val foundArtist = result.items.first()
+                ytmResult = ArtistEntity(
+                    // I pray the first search result will always be the correct one
+                    foundArtist.id,
+                    foundArtist.title,
+                    foundArtist.thumbnail
+                )
+
+                Log.d("WTF", "WHO TF IS THIS" + result.items.first().title)
+            }.onFailure {
+                throw Exception("Failed to search on YouTube Music")
+            }
+        } catch (e: Exception) {
+            // create temporary artists
+            Log.w("WTF", "FAILED TO RETRIEVE ARTIST, generating one ")
+            ytmResult = ArtistEntity(ArtistEntity.generateArtistId(), query, isLocal = true)
+        }
+    }
+
+    return ytmResult
 }
 
 /**
@@ -550,7 +594,7 @@ fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
 fun compareSong(a: Song, b: Song, matchStrength: ScannerSensitivity, strictFileNames: Boolean): Boolean {
     if (strictFileNames &&
         (a.song.localPath?.substringBeforeLast('/') !=
-                b.song.localPath?.substringBeforeLast('/'))
+            b.song.localPath?.substringBeforeLast('/'))
     ) {
         return false
     }
@@ -558,10 +602,10 @@ fun compareSong(a: Song, b: Song, matchStrength: ScannerSensitivity, strictFileN
     return when (matchStrength) {
         ScannerSensitivity.LEVEL_1 -> a.song.title == b.song.title
         ScannerSensitivity.LEVEL_2 -> a.song.title == b.song.title &&
-                compareArtist(a.artists, b.artists)
+            compareArtist(a.artists, b.artists)
 
         ScannerSensitivity.LEVEL_3 -> a.song.title == b.song.title &&
-                compareArtist(a.artists, b.artists) && true // album compare go here
+            compareArtist(a.artists, b.artists) && true // album compare go here
     }
 }
 
