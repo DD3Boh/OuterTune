@@ -455,7 +455,12 @@ fun scanLocal(
                         async(scannerSession) { advancedScan() }
                     )
                 } else {
-                    advancedScan()
+                    val toInsert = advancedScan()
+                    advancedScan().song.localPath?.let { s ->
+                        newDirectoryStructure.insert(
+                            s.substringAfter(sdcardRoot), toInsert
+                        )
+                    }
                 }
             }
         }
@@ -469,9 +474,9 @@ fun scanLocal(
     scannerJobs.forEach {
         val song = it.getCompleted()
 
-        song.song.localPath?.let { it ->
+        song.song.localPath?.let { s ->
             newDirectoryStructure.insert(
-                it.substringAfter(sdcardRoot), song
+                s.substringAfter(sdcardRoot), song
             )
         }
     }
