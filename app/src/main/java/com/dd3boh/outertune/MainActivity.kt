@@ -145,7 +145,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val permissionLauncher =
+    // storage permission helpers
+    private val mediaPermissionLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
+    else Manifest.permission.READ_EXTERNAL_STORAGE
+
+    val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
 //                Toast.makeText(this, "Granted", Toast.LENGTH_SHORT).show()
@@ -170,13 +174,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // Check if the permission is not granted
-        // i have no idea is this will explode under API 33
-        if (checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            // Request the permission using the permission launcher
-            permissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
-        }
 
         setContent {
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
@@ -213,6 +210,19 @@ class MainActivity : ComponentActivity() {
                         }
                     } else DefaultThemeColor
                 }
+            }
+
+            // Check if the permissions for local media access
+            // i have no idea is this will explode under API 33
+            if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_GRANTED) {
+                val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = false)
+                if (autoScan == true) {
+//                    Not implemented
+                }
+            }
+            else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
+                // Request the permission using the permission launcher
+                permissionLauncher.launch(mediaPermissionLevel)
             }
 
             OuterTuneTheme(

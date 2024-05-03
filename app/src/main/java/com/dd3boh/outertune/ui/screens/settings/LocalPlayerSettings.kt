@@ -1,6 +1,10 @@
 package com.dd3boh.outertune.ui.screens.settings
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
@@ -69,12 +74,13 @@ fun LocalPlayerSettings(
     context: Context,
     database: MusicDatabase,
 ) {
+    val mediaPermissionLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
+    else Manifest.permission.READ_EXTERNAL_STORAGE
 
     val coroutineScope = rememberCoroutineScope()
     var isScannerActive by remember { mutableStateOf(false) }
     var isScanFinished by remember { mutableStateOf(false) }
-
-
+    var mediaPermission by remember { mutableStateOf(true) }
 
     val (scannerType, onScannerTypeChange) = rememberEnumPreference(
         key = ScannerTypeKey,
@@ -121,6 +127,27 @@ fun LocalPlayerSettings(
                         return@Button
                     }
 
+                    // check permission
+                    if (context.checkSelfPermission(mediaPermissionLevel)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+                        Toast.makeText(
+                            context,
+                            "The scanner requires storage permissions",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        requestPermissions(context as Activity,
+                            arrayOf(mediaPermissionLevel), PackageManager.PERMISSION_GRANTED
+                        )
+
+                        mediaPermission = false
+                        return@Button
+                    } else if (context.checkSelfPermission(mediaPermissionLevel)
+                        == PackageManager.PERMISSION_GRANTED) {
+                        mediaPermission = true
+                    }
+
                     isScanFinished = false
                     isScannerActive = true
 
@@ -143,6 +170,8 @@ fun LocalPlayerSettings(
                         "Scanning..."
                     } else if (isScanFinished) {
                         "Scan complete"
+                    } else if (!mediaPermission) {
+                        "No Permission"
                     } else {
                         "Scan"
                     }
