@@ -72,7 +72,8 @@ val projection = arrayOf(
  * @param path root directory start
  */
 class DirectoryTree(path: String) {
-    var currentDir = path // file name, id
+    var currentDir = path // file name
+    var parent: String = ""
 
     // folder contents
     var subdirs = ArrayList<DirectoryTree>()
@@ -122,6 +123,7 @@ class DirectoryTree(path: String) {
 
         if (existingSubdir == null) {
             val tree = DirectoryTree(subdirPath)
+            tree.parent = parent + "/$currentDir"
             tree.insert(tmppath.substringAfter('/'), song)
             subdirs.add(tree)
 

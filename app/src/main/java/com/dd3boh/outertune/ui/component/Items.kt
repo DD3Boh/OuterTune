@@ -71,6 +71,7 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
 import androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
 import androidx.media3.exoplayer.offline.Download.STATE_QUEUED
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
@@ -96,7 +97,9 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
+import com.dd3boh.outertune.ui.menu.FolderMenu
 import com.dd3boh.outertune.ui.theme.extractThemeColor
+import com.dd3boh.outertune.ui.utils.DirectoryTree
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
@@ -383,7 +386,45 @@ fun SongListItem(
 fun SongFolderItem(
     folderTitle: String,
     modifier: Modifier = Modifier,
-) = ListItem( title = folderTitle, thumbnailContent = { Icon(
+) = ListItem(title = folderTitle, thumbnailContent = {
+        Icon(
+            Icons.Rounded.Folder,
+            contentDescription = null,
+            modifier = modifier.size(48.dp)
+        )
+    },
+    modifier = modifier
+)
+
+@Composable
+fun SongFolderItem(
+    folderTitle: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier,
+) = ListItem(title = folderTitle,
+    subtitle = subtitle,
+    thumbnailContent = {
+        Icon(
+            Icons.Rounded.Folder,
+            contentDescription = null,
+            modifier = modifier.size(48.dp)
+        )
+    },
+    modifier = modifier
+)
+
+@Composable
+fun SongFolderItem(
+    folder: DirectoryTree,
+    modifier: Modifier = Modifier,
+    folderTitle: String? = null,
+    menuState: MenuState,
+    navController: NavController,
+    subtitle: String
+) = ListItem(title = folderTitle ?: folder.currentDir,
+    subtitle = subtitle,
+    thumbnailContent = {
+    Icon(
         Icons.Rounded.Folder,
         contentDescription = null,
         modifier = modifier.size(48.dp)
@@ -392,13 +433,13 @@ fun SongFolderItem(
     trailingContent = {
         androidx.compose.material3.IconButton(
             onClick = {
-//                menuState.show {
-//                    SongMenu(
-//                        originalSong = song,
-//                        navController = navController,
-//                        onDismiss = menuState::dismiss
-//                    )
-//                }
+                menuState.show {
+                    FolderMenu(
+                        folder = folder,
+                        navController = navController,
+                        onDismiss = menuState::dismiss
+                    )
+                }
             }
         ) {
             Icon(

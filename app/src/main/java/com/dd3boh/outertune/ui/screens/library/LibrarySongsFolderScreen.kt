@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.DividerDefaults
@@ -52,6 +51,8 @@ import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.ui.utils.getDirectorytree
+import com.dd3boh.outertune.utils.joinByBullet
+import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
@@ -148,13 +149,16 @@ fun LibrarySongsFolderScreen(
                 contentType = { _, _ -> CONTENT_TYPE_FOLDER }
             ) { index, folder ->
                 SongFolderItem(
-                    folderTitle = folder.currentDir,
+                    folder = folder,
+                    subtitle = "${folder.toList().size} Song${if (folder.toList().size > 1) "" else "s"}",
                     modifier = Modifier
                         .combinedClickable {
                             // navigate to next page
                             currDir = folderStack.push(folder)
                         }
-                        .animateItemPlacement()
+                        .animateItemPlacement(),
+                    menuState = menuState,
+                    navController = navController
                 )
             }
 
