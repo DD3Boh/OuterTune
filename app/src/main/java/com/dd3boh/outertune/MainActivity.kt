@@ -713,7 +713,8 @@ class MainActivity : ComponentActivity() {
                                             Screens.Songs.route,
                                             Screens.Artists.route,
                                             Screens.Albums.route,
-                                            Screens.Playlists.route
+                                            Screens.Playlists.route,
+                                            Screens.Library.route
                                         )
                                     ) {
                                         IconButton(
