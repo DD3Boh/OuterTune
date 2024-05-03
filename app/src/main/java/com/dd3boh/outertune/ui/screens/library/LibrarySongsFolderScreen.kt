@@ -11,14 +11,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,10 +43,12 @@ import com.dd3boh.outertune.constants.*
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.playback.queues.ListQueue
+import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
+import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.ui.utils.getDirectorytree
@@ -55,6 +61,7 @@ import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
 @Composable
 fun LibrarySongsFolderScreen(
     navController: NavController,
+    scrollBehavior: TopAppBarScrollBehavior,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -62,6 +69,8 @@ fun LibrarySongsFolderScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val folderStack = remember { viewModel.folderPositionStack }
     val (flatSubfolders) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
 
@@ -81,9 +90,11 @@ fun LibrarySongsFolderScreen(
     }
 
     // content to load for this page
-    var currDir by remember { mutableStateOf(
-        if (flatSubfolders) folderStack.peek().toFlattenedTree() else folderStack.peek()
-        )}
+    var currDir by remember {
+        mutableStateOf(
+            if (flatSubfolders) folderStack.peek().toFlattenedTree() else folderStack.peek()
+        )
+    }
 
 
     Box(
@@ -127,33 +138,6 @@ fun LibrarySongsFolderScreen(
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
-
-
-                TopAppBar(
-                    title = {
-                        if (viewModel.folderPositionStack.size > 1) Text(currDir.currentDir)
-                        else Text("Internal Storage")
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                // go back to songs screen when backing out of root
-                                if (folderStack.size == 0) {
-                                    navController.navigate(Screens.Songs.route)
-                                    return@IconButton
-                                }
-                                currDir = folderStack.pop()
-                            }
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = null
-                            )
-                        }
-                    },
-//                            scrollBehavior = scrollBehavior
-                )
-
             }
 
 
@@ -161,7 +145,7 @@ fun LibrarySongsFolderScreen(
             itemsIndexed(
                 items = currDir.subdirs,
                 key = { _, item -> item.uid },
-                contentType = { _, _ -> CONTENT_TYPE_SONG }
+                contentType = { _, _ -> CONTENT_TYPE_FOLDER }
             ) { index, folder ->
                 SongFolderItem(
                     folderTitle = folder.currentDir,
@@ -178,7 +162,6 @@ fun LibrarySongsFolderScreen(
             if (currDir.subdirs.size > 0 && currDir.files.size > 0) {
                 item(
                     key = "folder_songs_divider",
-
                 ) {
                     HorizontalDivider(
                         thickness = DividerDefaults.Thickness,
@@ -193,45 +176,100 @@ fun LibrarySongsFolderScreen(
                 key = { _, item -> item.id },
                 contentType = { _, _ -> CONTENT_TYPE_SONG }
             ) { index, song ->
-                SongListItem(
-                    song = song,
-                    isActive = song.id == mediaMetadata?.id,
-                    isPlaying = isPlaying,
-                    trailingContent = {
-                        IconButton(
-                            onClick = {
-                                menuState.show {
-                                    SongMenu(
-                                        originalSong = song,
-                                        navController = navController,
-                                        onDismiss = menuState::dismiss
+                SwipeToQueueBox(
+                    item = song.toMediaItem(),
+                    content = {
+                        SongListItem(
+                            song = song,
+                            isActive = song.id == mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                            trailingContent = {
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            SongMenu(
+                                                originalSong = song,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = null
                                     )
                                 }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Rounded.MoreVert,
-                                contentDescription = null
-                            )
-                        }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable {
+                                    if (song.id == mediaMetadata?.id) {
+                                        playerConnection.player.togglePlayPause()
+                                    } else {
+                                        playerConnection.playQueue(ListQueue(title = context.getString(R.string.queue_all_songs),
+                                            // I surely hope this applies to all in this folder...
+                                            items = currDir
+                                                .toList()
+                                                .map { it.toMediaItem() }, startIndex = index))
+                                    }
+                                }
+                                .animateItemPlacement()
+                        )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable {
-                            if (song.id == mediaMetadata?.id) {
-                                playerConnection.player.togglePlayPause()
-                            } else {
-                                playerConnection.playQueue(ListQueue(title = context.getString(R.string.queue_all_songs),
-                                    // I surely hope this applies to all in this folder...
-                                    items = currDir
-                                        .toList()
-                                        .map { it.toMediaItem() }, startIndex = index))
-                            }
-                        }
-                        .animateItemPlacement()
+                    snackbarHostState = snackbarHostState
                 )
             }
         }
 
+        HideOnScrollFAB(
+            visible = currDir.toList().isNotEmpty(),
+            lazyListState = lazyListState,
+            icon = Icons.Rounded.Shuffle,
+            onClick = {
+                playerConnection.playQueue(
+                    ListQueue(
+                        title = context.getString(R.string.queue_all_songs),
+                        items = currDir.toList().shuffled().map { it.toMediaItem() }
+                    )
+                )
+            }
+        )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                .align(Alignment.BottomCenter)
+        )
     }
+
+    TopAppBar(
+        title = {
+            if (viewModel.folderPositionStack.size > 1) Text(currDir.currentDir)
+            else Text("Internal Storage")
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = {
+                    println("Bakc cluicked")
+                    // go back to songs screen when backing out of root
+                    if (folderStack.size <= 1) {
+                        navController.navigate(Screens.Songs.route)
+                        return@IconButton
+                    }
+                    folderStack.pop()
+                    currDir = folderStack.peek()
+                    println("popped " + currDir.currentDir)
+                }
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = null
+                )
+            }
+        },
+        scrollBehavior = scrollBehavior,
+        modifier = Modifier.padding(0.dp)
+    )
 }
