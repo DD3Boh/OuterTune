@@ -198,8 +198,8 @@ fun LocalPlayerSettings(
         }
 
         Row(
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 Icons.Rounded.WarningAmber,
@@ -211,8 +211,7 @@ fun LocalPlayerSettings(
                 stringResource(R.string.scanner_warning),
                 color = MaterialTheme.colorScheme.secondary,
                 fontSize = 12.sp,
-                modifier = Modifier
-                    .padding(horizontal = 15.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
 
