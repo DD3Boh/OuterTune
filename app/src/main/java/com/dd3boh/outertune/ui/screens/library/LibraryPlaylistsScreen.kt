@@ -1,14 +1,11 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,11 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
-import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.PlaylistAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +34,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -61,19 +54,15 @@ import com.dd3boh.outertune.constants.PlaylistSortTypeKey
 import com.dd3boh.outertune.constants.PlaylistViewTypeKey
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
+import com.dd3boh.outertune.ui.component.LibraryPlaylistGridItem
+import com.dd3boh.outertune.ui.component.LibraryPlaylistListItem
 import com.dd3boh.outertune.ui.component.LocalMenuState
-import com.dd3boh.outertune.ui.component.PlaylistGridItem
-import com.dd3boh.outertune.ui.component.PlaylistListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.TextFieldDialog
-import com.dd3boh.outertune.ui.menu.PlaylistMenu
-import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.PlaylistItem
-import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.Dispatchers
 import java.time.LocalDateTime
 import kotlinx.coroutines.launch
@@ -209,57 +198,12 @@ fun LibraryPlaylistsScreen(
                         key = { it.id },
                         contentType = { CONTENT_TYPE_PLAYLIST }
                     ) { playlist ->
-                        PlaylistListItem(
+                        LibraryPlaylistListItem(
+                            navController = navController,
+                            menuState = menuState,
+                            coroutineScope = coroutineScope,
                             playlist = playlist,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            playlist.playlist.isEditable?.let { isEditable ->
-                                                if (isEditable || playlist.songCount != 0) {
-                                                    PlaylistMenu(
-                                                        playlist = playlist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss
-                                                    )
-                                                } else {
-                                                    playlist.playlist.browseId?.let { browseId ->
-                                                        YouTubePlaylistMenu(
-                                                            playlist = PlaylistItem(
-                                                                id = browseId,
-                                                                title = playlist.playlist.name,
-                                                                author = null,
-                                                                songCountText = null,
-                                                                thumbnail = playlist.thumbnails[0],
-                                                                playEndpoint = WatchEndpoint(playlistId = browseId, params = playlist.playlist.playEndpointParams),
-                                                                shuffleEndpoint = WatchEndpoint(playlistId = browseId, params = playlist.playlist.shuffleEndpointParams),
-                                                                radioEndpoint = WatchEndpoint(playlistId = "RDAMPL$browseId", params = playlist.playlist.radioEndpointParams),
-                                                                isEditable = false
-                                                            ),
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (playlist.playlist.isEditable == false && playlist.songCount == 0 && playlist.playlist.remoteSongCount != 0)
-                                        navController.navigate("online_playlist/${playlist.playlist.browseId}")
-                                    else
-                                        navController.navigate("local_playlist/${playlist.id}")
-                                }
-                                .animateItemPlacement()
+                            modifier = Modifier.animateItemPlacement()
                         )
                     }
                 }
@@ -300,60 +244,12 @@ fun LibraryPlaylistsScreen(
                         key = { it.id },
                         contentType = { CONTENT_TYPE_PLAYLIST }
                     ) { playlist ->
-                        PlaylistGridItem(
+                        LibraryPlaylistGridItem(
+                            navController = navController,
+                            menuState = menuState,
+                            coroutineScope = coroutineScope,
                             playlist = playlist,
-                            fillMaxWidth = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        if (playlist.playlist.isEditable == false && playlist.songCount == 0 && playlist.playlist.remoteSongCount != 0)
-                                            navController.navigate("online_playlist/${playlist.playlist.browseId}")
-                                        else
-                                            navController.navigate("local_playlist/${playlist.id}")
-                                    },
-                                    onLongClick = {
-                                        menuState.show {
-                                            playlist.playlist.isEditable?.let { isEditable ->
-                                                if (isEditable || playlist.songCount != 0) {
-                                                    PlaylistMenu(
-                                                        playlist = playlist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss
-                                                    )
-                                                } else {
-                                                    playlist.playlist.browseId?.let { browseId ->
-                                                        YouTubePlaylistMenu(
-                                                            playlist = PlaylistItem(
-                                                                id = browseId,
-                                                                title = playlist.playlist.name,
-                                                                author = null,
-                                                                songCountText = null,
-                                                                thumbnail = playlist.thumbnails[0],
-                                                                playEndpoint = WatchEndpoint(
-                                                                    playlistId = browseId,
-                                                                    params = playlist.playlist.playEndpointParams
-                                                                ),
-                                                                shuffleEndpoint = WatchEndpoint(
-                                                                    playlistId = browseId,
-                                                                    params = playlist.playlist.shuffleEndpointParams
-                                                                ),
-                                                                radioEndpoint = WatchEndpoint(
-                                                                    playlistId = "RDAMPL$browseId",
-                                                                    params = playlist.playlist.radioEndpointParams
-                                                                ),
-                                                                isEditable = false
-                                                            ),
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                )
-                                .animateItemPlacement()
+                            modifier = Modifier.animateItemPlacement()
                         )
                     }
                 }

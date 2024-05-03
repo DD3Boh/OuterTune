@@ -1,14 +1,11 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -19,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,13 +46,11 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
 import com.dd3boh.outertune.constants.LibraryViewTypeKey
-import com.dd3boh.outertune.constants.PlaylistViewTypeKey
-import com.dd3boh.outertune.ui.component.ArtistGridItem
-import com.dd3boh.outertune.ui.component.ArtistListItem
 import com.dd3boh.outertune.ui.component.ChipsRow
+import com.dd3boh.outertune.ui.component.LibraryArtistGridItem
+import com.dd3boh.outertune.ui.component.LibraryArtistListItem
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SortHeader
-import com.dd3boh.outertune.ui.menu.ArtistMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryArtistsViewModel
@@ -172,32 +165,12 @@ fun LibraryArtistsScreen(
                         key = { it.id },
                         contentType = { CONTENT_TYPE_ARTIST }
                     ) { artist ->
-                        ArtistListItem(
-                            artist = artist,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            ArtistMenu(
-                                                originalArtist = artist,
-                                                coroutineScope = coroutineScope,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate("artist/${artist.id}")
-                                }
-                                .animateItemPlacement()
+                        LibraryArtistListItem(
+                            navController = navController,
+                            menuState = menuState,
+                            coroutineScope = coroutineScope,
+                            modifier = Modifier.animateItemPlacement(),
+                            artist = artist
                         )
                     }
                 }
@@ -228,26 +201,12 @@ fun LibraryArtistsScreen(
                         key = { it.id },
                         contentType = { CONTENT_TYPE_ARTIST }
                     ) { artist ->
-                        ArtistGridItem(
-                            artist = artist,
-                            fillMaxWidth = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        navController.navigate("artist/${artist.id}")
-                                    },
-                                    onLongClick = {
-                                        menuState.show {
-                                            ArtistMenu(
-                                                originalArtist = artist,
-                                                coroutineScope = coroutineScope,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                )
-                                .animateItemPlacement()
+                        LibraryArtistGridItem(
+                            navController = navController,
+                            menuState = menuState,
+                            coroutineScope = coroutineScope,
+                            modifier = Modifier.animateItemPlacement(),
+                            artist = artist
                         )
                     }
                 }
