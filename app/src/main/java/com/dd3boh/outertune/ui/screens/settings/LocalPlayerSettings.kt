@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
@@ -44,6 +45,8 @@ import com.dd3boh.outertune.constants.AutomaticScannerKey
 import com.dd3boh.outertune.constants.ScannerSensitivity
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
+import com.dd3boh.outertune.constants.ScannerType
+import com.dd3boh.outertune.constants.ScannerTypeKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
@@ -73,6 +76,10 @@ fun LocalPlayerSettings(
 
 
 
+    val (scannerType, onScannerTypeChange) = rememberEnumPreference(
+        key = ScannerTypeKey,
+        defaultValue = ScannerType.MEDIASTORE
+    )
     val (scannerSensitivity, onScannerSensitivityChange) = rememberEnumPreference(
         key = ScannerSensitivityKey,
         defaultValue = ScannerSensitivity.LEVEL_2
@@ -123,7 +130,7 @@ fun LocalPlayerSettings(
                         Toast.LENGTH_SHORT
                     ).show()
                     coroutineScope.launch(Dispatchers.IO) {
-                        val directoryStructure = scanLocal(context, database).value
+                        val directoryStructure = scanLocal(context, database, scannerType).value
                         syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions)
 
                         isScannerActive = false
@@ -183,6 +190,21 @@ fun LocalPlayerSettings(
 
         PreferenceGroupTitle(
             title = stringResource(R.string.scanner_settings_title)
+        )
+
+        // scanner type
+        EnumListPreference(
+            title = { Text(stringResource(R.string.scanner_type_title)) },
+            icon = { Icon(Icons.Rounded.Speed, null) },
+            selectedValue = scannerType,
+            onValueSelected = onScannerTypeChange,
+            valueText = {
+                when (it) {
+                    ScannerType.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
+                    ScannerType.FFPROBEKIT_ASYNC -> stringResource(R.string.scanner_type_ffprobekit_async)
+                    ScannerType.FFPROBEKIT_SYNC -> stringResource(R.string.scanner_type_ffprobekit_sync)
+                }
+            }
         )
 
         // scanner sensitivity

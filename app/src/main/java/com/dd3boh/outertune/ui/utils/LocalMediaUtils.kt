@@ -8,6 +8,7 @@ import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import android.util.Log
 import com.dd3boh.outertune.constants.ScannerSensitivity
+import com.dd3boh.outertune.constants.ScannerType
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
@@ -37,9 +38,10 @@ const val TAG = "LocalMediaUtils"
  * You can try more than 8 jobs, but good luck.
  * For easier debugging, uncomment SCANNER_CRASH_AT_FIRST_ERROR to stop at first error
  */
-const val SCANNER_CRASH_AT_FIRST_ERROR = false
+const val SCANNER_CRASH_AT_FIRST_ERROR = false // crash at ffprobe-kit errors only
 const val SYNC_SCANNER = false // true will not use multithreading for scanner
 const val MAX_CONCURRENT_JOBS = 8
+
 @OptIn(ExperimentalCoroutinesApi::class)
 val scannerSession = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_JOBS)
 
@@ -304,8 +306,8 @@ fun refreshLocal(
 /**
  * Dev uses
  */
-fun scanLocal(context: Context, database: MusicDatabase) =
-    scanLocal(context, database, testScanPaths)
+fun scanLocal(context: Context, database: MusicDatabase, scannerType: ScannerType) =
+    scanLocal(context, database, testScanPaths, scannerType)
 
 /**
  * Scan MediaStore for songs given a list of paths to scan for.
@@ -320,7 +322,8 @@ fun scanLocal(context: Context, database: MusicDatabase) =
 fun scanLocal(
     context: Context,
     database: MusicDatabase,
-    scanPaths: ArrayList<String>
+    scanPaths: ArrayList<String>,
+    scannerType: ScannerType
 ): MutableStateFlow<DirectoryTree> {
     val newDirectoryStructure = DirectoryTree(sdcardRoot)
     val contentResolver: ContentResolver = context.contentResolver
@@ -369,7 +372,12 @@ fun scanLocal(
 
                 /**
                  * Compiles a song with all it's necessary metadata. Unlike MediaStore,
-                 * this also supports, multiple genres (TBD), and a few extra details (TBD).
+                 * this also supports multiple artists, multiple genres (TBD), and a few extra details (TBD).
+                 *
+                 * If sync ffprobe-kit is preferred, it will be used, else when using ffprobe-kit, it is
+                 * assumed to be async
+                 *
+                 * The debug options are enabled, they will override any conflicting options
                  */
                 fun advancedScan(): Song {
                     var artists = ArrayList<ArtistEntity>()
@@ -380,6 +388,10 @@ fun scanLocal(
                     while (retries < 2) {
 
                         try {
+                            if (scannerType == ScannerType.MEDIASTORE) {
+                                throw Exception("Forcing MediaStore fallback")
+                            }
+
                             val artistString = getExtraMetadata("$sdcardRoot$path$name")
                             // parse data
                             artistString.artists.split(';').forEach { artistVal ->
@@ -403,7 +415,7 @@ fun scanLocal(
                                 }
                             }
                         } catch (e: Exception) {
-                            if (SCANNER_CRASH_AT_FIRST_ERROR) {
+                            if (SCANNER_CRASH_AT_FIRST_ERROR && scannerType != ScannerType.MEDIASTORE) {
                                 throw Exception("HALTING AT FIRST SCANNER ERROR " + e.message) // debug
                             }
                             // fallback on media store
@@ -416,7 +428,7 @@ fun scanLocal(
                             artists.add(ArtistEntity(artistID, artist, isLocal = true))
                         }
 
-                    retries += 1
+                        retries += 1
                     }
 
                     return Song(
@@ -436,7 +448,7 @@ fun scanLocal(
                     )
                 }
 
-                if (!SYNC_SCANNER) {
+                if (!SYNC_SCANNER && scannerType == ScannerType.FFPROBEKIT_ASYNC) {
                     scannerJobs.add(
                         async(scannerSession) { advancedScan() }
                     )

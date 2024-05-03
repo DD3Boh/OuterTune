@@ -292,6 +292,12 @@
     <string name="scanner_sensitivity_L2">Match title and artists</string>
     <string name="scanner_sensitivity_L3">Match title, artists, albums</string>
 
+    <string name="scanner_type_title">Scanner Speed</string>
+    <string name="scanner_type_description">Choose scanner type</string>
+    <string name="scanner_type_mediastore">MediaStore (very fast, inaccurate artist tags)</string>
+    <string name="scanner_type_ffprobekit_sync">FFProbe async (slow, mostly accurate tags)</string>
+    <string name="scanner_type_ffprobekit_async">FFProbe sync (extremely slow, highly accurate)</string>
+
 <!--Folders-->
     <string name="flat_subfolders_title">Flatten subfolders</string>
     <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>

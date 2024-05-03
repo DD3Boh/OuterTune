@@ -135,6 +135,7 @@ val AccountChannelHandleKey = stringPreferencesKey("accountChannelHandle")
 
 //  local playback
 val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
+val ScannerTypeKey = stringPreferencesKey("scannerType")
 
 /**
  * Specify how strict the metadata scanner should be
@@ -143,6 +144,15 @@ enum class ScannerSensitivity {
     LEVEL_1, // Title only
     LEVEL_2, // Title and artists
     LEVEL_3, // Title, artists, albums
+}
+
+/**
+ *
+ */
+enum class ScannerType {
+    MEDIASTORE,
+    FFPROBEKIT_SYNC,
+    FFPROBEKIT_ASYNC,
 }
 
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
