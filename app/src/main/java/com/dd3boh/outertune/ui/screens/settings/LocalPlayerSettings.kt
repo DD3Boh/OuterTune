@@ -99,13 +99,13 @@ fun LocalPlayerSettings(
             .verticalScroll(rememberScrollState())
     ) {
         // automatic scanner
-        SwitchPreference(
-            title = { Text(stringResource(R.string.auto_scanner_title)) },
-            description = stringResource(R.string.auto_scanner_description),
-            icon = { Icon(Icons.Rounded.Autorenew, null) },
-            checked = autoScan,
-            onCheckedChange = onAutoScanChange
-        )
+//        SwitchPreference(
+//            title = { Text(stringResource(R.string.auto_scanner_title)) },
+//            description = stringResource(R.string.auto_scanner_description),
+//            icon = { Icon(Icons.Rounded.Autorenew, null) },
+//            checked = autoScan,
+//            onCheckedChange = onAutoScanChange
+//        )
 
 
         PreferenceGroupTitle(

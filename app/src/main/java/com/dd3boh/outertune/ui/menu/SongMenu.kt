@@ -280,7 +280,7 @@ fun SongMenu(
             }
         }
 
-        if (song.song.isLocal != true) {
+        if (song.song.isLocal != true)
             DownloadGridMenu(
                 state = download?.state,
                 onDownload = {
@@ -304,7 +304,7 @@ fun SongMenu(
                     )
                 }
             )
-        }
+
 
         GridMenuItem(
             icon = R.drawable.artist,
@@ -317,7 +317,7 @@ fun SongMenu(
                 showSelectArtistDialog = true
             }
         }
-        if (song.song.albumId != null) {
+        if (song.song.albumId != null && song.song.isLocal != true) {
             GridMenuItem(
                 icon = Icons.Rounded.Album,
                 title = R.string.view_album
@@ -326,18 +326,19 @@ fun SongMenu(
                 navController.navigate("album/${song.song.albumId}")
             }
         }
-        GridMenuItem(
-            icon = Icons.Rounded.Share,
-            title = R.string.share
-        ) {
-            onDismiss()
-            val intent = Intent().apply {
-                action = Intent.ACTION_SEND
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
+        if (song.song.isLocal != true)
+            GridMenuItem(
+                icon = Icons.Rounded.Share,
+                title = R.string.share
+            ) {
+                onDismiss()
+                val intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
+                }
+                context.startActivity(Intent.createChooser(intent, null))
             }
-            context.startActivity(Intent.createChooser(intent, null))
-        }
         if (event != null) {
             GridMenuItem(
                 icon = Icons.Rounded.Delete,
