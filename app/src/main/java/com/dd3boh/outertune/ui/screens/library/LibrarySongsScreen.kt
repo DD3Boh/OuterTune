@@ -52,7 +52,7 @@ import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
 fun LibrarySongsScreen(
     navController: NavController,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
-    libraryFilterContent: @Composable() (() -> Unit)? = null,
+    libraryFilterContent: @Composable() (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val menuState = LocalMenuState.current
@@ -62,6 +62,8 @@ fun LibrarySongsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     var filter by rememberEnumPreference(SongFilterKey, SongFilter.LIKED)
+    libraryFilterContent?.let { filter = SongFilter.LIBRARY }
+
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
