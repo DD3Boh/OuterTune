@@ -72,6 +72,10 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
+import com.dd3boh.outertune.constants.SongSortDescendingKey
+import com.dd3boh.outertune.constants.SongSortType
+import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
@@ -85,9 +89,12 @@ import com.dd3boh.outertune.ui.component.EmptyPlaceholder
 import com.dd3boh.outertune.ui.component.FontSizeRange
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongListItem
+import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.makeTimeString
+import com.dd3boh.outertune.utils.rememberEnumPreference
+import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -105,6 +112,9 @@ fun AutoPlaylistScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val songs by viewModel.songs.collectAsState()
+
+    val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
+    val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
     val playlistId = viewModel.playlistId
     val playlist = PlaylistEntity(
@@ -388,7 +398,40 @@ fun AutoPlaylistScreen(
                 }
             }
 
-            if (songs.isEmpty()) {
+            if (songs.isNotEmpty()) {
+                item(
+                    key = "header",
+                    contentType = CONTENT_TYPE_HEADER
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        SortHeader(
+                            sortType = sortType,
+                            sortDescending = sortDescending,
+                            onSortTypeChange = onSortTypeChange,
+                            onSortDescendingChange = onSortDescendingChange,
+                            sortTypeText = { sortType ->
+                                when (sortType) {
+                                    SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                    SongSortType.NAME -> R.string.sort_by_name
+                                    SongSortType.ARTIST -> R.string.sort_by_artist
+                                    SongSortType.PLAY_TIME -> R.string.sort_by_play_time
+                                }
+                            }
+                        )
+
+                        Spacer(Modifier.weight(1f))
+
+                        Text(
+                            text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
+            } else {
                 item {
                     EmptyPlaceholder(
                         icon = Icons.Rounded.MusicNote,
@@ -396,6 +439,8 @@ fun AutoPlaylistScreen(
                     )
                 }
             }
+
+
 
             itemsIndexed(
                 items = mutableSongs,

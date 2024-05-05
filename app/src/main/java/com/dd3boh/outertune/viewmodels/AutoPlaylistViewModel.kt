@@ -10,10 +10,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.offline.Download
+import com.dd3boh.outertune.constants.SongSortDescendingKey
 import com.dd3boh.outertune.constants.SongSortType
+import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.db.MusicDatabase
-import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.extensions.reversed
+import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
+import com.dd3boh.outertune.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -46,15 +51,35 @@ class AutoPlaylistViewModel @Inject constructor(
         }
     ).asStateFlow()
 
-    val songs: StateFlow<List<Song>> = when (playlistId) {
-        "liked" -> database.likedSongs(SongSortType.CREATE_DATE, true)
-        "downloaded" -> downloadUtil.downloads.flatMapLatest { downloads ->
-            database.allSongs()
-                .flowOn(Dispatchers.IO)
-                .map { songs ->
-                    songs.filter { downloads[it.id]?.state == Download.STATE_COMPLETED }
-                }.map { songs -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }}
+    val songs = context.dataStore.data
+        .map {
+            it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE) to (it[SongSortDescendingKey] ?: true)
         }
-        else -> MutableStateFlow(emptyList())
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            when (playlistId) {
+                "liked" -> database.likedSongs(sortType, descending)
+                "downloaded" -> downloadUtil.downloads.flatMapLatest { downloads ->
+                    database.allSongs()
+                        .flowOn(Dispatchers.IO)
+                        .map { songs ->
+                            songs.filter {
+                                downloads[it.id]?.state == Download.STATE_COMPLETED
+                            }
+                        }
+                        .map { songs ->
+                            when (sortType) {
+                                SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
+                                SongSortType.NAME -> songs.sortedBy { it.song.title }
+                                SongSortType.ARTIST -> songs.sortedBy { song ->
+                                    song.artists.joinToString(separator = "") { it.name }
+                                }
+
+                                SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
+                            }.reversed(descending)
+                        }
+                }
+                else -> MutableStateFlow(emptyList())
+            }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 }
