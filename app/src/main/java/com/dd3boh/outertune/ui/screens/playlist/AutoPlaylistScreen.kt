@@ -111,6 +111,7 @@ fun AutoPlaylistScreen(
         id = playlistId,
         name = when (playlistId) {
             "liked" -> stringResource(id = R.string.liked_songs)
+            "downloaded" -> stringResource(id = R.string.downloaded_songs)
             else -> ""
         },
         browseId = when (playlistId) {

@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.Icon
@@ -88,6 +89,7 @@ fun LibraryScreen(
     val allItems by viewModel.allItems.collectAsState()
 
     val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
+    val downloadedPlaylist = PlaylistEntity(id = "downloaded", name = stringResource(id = R.string.downloaded_songs))
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
@@ -207,6 +209,22 @@ fun LibraryScreen(
                                 )
                             }
 
+                            item(
+                                key = downloadedPlaylist.id,
+                                contentType = { CONTENT_TYPE_PLAYLIST }
+                            ) {
+                                AutoPlaylistListItem(
+                                    playlist = downloadedPlaylist,
+                                    thumbnail = Icons.Rounded.CloudDownload,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate("auto_playlist/${downloadedPlaylist.id}")
+                                        }
+                                        .animateItemPlacement()
+                                )
+                            }
+
                             items(
                                 items = allItems,
                                 key = { it.id },
@@ -285,6 +303,23 @@ fun LibraryScreen(
                                         .fillMaxWidth()
                                         .clickable {
                                             navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                        }
+                                        .animateItemPlacement()
+                                )
+                            }
+
+                            item(
+                                key = downloadedPlaylist.id,
+                                contentType = { CONTENT_TYPE_PLAYLIST }
+                            ) {
+                                AutoPlaylistGridItem(
+                                    playlist = downloadedPlaylist,
+                                    thumbnail = Icons.Rounded.CloudDownload,
+                                    fillMaxWidth = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate("auto_playlist/${downloadedPlaylist.id}")
                                         }
                                         .animateItemPlacement()
                                 )
