@@ -1,10 +1,12 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -16,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +37,7 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.CONTENT_TYPE_LIST
+import com.dd3boh.outertune.constants.CONTENT_TYPE_PLAYLIST
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryFilter
 import com.dd3boh.outertune.constants.LibraryFilterKey
@@ -45,6 +49,9 @@ import com.dd3boh.outertune.constants.LibraryViewTypeKey
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
+import com.dd3boh.outertune.db.entities.PlaylistEntity
+import com.dd3boh.outertune.ui.component.AutoPlaylistGridItem
+import com.dd3boh.outertune.ui.component.AutoPlaylistListItem
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.LibraryAlbumGridItem
 import com.dd3boh.outertune.ui.component.LibraryAlbumListItem
@@ -79,6 +86,8 @@ fun LibraryScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(LibrarySortDescendingKey, true)
 
     val allItems by viewModel.allItems.collectAsState()
+
+    val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
@@ -182,6 +191,22 @@ fun LibraryScreen(
                                 headerContent()
                             }
 
+                            item(
+                                key = likedPlaylist.id,
+                                contentType = { CONTENT_TYPE_PLAYLIST }
+                            ) {
+                                AutoPlaylistListItem(
+                                    playlist = likedPlaylist,
+                                    thumbnail = Icons.Rounded.Favorite,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                        }
+                                        .animateItemPlacement()
+                                )
+                            }
+
                             items(
                                 items = allItems,
                                 key = { it.id },
@@ -246,6 +271,23 @@ fun LibraryScreen(
                                 contentType = CONTENT_TYPE_HEADER
                             ) {
                                 headerContent()
+                            }
+
+                            item(
+                                key = likedPlaylist.id,
+                                contentType = { CONTENT_TYPE_PLAYLIST }
+                            ) {
+                                AutoPlaylistGridItem(
+                                    playlist = likedPlaylist,
+                                    thumbnail = Icons.Rounded.Favorite,
+                                    fillMaxWidth = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                        }
+                                        .animateItemPlacement()
+                                )
                             }
 
                             items(

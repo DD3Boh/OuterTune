@@ -50,11 +50,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,6 +90,7 @@ import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
+import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
@@ -115,11 +118,11 @@ inline fun ListItem(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = if (isActive)
-                modifier
-                    .height(ListItemHeight)
-                    .padding(horizontal = 8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(color = MaterialTheme.colorScheme.secondaryContainer)
+            modifier
+                .height(ListItemHeight)
+                .padding(horizontal = 8.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(color = MaterialTheme.colorScheme.secondaryContainer)
             else
                 modifier
             .height(ListItemHeight)
@@ -697,6 +700,69 @@ fun AlbumGridItem(
                     tint = Color.White
                 )
             }
+        }
+    },
+    thumbnailShape = RoundedCornerShape(ThumbnailCornerRadius),
+    fillMaxWidth = fillMaxWidth,
+    modifier = modifier
+)
+
+@Composable
+fun AutoPlaylistListItem(
+    playlist: PlaylistEntity,
+    thumbnail: ImageVector,
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable RowScope.() -> Unit = {},
+) = ListItem(
+    title = playlist.name,
+    subtitle = stringResource(id = R.string.auto_playlist),
+    thumbnailContent = {
+        Box(
+            modifier = Modifier
+                .size(ListThumbnailSize)
+                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
+                    shape = RoundedCornerShape(ThumbnailCornerRadius))
+        ) {
+            Icon(
+                imageVector = thumbnail,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(ListThumbnailSize / 2 + 4.dp)
+                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
+                    .align(Alignment.Center)
+            )
+        }
+    },
+    trailingContent = trailingContent,
+    modifier = modifier
+)
+
+@Composable
+fun AutoPlaylistGridItem(
+    playlist: PlaylistEntity,
+    thumbnail: ImageVector,
+    modifier: Modifier = Modifier,
+    badges: @Composable RowScope.() -> Unit = { },
+    fillMaxWidth: Boolean = false,
+) = GridItem(
+    title = playlist.name,
+    subtitle = stringResource(id = R.string.auto_playlist),
+    badges = badges,
+    thumbnailContent = {
+        val width = maxWidth
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
+        ) {
+            Icon(
+                imageVector = thumbnail,
+                contentDescription = null,
+                tint = LocalContentColor.current.copy(alpha = 0.8f),
+                modifier = Modifier
+                    .size(width / 2 + 10.dp)
+                    .align(Alignment.Center)
+            )
         }
     },
     thumbnailShape = RoundedCornerShape(ThumbnailCornerRadius),

@@ -89,6 +89,7 @@ import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
+import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.OnlinePlaylistScreen
 import com.dd3boh.outertune.ui.screens.search.LocalSearchScreen
@@ -588,6 +589,16 @@ class MainActivity : ComponentActivity() {
                                     )
                                 ) {
                                     LocalPlaylistScreen(navController, scrollBehavior)
+                                }
+                                composable(
+                                    route = "auto_playlist/{playlistId}",
+                                    arguments = listOf(
+                                        navArgument("playlistId") {
+                                            type = NavType.StringType
+                                        }
+                                    )
+                                ) {
+                                    AutoPlaylistScreen(navController, scrollBehavior)
                                 }
                                 composable(
                                     route = "youtube_browse/{browseId}?params={params}",
