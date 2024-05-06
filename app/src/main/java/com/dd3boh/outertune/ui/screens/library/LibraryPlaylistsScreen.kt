@@ -202,36 +202,38 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    item(
-                        key = likedPlaylist.id,
-                        contentType = { CONTENT_TYPE_PLAYLIST }
-                    ) {
-                        AutoPlaylistListItem(
-                            playlist = likedPlaylist,
-                            thumbnail = Icons.Rounded.Favorite,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate("auto_playlist/${likedPlaylist.id}")
-                                }
-                                .animateItemPlacement()
-                        )
-                    }
+                    if (libraryFilterContent != null) {
+                        item(
+                            key = likedPlaylist.id,
+                            contentType = { CONTENT_TYPE_PLAYLIST }
+                        ) {
+                            AutoPlaylistListItem(
+                                playlist = likedPlaylist,
+                                thumbnail = Icons.Rounded.Favorite,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                    }
+                                    .animateItemPlacement()
+                            )
+                        }
 
-                    item(
-                        key = downloadedPlaylist.id,
-                        contentType = { CONTENT_TYPE_PLAYLIST }
-                    ) {
-                        AutoPlaylistListItem(
-                            playlist = downloadedPlaylist,
-                            thumbnail = Icons.Rounded.CloudDownload,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate("auto_playlist/${downloadedPlaylist.id}")
-                                }
-                                .animateItemPlacement()
-                        )
+                        item(
+                            key = downloadedPlaylist.id,
+                            contentType = { CONTENT_TYPE_PLAYLIST }
+                        ) {
+                            AutoPlaylistListItem(
+                                playlist = downloadedPlaylist,
+                                thumbnail = Icons.Rounded.CloudDownload,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navController.navigate("auto_playlist/${downloadedPlaylist.id}")
+                                    }
+                                    .animateItemPlacement()
+                            )
+                        }
                     }
 
                     items(
@@ -280,38 +282,40 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    item(
-                        key = likedPlaylist.id,
-                        contentType = { CONTENT_TYPE_PLAYLIST }
-                    ) {
-                        AutoPlaylistGridItem(
-                            playlist = likedPlaylist,
-                            thumbnail = Icons.Rounded.Favorite,
-                            fillMaxWidth = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate("auto_playlist/${likedPlaylist.id}")
-                                }
-                                .animateItemPlacement()
-                        )
-                    }
+                    if (libraryFilterContent != null) {
+                        item(
+                            key = likedPlaylist.id,
+                            contentType = { CONTENT_TYPE_PLAYLIST }
+                        ) {
+                            AutoPlaylistGridItem(
+                                playlist = likedPlaylist,
+                                thumbnail = Icons.Rounded.Favorite,
+                                fillMaxWidth = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                    }
+                                    .animateItemPlacement()
+                            )
+                        }
 
-                    item(
-                        key = downloadedPlaylist.id,
-                        contentType = { CONTENT_TYPE_PLAYLIST }
-                    ) {
-                        AutoPlaylistGridItem(
-                            playlist = downloadedPlaylist,
-                            thumbnail = Icons.Rounded.CloudDownload,
-                            fillMaxWidth = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate("auto_playlist/${downloadedPlaylist.id}")
-                                }
-                                .animateItemPlacement()
-                        )
+                        item(
+                            key = downloadedPlaylist.id,
+                            contentType = { CONTENT_TYPE_PLAYLIST }
+                        ) {
+                            AutoPlaylistGridItem(
+                                playlist = downloadedPlaylist,
+                                thumbnail = Icons.Rounded.CloudDownload,
+                                fillMaxWidth = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navController.navigate("auto_playlist/${downloadedPlaylist.id}")
+                                    }
+                                    .animateItemPlacement()
+                            )
+                        }
                     }
 
                     items(
