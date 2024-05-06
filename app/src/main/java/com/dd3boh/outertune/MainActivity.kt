@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -413,6 +414,28 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .nestedScroll(searchBarScrollBehavior.nestedScrollConnection)
                         ) {
+                            var transitionDirection = AnimatedContentTransitionScope.SlideDirection.Left
+
+                            if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                                if (navigationItems.fastAny { it.route == previousTab }) {
+                                    val curIndex = navigationItems.indexOf(
+                                        navigationItems.fastFirstOrNull {
+                                            it.route == navBackStackEntry?.destination?.route
+                                        }
+                                    )
+
+                                    val prevIndex = navigationItems.indexOf(
+                                        navigationItems.fastFirstOrNull {
+                                            it.route == previousTab
+                                        }
+                                    )
+
+                                    if (prevIndex > curIndex)
+                                        transitionDirection =
+                                            AnimatedContentTransitionScope.SlideDirection.Right
+                                }
+                            }
+
                             NavHost(
                                 navController = navController,
                                 startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
@@ -424,13 +447,13 @@ class MainActivity : ComponentActivity() {
                                 }.route,
                                 enterTransition = {
                                     slideIntoContainer(
-                                        AnimatedContentTransitionScope.SlideDirection.Left,
+                                        transitionDirection,
                                         animationSpec = tween(200)
                                     )
                                 },
                                 exitTransition = {
                                     slideOutOfContainer(
-                                        AnimatedContentTransitionScope.SlideDirection.Left,
+                                        transitionDirection,
                                         animationSpec = tween(200)
                                     )
                                 },
