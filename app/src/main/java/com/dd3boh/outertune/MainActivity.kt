@@ -298,7 +298,7 @@ class MainActivity : ComponentActivity() {
                     val searchBarScrollBehavior = appBarScrollBehavior(
                         state = rememberTopAppBarState(),
                         canScroll = {
-                            navBackStackEntry?.destination?.route?.startsWith("search/") == false &&
+                            navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } &&
                                     (playerBottomSheetState.isCollapsed || playerBottomSheetState.isDismissed)
                         }
                     )
