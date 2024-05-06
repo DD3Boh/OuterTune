@@ -70,6 +70,7 @@ import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
@@ -96,6 +97,8 @@ import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -107,6 +110,7 @@ fun AutoPlaylistScreen(
     val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
@@ -163,6 +167,12 @@ fun AutoPlaylistScreen(
                     Download.STATE_DOWNLOADING
                 else
                     Download.STATE_STOPPED
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            if (playlistId == "liked") syncUtils.syncLikedSongs()
         }
     }
 
@@ -229,8 +239,10 @@ fun AutoPlaylistScreen(
                         Box(
                             modifier = Modifier
                                 .size(AlbumThumbnailSize)
-                                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
-                                    shape = RoundedCornerShape(ThumbnailCornerRadius))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
+                                    shape = RoundedCornerShape(ThumbnailCornerRadius)
+                                )
                         ) {
                             Icon(
                                 imageVector = thumbnail,
