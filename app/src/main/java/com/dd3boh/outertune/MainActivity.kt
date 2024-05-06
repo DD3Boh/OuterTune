@@ -216,14 +216,27 @@ class MainActivity : ComponentActivity() {
 
                     val navigationItems = if (!newInterfaceStyle) Screens.MainScreens else Screens.MainScreensNew
                     val defaultOpenTab = remember {
-                        dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
+                        if (newInterfaceStyle) dataStore[DefaultOpenTabNewKey].toEnum(defaultValue = NavigationTabNew.HOME)
+                        else dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
                     }
                     val tabOpenedFromShortcut = remember {
+                        // reroute to library page for new layout is handled in NavHost section
                         when (intent?.action) {
-                            ACTION_SONGS -> NavigationTab.SONG
-                            ACTION_ALBUMS -> NavigationTab.ALBUM
-                            ACTION_PLAYLISTS -> NavigationTab.PLAYLIST
+                            ACTION_SONGS -> if (newInterfaceStyle) NavigationTabNew.LIBRARY else NavigationTab.SONG
+                            ACTION_ALBUMS -> if (newInterfaceStyle) NavigationTabNew.LIBRARY else NavigationTab.ALBUM
+                            ACTION_PLAYLISTS -> if (newInterfaceStyle) NavigationTabNew.LIBRARY else NavigationTab.PLAYLIST
                             else -> null
+                        }
+                    }
+                    // setup filters for new layout
+                    if (tabOpenedFromShortcut != null && newInterfaceStyle) {
+                        var filter by rememberEnumPreference(LibraryFilterKey, LibraryFilter.ALL)
+                        filter = when (intent?.action) {
+                            ACTION_SONGS -> LibraryFilter.SONGS
+                            ACTION_ALBUMS -> LibraryFilter.ALBUMS
+                            ACTION_PLAYLISTS -> LibraryFilter.PLAYLISTS
+                            ACTION_SEARCH -> filter // do change filter for search
+                            else -> LibraryFilter.ALL
                         }
                     }
 
@@ -447,6 +460,9 @@ class MainActivity : ComponentActivity() {
                                     NavigationTab.ARTIST -> Screens.Artists
                                     NavigationTab.ALBUM -> Screens.Albums
                                     NavigationTab.PLAYLIST -> Screens.Playlists
+                                    NavigationTabNew.HOME -> Screens.Home
+                                    NavigationTabNew.LIBRARY-> Screens.Library
+                                    else -> Screens.Home
                                 }.route,
                                 enterTransition = {
                                     slideIntoContainer(
