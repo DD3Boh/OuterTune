@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
@@ -421,6 +422,30 @@ class MainActivity : ComponentActivity() {
                                     NavigationTab.ALBUM -> Screens.Albums
                                     NavigationTab.PLAYLIST -> Screens.Playlists
                                 }.route,
+                                enterTransition = {
+                                    slideIntoContainer(
+                                        AnimatedContentTransitionScope.SlideDirection.Left,
+                                        animationSpec = tween(200)
+                                    )
+                                },
+                                exitTransition = {
+                                    slideOutOfContainer(
+                                        AnimatedContentTransitionScope.SlideDirection.Left,
+                                        animationSpec = tween(200)
+                                    )
+                                },
+                                popEnterTransition = {
+                                    slideIntoContainer(
+                                        AnimatedContentTransitionScope.SlideDirection.Right,
+                                        animationSpec = tween(200)
+                                    )
+                                },
+                                popExitTransition = {
+                                    slideOutOfContainer(
+                                        AnimatedContentTransitionScope.SlideDirection.Right,
+                                        animationSpec = tween(200)
+                                    )
+                                },
                                 modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
                             ) {
                                 composable(Screens.Home.route) {
