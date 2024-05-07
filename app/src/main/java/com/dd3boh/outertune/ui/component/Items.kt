@@ -1000,13 +1000,25 @@ fun MediaMetadataListItem(
         makeTimeString(mediaMetadata.duration * 1000L)
     ),
     thumbnailContent = {
-        AsyncImage(
-            model = mediaMetadata.thumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier
-                .size(ListThumbnailSize)
-                .clip(RoundedCornerShape(ThumbnailCornerRadius))
-        )
+        if (mediaMetadata.isLocal == true) {
+            // local thumbnail arts
+            AsyncLocalImage(
+                image = { getLocalThumbnail(mediaMetadata.localPath) },
+                contentDescription = null,
+                modifier = Modifier
+                    .size(ListThumbnailSize)
+                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+            )
+        } else {
+            // YTM thumbnail arts
+            AsyncImage(
+                model = mediaMetadata.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(ListThumbnailSize)
+                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+            )
+        }
 
         PlayingIndicatorBox(
             isActive = isActive,

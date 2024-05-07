@@ -37,7 +37,6 @@ fun Thumbnail(
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val currentView = LocalView.current
-
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val error by playerConnection.error.collectAsState()
 
@@ -67,13 +66,15 @@ fun Thumbnail(
             ) {
                 if (mediaMetadata?.isLocal == true) {
                     // local thumbnail arts
-                    AsyncLocalImage(
-                        image = { getLocalThumbnail(mediaMetadata!!.localPath) },
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                    )
+                    mediaMetadata?.let { // required to re render when song changes
+                        AsyncLocalImage(
+                            image = { getLocalThumbnail(it.localPath) },
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                        )
+                    }
                 } else {
                     // YTM thumbnail arts
                     AsyncImage(

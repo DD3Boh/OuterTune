@@ -17,27 +17,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Non-blocking image
  */
 @Composable
 fun AsyncLocalImage(
-    image: () -> Deferred<Bitmap?>,
+    image: () -> Bitmap?,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
     var imageBitmapState by remember { mutableStateOf<ImageBitmap?>(null) }
-
-    LaunchedEffect(Unit) {
-        // Call the suspend function to get the Deferred<Bitmap>
-        val deferred = image.invoke()
-
+    LaunchedEffect(image) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val bitmap = deferred.await()
+                val bitmap = image.invoke()
                 if (bitmap != null) {
-                    imageBitmapState = bitmap.asImageBitmap()
+                    withContext(Dispatchers.Main) {
+                        imageBitmapState = bitmap.asImageBitmap()
+                    }
                 }
             } catch (e: Exception) {
 //                e.printStackTrace()

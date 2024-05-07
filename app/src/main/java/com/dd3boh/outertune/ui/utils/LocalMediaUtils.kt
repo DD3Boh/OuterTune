@@ -666,18 +666,16 @@ var bitmapCache = ArrayList<CachedBitmap>()
  *
  * @param path Full path of audio file
  */
-fun getLocalThumbnail(path: String?): Deferred<Bitmap?> {
-    return CoroutineScope(Dispatchers.IO).async {
+fun getLocalThumbnail(path: String?): Bitmap? {
         if (path == null) {
-            return@async null
+            return null
         }
 
         // get cached image
         try {
-            return@async CachedBitmap.retrieveImage(path)
+            return CachedBitmap.retrieveImage(path)
         } catch (_: NoSuchElementException) {
         }
-
 
         val mData = MediaMetadataRetriever()
         mData.setDataSource(path)
@@ -690,8 +688,7 @@ fun getLocalThumbnail(path: String?): Deferred<Bitmap?> {
         }
 
         CachedBitmap.cache(path, image)
-        return@async image
-    }
+        return image
 }
 
 
