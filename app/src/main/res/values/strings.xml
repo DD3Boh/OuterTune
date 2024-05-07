@@ -302,4 +302,8 @@
     <string name="flat_subfolders_title">Flatten subfolders</string>
     <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
 
+<!--Lyrics-->
+    <string name="lyrics_multiline_title">Read multiline lyrics</string>
+    <string name="lyrics_multiline_description">Treat all the lines between sync points as one lyric text</string>
+    <string name="lyrics_trim_title">Remove spaces around lyrics</string>
 </resources>

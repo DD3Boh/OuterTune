@@ -158,6 +158,8 @@ enum class ScannerType {
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
 val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
 val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
+val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
+val LyricTrimKey = booleanPreferencesKey("lyricTrim")
 
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",
