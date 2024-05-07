@@ -336,6 +336,19 @@ class MainActivity : ComponentActivity() {
                         navController.currentBackStackEntry?.destination?.route?.let {
                             setPreviousTab(it)
                         }
+
+                        /*
+                         * If the current back stack entry matches one of the main screens, but
+                         * is not in the current navigation items, we need to remove the entry
+                         * to avoid entering a "ghost" screen.
+                         */
+                        if (Screens.MainScreens.fastAny { it.route == navBackStackEntry?.destination?.route } ||
+                            Screens.MainScreensNew.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                            if (!navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                                navController.popBackStack()
+                                navController.navigate(Screens.Home.route)
+                            }
+                        }
                     }
 
                     LaunchedEffect(playerConnection) {
