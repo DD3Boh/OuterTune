@@ -139,8 +139,8 @@ fun SwipeToQueueBox(
                 DragAnchors.Start at -with(density) { 150.dp.toPx() }
                 DragAnchors.Center at 0f
             },
-            positionalThreshold = { distance -> distance },
-            velocityThreshold = { with(density) { 100.dp.toPx() } },
+            positionalThreshold = { distance -> distance * 0.7f },
+            velocityThreshold = { with(density) { 10000.dp.toPx() } },
             animationSpec = tween(),
             confirmValueChange = { dragValue ->
                 if (dragValue == DragAnchors.Start && !addedToQueue) {
