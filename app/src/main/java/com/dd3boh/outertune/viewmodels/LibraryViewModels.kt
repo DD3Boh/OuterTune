@@ -46,7 +46,7 @@ class LibrarySongsViewModel @Inject constructor(
      * The top of the stack is the folder that the page will render.
      * Clicking on a folder pushes, while the back button pops.
      */
-    val folderPositionStack = Stack<DirectoryTree>()
+    var folderPositionStack = Stack<DirectoryTree>()
     val databseLink = database
 
     val allSongs = syncAllSongs(context, database, downloadUtil)

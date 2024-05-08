@@ -57,6 +57,7 @@ import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
+import java.util.Stack
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -83,6 +84,11 @@ fun LibrarySongsFolderScreen(
 
     val lazyListState = rememberLazyListState()
 
+    // destroy old structure when pref changes
+    flatSubfolders.let {
+        viewModel.folderPositionStack = Stack()
+    }
+
     // initialize with first directory
     if (folderStack.isEmpty()) {
         val cachedTree = getDirectorytree()
@@ -90,14 +96,13 @@ fun LibrarySongsFolderScreen(
             viewModel.getLocalSongs(context, viewModel.databseLink)
         }
 
-        folderStack.push(viewModel.localSongDirectoryTree.value)
+        folderStack.push(if (flatSubfolders) viewModel.localSongDirectoryTree.value.toFlattenedTree()
+        else viewModel.localSongDirectoryTree.value)
     }
 
     // content to load for this page
     var currDir by remember {
-        mutableStateOf(
-            if (flatSubfolders) folderStack.peek().toFlattenedTree() else folderStack.peek()
-        )
+        mutableStateOf(folderStack.peek())
     }
 
     Box(
