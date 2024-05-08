@@ -21,6 +21,11 @@ android {
         versionCode = 19
         versionName = "0.5.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags += ""
+            }
+        }
     }
     buildTypes {
         release {
@@ -62,6 +67,20 @@ android {
         disable += "MissingTranslation"
     }
 
+    sourceSets {
+        getByName("main") {
+            jniLibs.srcDirs("src/main/jni/ffmpeg-android-maker/output/lib/")
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version = "3.22.1"
+            path = file("src/main/jni/CMakeLists.txt")
+        }
+    }
+
+    ndkVersion = "27.0.11718014"
 }
 
 ksp {

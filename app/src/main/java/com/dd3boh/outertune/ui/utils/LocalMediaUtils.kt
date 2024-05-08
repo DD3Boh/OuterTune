@@ -14,6 +14,7 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.utils.scanners.FFProbeScanner
 import com.dd3boh.outertune.utils.cache
 import com.dd3boh.outertune.utils.retrieveImage
 import com.dd3boh.outertune.utils.scanners.FFProbeKitScanner
@@ -338,6 +339,19 @@ fun scanLocal(
     scanPaths: ArrayList<String>,
     scannerType: ScannerType
 ): MutableStateFlow<DirectoryTree> {
+
+    if (scannerType != ScannerType.MEDIASTORE) {
+        // load advanced scanner libs
+        System.loadLibrary("avcodec")
+        System.loadLibrary("avdevice")
+        System.loadLibrary("ffprobejni")
+        System.loadLibrary("avfilter")
+        System.loadLibrary("avformat")
+        System.loadLibrary("avutil")
+        System.loadLibrary("swresample")
+        System.loadLibrary("swscale")
+    }
+
     val newDirectoryStructure = DirectoryTree(sdcardRoot)
     val contentResolver: ContentResolver = context.contentResolver
 
@@ -397,7 +411,7 @@ fun scanLocal(
                         // decide which scanner to use
                         val scanner = when (scannerType) {
                             ScannerType.FFPROBEKIT_ASYNC -> FFProbeKitScanner()
-                            ScannerType.FFPROBE -> throw Exception("Not implemented")
+                            ScannerType.FFPROBE -> FFProbeScanner()
                             ScannerType.MEDIASTORE -> throw Exception("Forcing MediaStore fallback")
                         }
 
@@ -466,7 +480,7 @@ fun scanLocal(
                 } else {
                     // force synchronous scanning of songs
                     val toInsert = advancedScan()
-                    advancedScan().song.localPath?.let { s ->
+                    toInsert.song.localPath?.let { s ->
                         newDirectoryStructure.insert(
                             s.substringAfter(sdcardRoot), toInsert
                         )
