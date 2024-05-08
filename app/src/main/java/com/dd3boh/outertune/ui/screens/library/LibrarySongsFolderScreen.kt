@@ -87,7 +87,7 @@ fun LibrarySongsFolderScreen(
     if (folderStack.isEmpty()) {
         val cachedTree = getDirectorytree()
         if (cachedTree == null) {
-            viewModel.getLocalSongs(context, viewModel.databseLink)
+            viewModel.getLocalSongs(context, viewModel.databaseLink)
         }
 
         folderStack.push(if (flatSubfolders) viewModel.localSongDirectoryTree.value.toFlattenedTree()
