@@ -2,6 +2,7 @@ package com.dd3boh.outertune.ui.screens.library
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -62,8 +63,8 @@ import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
 @Composable
 fun LibrarySongsFolderScreen(
     navController: NavController,
-    scrollBehavior: TopAppBarScrollBehavior,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
+    filterContent: @Composable() (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val menuState = LocalMenuState.current
@@ -77,6 +78,8 @@ fun LibrarySongsFolderScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
+
+    var inLocal by viewModel.inLocal
 
     val lazyListState = rememberLazyListState()
 
@@ -97,7 +100,6 @@ fun LibrarySongsFolderScreen(
         )
     }
 
-
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -105,6 +107,14 @@ fun LibrarySongsFolderScreen(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
+            filterContent?.let {
+                item(
+                    key = "filter",
+                    contentType = CONTENT_TYPE_HEADER
+                ) {
+                    it()
+                }
+            }
 
             item(
                 key = "header",
@@ -141,6 +151,23 @@ fun LibrarySongsFolderScreen(
                 }
             }
 
+            item(
+                key = "previous",
+                contentType = CONTENT_TYPE_FOLDER
+            ) {
+                SongFolderItem(
+                    folderTitle = "..",
+                    subtitle = "Previous folder",
+                    modifier = Modifier
+                        .clickable {
+                            if (folderStack.size > 1) {
+                                folderStack.pop()
+                                currDir = folderStack.peek()
+                            }
+                            else inLocal = false
+                        }
+                )
+            }
 
             // all subdirectories listed here
             itemsIndexed(
@@ -263,33 +290,4 @@ fun LibrarySongsFolderScreen(
                 .align(Alignment.BottomCenter)
         )
     }
-
-    TopAppBar(
-        title = {
-            if (viewModel.folderPositionStack.size > 1) Text(currDir.currentDir)
-            else Text("Internal Storage")
-        },
-        navigationIcon = {
-            IconButton(
-                onClick = {
-                    println("Bakc cluicked")
-                    // go back to songs screen when backing out of root
-                    if (folderStack.size <= 1) {
-                        navController.navigate(Screens.Songs.route)
-                        return@IconButton
-                    }
-                    folderStack.pop()
-                    currDir = folderStack.peek()
-                    println("popped " + currDir.currentDir)
-                }
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null
-                )
-            }
-        },
-        scrollBehavior = scrollBehavior,
-        modifier = Modifier.padding(0.dp)
-    )
 }

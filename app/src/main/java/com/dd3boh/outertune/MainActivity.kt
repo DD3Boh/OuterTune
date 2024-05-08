@@ -567,7 +567,7 @@ class MainActivity : ComponentActivity() {
                                     NewReleaseScreen(navController, scrollBehavior)
                                 }
                                 composable(Screens.SongFolders.route) {
-                                    LibrarySongsFolderScreen(navController, scrollBehavior)
+                                    LibrarySongsFolderScreen(navController)
                                 }
 
                                 composable(

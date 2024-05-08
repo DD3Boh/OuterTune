@@ -3,6 +3,7 @@
 package com.dd3boh.outertune.viewmodels
 
 import android.content.Context
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -51,6 +52,8 @@ class LibrarySongsViewModel @Inject constructor(
     val allSongs = syncAllSongs(context, database, downloadUtil)
 
     val localSongDirectoryTree = refreshLocal(context, database)
+
+    val inLocal = mutableStateOf(false)
 
     fun syncLibrarySongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
