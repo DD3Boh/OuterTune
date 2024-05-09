@@ -5,6 +5,7 @@
     <string name="artists">Artists</string>
     <string name="albums">Albums</string>
     <string name="playlists">Playlists</string>
+    <string name="library">Library</string>
 
     <!-- Top bar -->
     <plurals name="n_selected">
@@ -59,6 +60,7 @@
     <string name="playlist_is_empty">The playlist is empty</string>
     <string name="remove_download_playlist_confirm">Do you really want to remove all \"%s\" playlist songs from the Downloaded Songs storage?</string>
     <string name="delete_playlist_confirm">Do you really want to delete the playlist \"%s\"?</string>
+    <string name="auto_playlist">Auto playlist</string>
 
     <!-- Button -->
     <string name="retry">Retry</string>
@@ -206,6 +208,7 @@
     <string name="dark_theme_off">Off</string>
     <string name="dark_theme_follow_system">Follow system</string>
     <string name="pure_black">Pure black</string>
+    <string name="new_interface">New interface layout</string>
     <string name="default_open_tab">Default open tab</string>
     <string name="customize_navigation_tabs">Customize navigation tabs</string>
     <string name="lyrics_text_position">Lyrics text position</string>

@@ -9,6 +9,8 @@ val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
+val DefaultOpenTabNewKey = stringPreferencesKey("defaultOpenTabNew")
+val NewInterfaceKey = booleanPreferencesKey("newInterface")
 
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
 val ContentLanguageKey = stringPreferencesKey("contentLanguage")
@@ -44,6 +46,8 @@ val AlbumSortTypeKey = stringPreferencesKey("albumSortType")
 val AlbumSortDescendingKey = booleanPreferencesKey("albumSortDescending")
 val PlaylistSortTypeKey = stringPreferencesKey("playlistSortType")
 val PlaylistSortDescendingKey = booleanPreferencesKey("playlistSortDescending")
+val LibrarySortTypeKey = stringPreferencesKey("librarySortType")
+val LibrarySortDescendingKey = booleanPreferencesKey("librarySortDescending")
 val ArtistSongSortTypeKey = stringPreferencesKey("artistSongSortType")
 val ArtistSongSortDescendingKey = booleanPreferencesKey("artistSongSortDescending")
 
@@ -53,6 +57,8 @@ val ArtistViewTypeKey = stringPreferencesKey("artistViewType")
 val AlbumFilterKey = stringPreferencesKey("albumFilter")
 val AlbumViewTypeKey = stringPreferencesKey("albumViewType")
 val PlaylistViewTypeKey = stringPreferencesKey("playlistViewType")
+val LibraryFilterKey = stringPreferencesKey("libraryFilter")
+val LibraryViewTypeKey = stringPreferencesKey("libraryViewType")
 
 val PlaylistEditLockKey = booleanPreferencesKey("playlistEditLock")
 
@@ -89,6 +95,10 @@ enum class PlaylistSortType {
     CREATE_DATE, NAME, SONG_COUNT
 }
 
+enum class LibrarySortType {
+    CREATE_DATE, NAME
+}
+
 enum class SongFilter {
     LIBRARY, LIKED, DOWNLOADED
 }
@@ -99,6 +109,10 @@ enum class ArtistFilter {
 
 enum class AlbumFilter {
     LIBRARY, LIKED
+}
+
+enum class LibraryFilter {
+    ALL, ALBUMS, ARTISTS, PLAYLISTS, SONGS
 }
 
 val ShowLyricsKey = booleanPreferencesKey("showLyrics")

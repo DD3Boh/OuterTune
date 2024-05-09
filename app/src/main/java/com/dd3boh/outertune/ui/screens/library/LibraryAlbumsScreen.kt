@@ -1,13 +1,11 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -16,11 +14,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.List
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,12 +37,11 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.*
-import com.dd3boh.outertune.ui.component.AlbumGridItem
-import com.dd3boh.outertune.ui.component.AlbumListItem
 import com.dd3boh.outertune.ui.component.ChipsRow
+import com.dd3boh.outertune.ui.component.LibraryAlbumGridItem
+import com.dd3boh.outertune.ui.component.LibraryAlbumListItem
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SortHeader
-import com.dd3boh.outertune.ui.menu.AlbumMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryAlbumsViewModel
@@ -58,6 +51,7 @@ import com.dd3boh.outertune.viewmodels.LibraryAlbumsViewModel
 fun LibraryAlbumsScreen(
     navController: NavController,
     viewModel: LibraryAlbumsViewModel = hiltViewModel(),
+    libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -65,7 +59,13 @@ fun LibraryAlbumsScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIKED)
-    var viewType by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
+    libraryFilterContent?.let { filter = AlbumFilter.LIKED }
+
+    val viewTypeLocal by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
+    val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+
+    var viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+
     val (sortType, onSortTypeChange) = rememberEnumPreference(AlbumSortTypeKey, AlbumSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(AlbumSortDescendingKey, true)
 
@@ -150,7 +150,7 @@ fun LibraryAlbumsScreen(
                         key = "filter",
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        filterContent()
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(
@@ -165,34 +165,13 @@ fun LibraryAlbumsScreen(
                         key = { it.id },
                         contentType = { CONTENT_TYPE_ALBUM }
                     ) { album ->
-                        AlbumListItem(
+                        LibraryAlbumListItem(
+                            navController = navController,
+                            menuState = menuState,
                             album = album,
                             isActive = album.id == mediaMetadata?.album?.id,
                             isPlaying = isPlaying,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            AlbumMenu(
-                                                originalAlbum = album,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable {
-                                    navController.navigate("album/${album.id}")
-                                }
-                                .animateItemPlacement()
+                            modifier = Modifier.animateItemPlacement()
                         )
                     }
                 }
@@ -207,7 +186,7 @@ fun LibraryAlbumsScreen(
                         span = { GridItemSpan(maxLineSpan) },
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        filterContent()
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(
@@ -223,29 +202,14 @@ fun LibraryAlbumsScreen(
                         key = { it.id },
                         contentType = { CONTENT_TYPE_ALBUM }
                     ) { album ->
-                        AlbumGridItem(
+                        LibraryAlbumGridItem(
+                            navController = navController,
+                            menuState = menuState,
+                            coroutineScope = coroutineScope,
                             album = album,
                             isActive = album.id == mediaMetadata?.album?.id,
                             isPlaying = isPlaying,
-                            coroutineScope = coroutineScope,
-                            fillMaxWidth = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        navController.navigate("album/${album.id}")
-                                    },
-                                    onLongClick = {
-                                        menuState.show {
-                                            AlbumMenu(
-                                                originalAlbum = album,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                )
-                                .animateItemPlacement()
+                            modifier = Modifier.animateItemPlacement()
                         )
                     }
                 }

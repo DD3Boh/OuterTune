@@ -10,6 +10,9 @@ import androidx.media3.exoplayer.offline.Download
 import com.zionhuang.innertube.YouTube
 import com.dd3boh.outertune.constants.*
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.db.entities.Album
+import com.dd3boh.outertune.db.entities.Artist
+import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
@@ -189,6 +192,49 @@ class LibraryPlaylistsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() } }
+}
+
+@HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
+class LibraryViewModel @Inject constructor(
+    @ApplicationContext context: Context,
+    database: MusicDatabase,
+) : ViewModel() {
+    var artists = database.artistsBookmarked(ArtistSortType.CREATE_DATE, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    var albums = database.albumsLiked(AlbumSortType.CREATE_DATE, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    var playlists = database.playlists(PlaylistSortType.CREATE_DATE, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val allItems = context.dataStore.data
+        .map {
+            it[LibrarySortTypeKey].toEnum(LibrarySortType.CREATE_DATE) to (it[LibrarySortDescendingKey]?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            combine(artists, albums, playlists) { artists, albums, playlists ->
+                val items = artists + albums + playlists
+                items.sortedBy { item ->
+                    when (sortType) {
+                        LibrarySortType.CREATE_DATE -> when (item) {
+                            is Album -> item.album.bookmarkedAt
+                            is Artist -> item.artist.bookmarkedAt
+                            is Playlist -> item.playlist.bookmarkedAt
+                            else -> LocalDateTime.now()
+                        }
+
+                        else -> when (item) {
+                            is Album -> item.album.title
+                            is Artist -> item.artist.name
+                            is Playlist -> item.playlist.name
+                            else -> ""
+                        }
+                    }.toString()
+                }.let { if (descending) it.reversed() else it }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 }
 
 @HiltViewModel

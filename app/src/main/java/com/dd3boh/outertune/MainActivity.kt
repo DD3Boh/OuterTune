@@ -87,7 +87,9 @@ import com.dd3boh.outertune.ui.screens.artist.ArtistSongsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
+import com.dd3boh.outertune.ui.screens.library.LibraryScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
+import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.OnlinePlaylistScreen
 import com.dd3boh.outertune.ui.screens.search.LocalSearchScreen
@@ -160,6 +162,7 @@ class MainActivity : ComponentActivity() {
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
+            val newInterfaceStyle by rememberPreference(NewInterfaceKey, defaultValue = true)
             val isSystemInDarkTheme = isSystemInDarkTheme()
             val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
                 if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
@@ -211,16 +214,29 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
-                    val navigationItems = remember { Screens.MainScreens }
+                    val navigationItems = if (!newInterfaceStyle) Screens.MainScreens else Screens.MainScreensNew
                     val defaultOpenTab = remember {
-                        dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
+                        if (newInterfaceStyle) dataStore[DefaultOpenTabNewKey].toEnum(defaultValue = NavigationTabNew.HOME)
+                        else dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
                     }
                     val tabOpenedFromShortcut = remember {
+                        // reroute to library page for new layout is handled in NavHost section
                         when (intent?.action) {
-                            ACTION_SONGS -> NavigationTab.SONG
-                            ACTION_ALBUMS -> NavigationTab.ALBUM
-                            ACTION_PLAYLISTS -> NavigationTab.PLAYLIST
+                            ACTION_SONGS -> if (newInterfaceStyle) NavigationTabNew.LIBRARY else NavigationTab.SONG
+                            ACTION_ALBUMS -> if (newInterfaceStyle) NavigationTabNew.LIBRARY else NavigationTab.ALBUM
+                            ACTION_PLAYLISTS -> if (newInterfaceStyle) NavigationTabNew.LIBRARY else NavigationTab.PLAYLIST
                             else -> null
+                        }
+                    }
+                    // setup filters for new layout
+                    if (tabOpenedFromShortcut != null && newInterfaceStyle) {
+                        var filter by rememberEnumPreference(LibraryFilterKey, LibraryFilter.ALL)
+                        filter = when (intent?.action) {
+                            ACTION_SONGS -> LibraryFilter.SONGS
+                            ACTION_ALBUMS -> LibraryFilter.ALBUMS
+                            ACTION_PLAYLISTS -> LibraryFilter.PLAYLISTS
+                            ACTION_SEARCH -> filter // do change filter for search
+                            else -> LibraryFilter.ALL
                         }
                     }
 
@@ -319,6 +335,19 @@ class MainActivity : ComponentActivity() {
 
                         navController.currentBackStackEntry?.destination?.route?.let {
                             setPreviousTab(it)
+                        }
+
+                        /*
+                         * If the current back stack entry matches one of the main screens, but
+                         * is not in the current navigation items, we need to remove the entry
+                         * to avoid entering a "ghost" screen.
+                         */
+                        if (Screens.MainScreens.fastAny { it.route == navBackStackEntry?.destination?.route } ||
+                            Screens.MainScreensNew.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                            if (!navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                                navController.popBackStack()
+                                navController.navigate(Screens.Home.route)
+                            }
                         }
                     }
 
@@ -444,6 +473,9 @@ class MainActivity : ComponentActivity() {
                                     NavigationTab.ARTIST -> Screens.Artists
                                     NavigationTab.ALBUM -> Screens.Albums
                                     NavigationTab.PLAYLIST -> Screens.Playlists
+                                    NavigationTabNew.HOME -> Screens.Home
+                                    NavigationTabNew.LIBRARY-> Screens.Library
+                                    else -> Screens.Home
                                 }.route,
                                 enterTransition = {
                                     slideIntoContainer(
@@ -485,6 +517,9 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable(Screens.Playlists.route) {
                                     LibraryPlaylistsScreen(navController)
+                                }
+                                composable(Screens.Library.route) {
+                                    LibraryScreen(navController)
                                 }
                                 composable("history") {
                                     HistoryScreen(navController)
@@ -583,6 +618,16 @@ class MainActivity : ComponentActivity() {
                                     )
                                 ) {
                                     LocalPlaylistScreen(navController, scrollBehavior)
+                                }
+                                composable(
+                                    route = "auto_playlist/{playlistId}",
+                                    arguments = listOf(
+                                        navArgument("playlistId") {
+                                            type = NavType.StringType
+                                        }
+                                    )
+                                ) {
+                                    AutoPlaylistScreen(navController, scrollBehavior)
                                 }
                                 composable(
                                     route = "youtube_browse/{browseId}?params={params}",
@@ -708,7 +753,8 @@ class MainActivity : ComponentActivity() {
                                             Screens.Songs.route,
                                             Screens.Artists.route,
                                             Screens.Albums.route,
-                                            Screens.Playlists.route
+                                            Screens.Playlists.route,
+                                            Screens.Library.route
                                         )
                                     ) {
                                         IconButton(

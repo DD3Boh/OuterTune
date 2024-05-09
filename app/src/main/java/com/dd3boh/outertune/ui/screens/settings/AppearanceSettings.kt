@@ -6,7 +6,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Lyrics
@@ -19,15 +18,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
+import com.dd3boh.outertune.constants.DefaultOpenTabNewKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
+import com.dd3boh.outertune.constants.NewInterfaceKey
 import com.dd3boh.outertune.constants.PureBlackKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
@@ -46,7 +46,9 @@ fun AppearanceSettings(
     val (darkMode, onDarkModeChange) = rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(DefaultOpenTabKey, defaultValue = NavigationTab.HOME)
+    val (defaultOpenTabNew, onDefaultOpenTabNewChange) = rememberEnumPreference(DefaultOpenTabNewKey, defaultValue = NavigationTabNew.HOME)
     val (lyricsPosition, onLyricsPositionChange) = rememberEnumPreference(LyricsTextPositionKey, defaultValue = LyricsPosition.CENTER)
+    val (newInterfaceStyle, onNewInterfaceStyleChange) = rememberPreference(key = NewInterfaceKey, defaultValue = true)
 
     Column(
         Modifier
@@ -78,21 +80,43 @@ fun AppearanceSettings(
             checked = pureBlack,
             onCheckedChange = onPureBlackChange
         )
-        EnumListPreference(
-            title = { Text(stringResource(R.string.default_open_tab)) },
-            icon = { Icon(Icons.Rounded.Tab, null) },
-            selectedValue = defaultOpenTab,
-            onValueSelected = onDefaultOpenTabChange,
-            valueText = {
-                when (it) {
-                    NavigationTab.HOME -> stringResource(R.string.home)
-                    NavigationTab.SONG -> stringResource(R.string.songs)
-                    NavigationTab.ARTIST -> stringResource(R.string.artists)
-                    NavigationTab.ALBUM -> stringResource(R.string.albums)
-                    NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
-                }
-            }
+        SwitchPreference(
+            title = { Text(stringResource(R.string.new_interface)) },
+            icon = { Icon(Icons.Rounded.Palette, null) },
+            checked = newInterfaceStyle,
+            onCheckedChange = onNewInterfaceStyleChange
         )
+
+        if (newInterfaceStyle) {
+            EnumListPreference(
+                title = { Text(stringResource(R.string.default_open_tab)) },
+                icon = { Icon(Icons.Rounded.Tab, null) },
+                selectedValue = defaultOpenTabNew,
+                onValueSelected = onDefaultOpenTabNewChange,
+                valueText = {
+                    when (it) {
+                        NavigationTabNew.HOME -> stringResource(R.string.home)
+                        NavigationTabNew.LIBRARY -> stringResource(R.string.library)
+                    }
+                }
+            )
+        } else {
+            EnumListPreference(
+                title = { Text(stringResource(R.string.default_open_tab)) },
+                icon = { Icon(Icons.Rounded.Tab, null) },
+                selectedValue = defaultOpenTab,
+                onValueSelected = onDefaultOpenTabChange,
+                valueText = {
+                    when (it) {
+                        NavigationTab.HOME -> stringResource(R.string.home)
+                        NavigationTab.SONG -> stringResource(R.string.songs)
+                        NavigationTab.ARTIST -> stringResource(R.string.artists)
+                        NavigationTab.ALBUM -> stringResource(R.string.albums)
+                        NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
+                    }
+                }
+            )
+        }
         EnumListPreference(
             title = { Text(stringResource(R.string.lyrics_text_position)) },
             icon = { Icon(Icons.Rounded.Lyrics, null) },
@@ -131,6 +155,9 @@ enum class DarkMode {
 
 enum class NavigationTab {
     HOME, SONG, ARTIST, ALBUM, PLAYLIST
+}
+enum class NavigationTabNew {
+    HOME, LIBRARY
 }
 
 enum class LyricsPosition {
