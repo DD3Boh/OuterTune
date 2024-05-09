@@ -59,6 +59,7 @@ fun LibraryAlbumsScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIKED)
+    libraryFilterContent?.let { filter = AlbumFilter.LIKED }
 
     val viewTypeLocal by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)

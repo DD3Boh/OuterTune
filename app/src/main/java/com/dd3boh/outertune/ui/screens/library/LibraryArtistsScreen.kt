@@ -64,6 +64,7 @@ fun LibraryArtistsScreen(
 ) {
     val menuState = LocalMenuState.current
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
+    libraryFilterContent?.let { filter = ArtistFilter.LIKED }
 
     val viewTypeLocal by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
