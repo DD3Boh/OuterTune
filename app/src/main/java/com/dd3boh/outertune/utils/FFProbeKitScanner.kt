@@ -2,10 +2,7 @@ package com.dd3boh.outertune.utils
 
 
 import android.util.Log
-import com.arthenica.ffmpegkit.FFmpegSession
 import com.arthenica.ffmpegkit.FFprobeKit
-import com.arthenica.ffmpegkit.MediaInformationSession
-import com.arthenica.ffmpegkit.MediaInformationSessionCompleteCallback
 import com.dd3boh.outertune.ui.utils.ExtraMetadataWrapper
 import org.json.JSONException
 import org.json.JSONObject
@@ -13,15 +10,6 @@ import org.json.JSONObject
 
 const val TAG = "FFMetadataExtractor"
 
-
-class fuckYouFFMpegKit : MediaInformationSessionCompleteCallback {
-    override fun apply(p0: MediaInformationSession?) {
-        if (p0 != null) {
-            p0.mediaInformation.allProperties
-        }
-    }
-
-}
 
 /**
  * Given a path to a file, return the artist string
