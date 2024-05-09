@@ -14,7 +14,7 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.utils.getExtraMetadata
+import com.dd3boh.outertune.utils.scanners.FFProbeKitScanner
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.YouTube.search
 import kotlinx.coroutines.CoroutineScope
@@ -238,11 +238,6 @@ class DirectoryTree(path: String) {
     }
 }
 
-/**
- * A wrapper containing extra raw metadata that MediaStore fails to read properly
- */
-data class ExtraMetadataWrapper(val artists: String, val genres: String, val date: String)
-
 
 /**
  * ==========================
@@ -397,11 +392,14 @@ fun scanLocal(
 //                    var year: String? = null
 
                     try {
-                        if (scannerType == ScannerType.MEDIASTORE) {
-                            throw Exception("Forcing MediaStore fallback")
+                        // decide which scanner to use
+                        val scanner = when(scannerType) {
+                            ScannerType.FFPROBEKIT_ASYNC -> FFProbeKitScanner()
+                            ScannerType.FFPROBE -> throw Exception("Not implemented")
+                            ScannerType.MEDIASTORE -> throw Exception("Forcing MediaStore fallback")
                         }
 
-                        val artistString = getExtraMetadata("$sdcardRoot$path$name")
+                        val artistString = scanner.getMediaStoreSupplement("$sdcardRoot$path$name")
                         // parse data
                         artistString.artists?.split(';')?.forEach { artistVal ->
 
