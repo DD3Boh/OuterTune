@@ -86,13 +86,12 @@ fun LibraryArtistGridItem(
 
 @Composable
 fun LibraryAlbumListItem(
+    modifier: Modifier = Modifier,
     navController: NavController,
     menuState: MenuState,
-    coroutineScope: CoroutineScope,
     album: Album,
     isActive: Boolean = false,
-    isPlaying: Boolean = false,
-    modifier: Modifier = Modifier
+    isPlaying: Boolean = false
 ) = AlbumListItem(
     album = album,
     isActive = isActive,
@@ -125,13 +124,13 @@ fun LibraryAlbumListItem(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LibraryAlbumGridItem(
+    modifier: Modifier = Modifier,
     navController: NavController,
     menuState: MenuState,
     coroutineScope: CoroutineScope,
     album: Album,
     isActive: Boolean = false,
-    isPlaying: Boolean = false,
-    modifier: Modifier = Modifier
+    isPlaying: Boolean = false
 ) = AlbumGridItem(
     album = album,
     isActive = isActive,
