@@ -47,7 +47,7 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
-import com.dd3boh.outertune.ui.utils.getDirectorytree
+import com.dd3boh.outertune.ui.utils.getDirectoryTree
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
@@ -85,7 +85,7 @@ fun LibrarySongsFolderScreen(
 
     // initialize with first directory
     if (folderStack.isEmpty()) {
-        val cachedTree = getDirectorytree()
+        val cachedTree = getDirectoryTree()
         if (cachedTree == null) {
             viewModel.getLocalSongs(context, viewModel.databaseLink)
         }

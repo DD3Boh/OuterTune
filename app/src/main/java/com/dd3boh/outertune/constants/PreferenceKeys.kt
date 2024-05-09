@@ -151,7 +151,7 @@ enum class ScannerSensitivity {
  */
 enum class ScannerType {
     MEDIASTORE,
-    FFPROBEKIT_SYNC,
+    FFPROBE,
     FFPROBEKIT_ASYNC,
 }
 

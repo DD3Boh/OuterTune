@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
-import android.util.Log
 import com.dd3boh.outertune.constants.ScannerSensitivity
 import com.dd3boh.outertune.constants.ScannerType
 import com.dd3boh.outertune.db.MusicDatabase
@@ -28,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 import java.time.LocalDateTime
 
 const val TAG = "LocalMediaUtils"
@@ -38,9 +38,10 @@ const val TAG = "LocalMediaUtils"
  * You can try more than 8 jobs, but good luck.
  * For easier debugging, uncomment SCANNER_CRASH_AT_FIRST_ERROR to stop at first error
  */
-const val SCANNER_CRASH_AT_FIRST_ERROR = false // crash at ffprobe-kit errors only
+const val SCANNER_CRASH_AT_FIRST_ERROR = false // crash at ffprobe errors only
 const val SYNC_SCANNER = false // true will not use multithreading for scanner
 const val MAX_CONCURRENT_JOBS = 8
+const val SCANNER_DEBUG = false
 
 @OptIn(ExperimentalCoroutinesApi::class)
 val scannerSession = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_JOBS)
@@ -72,7 +73,18 @@ val projection = arrayOf(
  * @param path root directory start
  */
 class DirectoryTree(path: String) {
+    companion object {
+        const val TAG = "DirectoryTree"
+    }
+
+    /**
+     * Directory name
+     */
     var currentDir = path // file name
+
+    /**
+     * Full parent directory path
+     */
     var parent: String = ""
 
     // folder contents
@@ -99,18 +111,18 @@ class DirectoryTree(path: String) {
         // add a file
         if (path.indexOf('/') == -1) {
             files.add(song)
-            println("add A MUSIC FILE AAAAAAHHH " + path)
+            Timber.tag(TAG).d("Adding song with path: $path")
             return
         }
 
         // there is still subdirs to process
-        var tmppath = path
+        var tmpPath = path
         if (path[path.length - 1] == '/') {
-            tmppath = path.substring(0, path.length - 1)
+            tmpPath = path.substring(0, path.length - 1)
         }
 
         // the first directory before the .
-        val subdirPath = tmppath.substringBefore('/')
+        val subdirPath = tmpPath.substringBefore('/')
 
         // create subdirs if they do not exist, then insert
         var existingSubdir: DirectoryTree? = null
@@ -123,12 +135,12 @@ class DirectoryTree(path: String) {
 
         if (existingSubdir == null) {
             val tree = DirectoryTree(subdirPath)
-            tree.parent = parent + "/$currentDir"
-            tree.insert(tmppath.substringAfter('/'), song)
+            tree.parent = "$parent/$currentDir"
+            tree.insert(tmpPath.substringAfter('/'), song)
             subdirs.add(tree)
 
         } else {
-            existingSubdir!!.insert(tmppath.substringAfter('/'), song)
+            existingSubdir!!.insert(tmpPath.substringAfter('/'), song)
         }
     }
 
@@ -149,23 +161,23 @@ class DirectoryTree(path: String) {
      * @return song at path, or null if it does not exist
      */
     fun getSong(path: String): Song? {
-        Log.d(TAG, "Searching for song, at path --> $path")
+        Timber.tag(TAG).d("Searching for song, at path: $path")
 
         // search for song in current dir
         if (path.indexOf('/') == -1) {
             val foundSong: Song = files.first { getFileName(it.song.localPath) == getFileName(path) }
-            Log.d(TAG, "Searching for song, found? --> " + foundSong?.id + " name: " + foundSong?.song?.title)
+            Timber.tag(TAG).d("Searching for song, found?: ${foundSong.id} Name: ${foundSong.song.title}")
             return foundSong
         }
 
         // there is still subdirs to process
-        var tmppath = path
+        var tmpPath = path
         if (path[path.length - 1] == '/') {
-            tmppath = path.substring(0, path.length - 1)
+            tmpPath = path.substring(0, path.length - 1)
         }
 
         // the first directory before the .
-        val subdirPath = tmppath.substringBefore('/')
+        val subdirPath = tmpPath.substringBefore('/')
 
         // scan for matching subdirectory
         var existingSubdir: DirectoryTree? = null
@@ -180,7 +192,7 @@ class DirectoryTree(path: String) {
         if (existingSubdir == null) {
             return null
         } else {
-            return existingSubdir!!.getSong(tmppath.substringAfter('/'))
+            return existingSubdir!!.getSong(tmpPath.substringAfter('/'))
         }
     }
 
@@ -191,13 +203,12 @@ class DirectoryTree(path: String) {
     fun toList(): List<Song> {
         val songs = ArrayList<Song>()
 
-        fun traverseHELPME(tree: DirectoryTree, result: ArrayList<Song>) {
+        fun traverseTree(tree: DirectoryTree, result: ArrayList<Song>) {
             result.addAll(tree.files)
-            tree.subdirs.forEach { traverseHELPME(it, result) }
+            tree.subdirs.forEach { traverseTree(it, result) }
         }
 
-        traverseHELPME(this, songs)
-
+        traverseTree(this, songs)
         return songs
     }
 
@@ -247,10 +258,12 @@ fun refreshLocal(context: Context, database: MusicDatabase) =
     refreshLocal(context, database, testScanPaths)
 
 
-// so here is the thing right, if your files move around, that's on you to re run the full scanner.
-// so here is the other other thing right, if the metadata changes, that's also on you to re run the full scanner.
 /**
  * Quickly rebuild a skeleton directory tree of local files based on the database
+ *
+ * Notes:
+ * If files move around, that's on you to re run the scanner.
+ * If the metadata changes, that's also on you to re run the scanner.
  *
  * @param context Context
  * @param scanPaths List of whitelist paths to scan under. This assumes
@@ -279,7 +292,7 @@ fun refreshLocal(
         scanPaths.map { "$sdcardRoot$it%" }.toTypedArray(), // whitelist paths
         null
     )
-    Log.d(TAG, "------------------------------------------")
+    Timber.tag(TAG).d("------------ Starting Quick Directory Rebuild ------------")
     cursor?.use { cursor ->
         // Columns indices
         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
@@ -289,7 +302,8 @@ fun refreshLocal(
             val name = cursor.getString(nameColumn) // file name
             val path = cursor.getString(pathColumn)
 
-            Log.d(TAG, "Quick scanner: PATH: $path")
+            if (SCANNER_DEBUG)
+                Timber.tag(TAG).d("Quick scanner: PATH: $path")
 
             // Build directory tree with existing files
             val possibleMatch = existingSongs.firstOrNull() { it.song.localPath == "$sdcardRoot$path$name" }
@@ -338,11 +352,11 @@ fun scanLocal(
         scanPaths.map { "$sdcardRoot$it%" }.toTypedArray(), // whitelist paths
         null
     )
-    Log.d("WTF", "------------------------------------------")
+    Timber.tag(TAG).d("------------ Starting Full Scanner ------------")
 
     val scannerJobs = ArrayList<Deferred<Song>>()
     runBlocking {
-        // MediaStore is our "basic" scanner
+        // MediaStore is our "basic" scanner & file discovery
         cursor?.use { cursor ->
             // Columns indices
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
@@ -366,7 +380,8 @@ fun scanLocal(
                 val album = cursor.getString(albumColumn)
                 val path = cursor.getString(pathColumn)
 
-                Log.d("WTF", "ID: $id, Name: $name, ARTITST: $artist\" , PATH: $path")
+                if (SCANNER_DEBUG)
+                    Timber.tag(TAG).d("ID: $id, Name: $name, ARTIST: $artist, PATH: $path")
 
                 // append song to list
                 // media store doesn't support multi artists...
@@ -375,62 +390,54 @@ fun scanLocal(
                 /**
                  * Compiles a song with all it's necessary metadata. Unlike MediaStore,
                  * this also supports multiple artists, multiple genres (TBD), and a few extra details (TBD).
-                 *
-                 * If sync ffprobe-kit is preferred, it will be used, else when using ffprobe-kit, it is
-                 * assumed to be async
-                 *
-                 * The debug options are enabled, they will override any conflicting options
                  */
                 fun advancedScan(): Song {
                     var artists = ArrayList<ArtistEntity>()
 //                    var generes
 //                    var year: String? = null
 
-                    var retries: Int = 0
-                    while (retries < 2) {
-
-                        try {
-                            if (scannerType == ScannerType.MEDIASTORE) {
-                                throw Exception("Forcing MediaStore fallback")
-                            }
-
-                            val artistString = getExtraMetadata("$sdcardRoot$path$name")
-                            // parse data
-                            artistString.artists.split(';').forEach { artistVal ->
-
-                                // check if this artist exists in DB already
-                                val databaseArtistMatch =
-                                    runBlocking(Dispatchers.IO) {
-                                        database.searchArtists(artistVal).first().filter { artist ->
-                                            return@filter artist.artist.name == artistVal
-                                        }
-                                    }
-
-                                Log.d("WTF", "ARTIST FOUND IN DB???" + databaseArtistMatch.size)
-
-                                if (databaseArtistMatch.isEmpty()) {
-                                    youtubeArtistLookup(artistVal)?.let { artists.add(it) }
-                                } else {
-                                    artists.add(
-                                        databaseArtistMatch.first().artist
-                                    )
-                                }
-                            }
-                        } catch (e: Exception) {
-                            if (SCANNER_CRASH_AT_FIRST_ERROR && scannerType != ScannerType.MEDIASTORE) {
-                                throw Exception("HALTING AT FIRST SCANNER ERROR " + e.message) // debug
-                            }
-                            // fallback on media store
-                            Log.d(
-                                "WTF",
-                                "ERROR READING ARTIST METADATA, ${e.message} falling back on MediaStore for $path$name"
-                            )
-                            e.printStackTrace()
-
-                            artists.add(ArtistEntity(artistID, artist, isLocal = true))
+                    try {
+                        if (scannerType == ScannerType.MEDIASTORE) {
+                            throw Exception("Forcing MediaStore fallback")
                         }
 
-                        retries += 1
+                        val artistString = getExtraMetadata("$sdcardRoot$path$name")
+                        // parse data
+                        artistString.artists?.split(';')?.forEach { artistVal ->
+
+                            // check if this artist exists in DB already
+                            val databaseArtistMatch =
+                                runBlocking(Dispatchers.IO) {
+                                    database.searchArtists(artistVal).first().filter { artist ->
+                                        return@filter artist.artist.name == artistVal
+                                    }
+                                }
+
+                            if (SCANNER_DEBUG)
+                                Timber.tag(TAG).d("ARTIST FOUND IN DB??? Results size: ${databaseArtistMatch.size}")
+                            // resolve artist from YTM if not found in DB
+                            if (databaseArtistMatch.isEmpty()) {
+                                youtubeArtistLookup(artistVal)?.let { artists.add(it) }
+                            } else {
+                                artists.add(
+                                    databaseArtistMatch.first().artist
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (SCANNER_CRASH_AT_FIRST_ERROR && scannerType != ScannerType.MEDIASTORE) {
+                            throw Exception("HALTING AT FIRST SCANNER ERROR " + e.message) // debug
+                        }
+                        // fallback on media store
+                        Timber.tag(TAG).d(
+                            "ERROR READING ARTIST METADATA: ${e.message}" +
+                                    " Falling back on MediaStore for $path$name"
+                        )
+                        e.printStackTrace()
+
+                        if (artist.isNotBlank()) {
+                            artists.add(ArtistEntity(artistID, artist, isLocal = true))
+                        }
                     }
 
                     return Song(
@@ -450,11 +457,13 @@ fun scanLocal(
                     )
                 }
 
-                if (!SYNC_SCANNER && scannerType == ScannerType.FFPROBEKIT_ASYNC) {
+                if (!SYNC_SCANNER) {
+                    // use async scanner
                     scannerJobs.add(
                         async(scannerSession) { advancedScan() }
                     )
                 } else {
+                    // force synchronous scanning of songs
                     val toInsert = advancedScan()
                     advancedScan().song.localPath?.let { s ->
                         newDirectoryStructure.insert(
@@ -466,6 +475,7 @@ fun scanLocal(
         }
 
         if (!SYNC_SCANNER) {
+            // use async scanner
             scannerJobs.awaitAll()
         }
     }
@@ -506,13 +516,14 @@ fun youtubeArtistLookup(query: String): ArtistEntity? {
                     foundArtist.thumbnail
                 )
 
-                Log.d("WTF", "WHO TF IS THIS" + result.items.first().title)
+                if (SCANNER_DEBUG)
+                    Timber.tag(TAG).d("Found remote artist:  ${result.items.first().title}")
             }.onFailure {
                 throw Exception("Failed to search on YouTube Music")
             }
         } catch (e: Exception) {
             // create temporary artists
-            Log.w("WTF", "FAILED TO RETRIEVE ARTIST, generating one ")
+            Timber.tag(TAG).w("Failed to retrieve remote artist, generating one")
             ytmResult = ArtistEntity(ArtistEntity.generateArtistId(), query, isLocal = true)
         }
     }
@@ -537,28 +548,17 @@ fun syncDB(
     matchStrength: ScannerSensitivity,
     strictFileNames: Boolean
 ) {
-    println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + directoryStructure.size)
+    Timber.tag(TAG).d("------------ Starting Quick Directory Rebuild ------------")
+    Timber.tag(TAG).d("Entries to process: ${directoryStructure.size}")
 
     database.transaction {
         directoryStructure.forEach { song ->
-//            println("search for " + song.song.title.substringBeforeLast('.'))
             val querySong = database.searchSongs(song.song.title.substringBeforeLast('.'))
-
-
 
             CoroutineScope(Dispatchers.IO).launch {
 
                 // check if this song is known to the library
                 val songMatch = querySong.first().filter {
-                    // match file names
-                    if (strictFileNames &&
-                        (it.song.localPath?.substringBeforeLast('/') !=
-                            song.song.localPath?.substringBeforeLast('/'))
-                    ) {
-                        return@filter false
-                    }
-//                    println("song here:: " + it.song.title)
-
                     return@filter compareSong(it, song, matchStrength, strictFileNames)
                 }
 
@@ -567,11 +567,11 @@ fun syncDB(
                  * TODO: update specific fields instead of whole object
                  */
                 if (songMatch.isNotEmpty()) { // known song, update the song info in the database
-                    println("WE HAVE THIS WANKER: " + song.song.title)
+                    Timber.tag(TAG).d("Found in database, updating song: ${song.song.title}")
                     database.update(song.song)
                 } else { // new song
-                    println("WE inserrttt WANKER   " + song.song.title + song.artists.first().name + song.artists.first().id)
-                    println(database.insert(song.toMediaMetadata()))
+                    Timber.tag(TAG).d("NOT found in database, adding song: ${song.song.title}")
+                    database.insert(song.toMediaMetadata())
                 }
                 // do not delete songs from database automatically
             }
@@ -583,8 +583,8 @@ fun syncDB(
 /**
  * Check if artists are the same
  *
- *  * Both null == same artists
- *  * Either null == different artists
+ *  Both null == same artists
+ *  Either null == different artists
  */
 fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
 
@@ -611,24 +611,29 @@ fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
  * @param strictFileNames Whether to consider file names
  */
 fun compareSong(a: Song, b: Song, matchStrength: ScannerSensitivity, strictFileNames: Boolean): Boolean {
+    // if match file names
     if (strictFileNames &&
         (a.song.localPath?.substringBeforeLast('/') !=
-            b.song.localPath?.substringBeforeLast('/'))
+                b.song.localPath?.substringBeforeLast('/'))
     ) {
         return false
     }
 
+    // compare songs based on scanner strength
     return when (matchStrength) {
         ScannerSensitivity.LEVEL_1 -> a.song.title == b.song.title
         ScannerSensitivity.LEVEL_2 -> a.song.title == b.song.title &&
-            compareArtist(a.artists, b.artists)
+                compareArtist(a.artists, b.artists)
 
         ScannerSensitivity.LEVEL_3 -> a.song.title == b.song.title &&
-            compareArtist(a.artists, b.artists) && true // album compare go here
+                compareArtist(a.artists, b.artists) && true // album compare go here
     }
 }
 
 
+/**
+ * Cached image
+ */
 object CachedBitmap {
     var path: String? = null
     var image: Bitmap? = null
@@ -667,35 +672,35 @@ var bitmapCache = ArrayList<CachedBitmap>()
  * @param path Full path of audio file
  */
 fun getLocalThumbnail(path: String?): Bitmap? {
-        if (path == null) {
-            return null
-        }
+    if (path == null) {
+        return null
+    }
 
-        // get cached image
-        try {
-            return CachedBitmap.retrieveImage(path)
-        } catch (_: NoSuchElementException) {
-        }
+    // get cached image
+    try {
+        return CachedBitmap.retrieveImage(path)
+    } catch (_: NoSuchElementException) {
+    }
 
-        val mData = MediaMetadataRetriever()
-        mData.setDataSource(path)
+    val mData = MediaMetadataRetriever()
+    mData.setDataSource(path)
 
-        val image: Bitmap? = try {
-            val art = mData.embeddedPicture
-            BitmapFactory.decodeByteArray(art, 0, art!!.size)
-        } catch (e: Exception) {
-            null
-        }
+    val image: Bitmap? = try {
+        val art = mData.embeddedPicture
+        BitmapFactory.decodeByteArray(art, 0, art!!.size)
+    } catch (e: Exception) {
+        null
+    }
 
-        CachedBitmap.cache(path, image)
-        return image
+    CachedBitmap.cache(path, image)
+    return image
 }
 
 
 /**
  * Get cached directory tree
  */
-fun getDirectorytree(): DirectoryTree? {
+fun getDirectoryTree(): DirectoryTree? {
     if (cachedDirectoryTree == null) {
         return null
     }

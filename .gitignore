@@ -87,3 +87,5 @@ lint/tmp/
 
 .DS_Store
 /app/release/
+/app/src/main/jni/ffmpeg-android-maker/
+/app/src/main/jni/src/

@@ -295,8 +295,8 @@
     <string name="scanner_type_title">Scanner Speed</string>
     <string name="scanner_type_description">Choose scanner type</string>
     <string name="scanner_type_mediastore">MediaStore (very fast, inaccurate artist tags)</string>
-    <string name="scanner_type_ffprobekit_sync">FFProbe async (slow, mostly accurate tags)</string>
-    <string name="scanner_type_ffprobekit_async">FFProbe sync (extremely slow, highly accurate)</string>
+    <string name="scanner_type_ffprobe">FFProbe (slow, accurate tags)</string>
+    <string name="scanner_type_ffprobekit_async">FFProbe-kit (slow, accurate tags)</string>
 
 <!--Folders-->
     <string name="flat_subfolders_title">Flatten subfolders</string>

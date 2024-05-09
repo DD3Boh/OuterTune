@@ -230,7 +230,7 @@ fun LocalPlayerSettings(
                 when (it) {
                     ScannerType.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
                     ScannerType.FFPROBEKIT_ASYNC -> stringResource(R.string.scanner_type_ffprobekit_async)
-                    ScannerType.FFPROBEKIT_SYNC -> stringResource(R.string.scanner_type_ffprobekit_sync)
+                    ScannerType.FFPROBE -> stringResource(R.string.scanner_type_ffprobe)
                 }
             }
         )
