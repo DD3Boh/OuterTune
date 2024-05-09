@@ -136,7 +136,7 @@ fun MiniMediaInfo(
             if (mediaMetadata.isLocal == true) {
                 // local thumbnail arts
                 AsyncLocalImage(
-                    image = { getLocalThumbnail(mediaMetadata.localPath) },
+                    image = { getLocalThumbnail(mediaMetadata.localPath, true) },
                     contentDescription = null,
                     modifier = Modifier
                         .size(48.dp)

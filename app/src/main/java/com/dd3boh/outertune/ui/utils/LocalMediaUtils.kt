@@ -14,6 +14,8 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.utils.cache
+import com.dd3boh.outertune.utils.retrieveImage
 import com.dd3boh.outertune.utils.scanners.FFProbeKitScanner
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.YouTube.search
@@ -393,7 +395,7 @@ fun scanLocal(
 
                     try {
                         // decide which scanner to use
-                        val scanner = when(scannerType) {
+                        val scanner = when (scannerType) {
                             ScannerType.FFPROBEKIT_ASYNC -> FFProbeKitScanner()
                             ScannerType.FFPROBE -> throw Exception("Not implemented")
                             ScannerType.MEDIASTORE -> throw Exception("Forcing MediaStore fallback")
@@ -628,69 +630,52 @@ fun compareSong(a: Song, b: Song, matchStrength: ScannerSensitivity, strictFileN
     }
 }
 
-
 /**
- * Cached image
+ * Extract the album art from the audio file. The image is not resized
+ * (did you mean to use getLocalThumbnail(path: String?, resize: Boolean)?).
+ *
+ * @param path Full path of audio file
  */
-object CachedBitmap {
-    var path: String? = null
-    var image: Bitmap? = null
-
-    /**
-     * Adds an image to the cache
-     */
-    fun cache(path: String, image: Bitmap?) {
-        if (image == null) {
-            return
-        }
-
-        this.path = path
-        this.image = image
-        bitmapCache.add(this)
-    }
-
-    /**
-     * Retrieves an image from the cache
-     */
-    fun retrieveImage(path: String): Bitmap? {
-        return bitmapCache.first { it.path == path }.image
-    }
-}
-
-/**
- * TODO: Fix the root cause of the miniplayer constantly needing reloading
- * TODO: Clear the cache on library re-scan
- */
-// memory leak? who cares? speed is king!
-var bitmapCache = ArrayList<CachedBitmap>()
+fun getLocalThumbnail(path: String?): Bitmap? = getLocalThumbnail(path, false)
 
 /**
  * Extract the album art from the audio file
  *
  * @param path Full path of audio file
+ * @param resize Whether to resize the Bitmap to a thumbnail size (300x300)
  */
-fun getLocalThumbnail(path: String?): Bitmap? {
+fun getLocalThumbnail(path: String?, resize: Boolean): Bitmap? {
     if (path == null) {
         return null
     }
+    // try cache lookup
+    val cachedImage = if (resize) {
+        retrieveImage(path)?.resizedImage
+    } else {
+        retrieveImage(path)?.image
+    }
 
-    // get cached image
-    try {
-        return CachedBitmap.retrieveImage(path)
-    } catch (_: NoSuchElementException) {
+    if (cachedImage == null) {
+        Timber.tag(TAG).d("Cache miss on $path")
+    } else {
+        return cachedImage
     }
 
     val mData = MediaMetadataRetriever()
     mData.setDataSource(path)
 
-    val image: Bitmap? = try {
+    var image: Bitmap = try {
         val art = mData.embeddedPicture
         BitmapFactory.decodeByteArray(art, 0, art!!.size)
     } catch (e: Exception) {
         null
+    } ?: return null
+
+    if (resize) {
+        image = Bitmap.createScaledBitmap(image, 300, 300, false)
     }
 
-    CachedBitmap.cache(path, image)
+    cache(path, image, resize)
     return image
 }
 

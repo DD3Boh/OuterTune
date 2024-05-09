@@ -344,7 +344,7 @@ fun SongListItem(
                 if (song.song.isLocal == true) {
                     // local thumbnail arts
                     AsyncLocalImage(
-                        image = { getLocalThumbnail(song.song.localPath) },
+                        image = { getLocalThumbnail(song.song.localPath, true) },
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
@@ -1003,7 +1003,7 @@ fun MediaMetadataListItem(
         if (mediaMetadata.isLocal == true) {
             // local thumbnail arts
             AsyncLocalImage(
-                image = { getLocalThumbnail(mediaMetadata.localPath) },
+                image = { getLocalThumbnail(mediaMetadata.localPath, true) },
                 contentDescription = null,
                 modifier = Modifier
                     .size(ListThumbnailSize)
