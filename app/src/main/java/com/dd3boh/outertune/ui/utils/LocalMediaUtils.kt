@@ -539,6 +539,9 @@ fun youtubeArtistLookup(query: String): ArtistEntity? {
  * @param directoryStructure
  * @param matchStrength How lax should the scanner be
  * @param strictFileNames Whether to consider file names
+ * @param refreshExisting Setting this this to true will updated existing songs
+ * with new information, else existing song's data will not be touched, regardless
+ * whether it was actually changed on disk
  *
  * inserts a song if not found
  * updates a song information depending
@@ -547,35 +550,42 @@ fun syncDB(
     database: MusicDatabase,
     directoryStructure: List<Song>,
     matchStrength: ScannerSensitivity,
-    strictFileNames: Boolean
+    strictFileNames: Boolean,
+    refreshExisting: Boolean? = false
 ) {
-    Timber.tag(TAG).d("------------ Starting Quick Directory Rebuild ------------")
+    Timber.tag(TAG).d("------------ Starting Local Library Sync ------------")
     Timber.tag(TAG).d("Entries to process: ${directoryStructure.size}")
 
-    database.transaction {
-        directoryStructure.forEach { song ->
-            val querySong = database.searchSongs(song.song.title.substringBeforeLast('.'))
+    directoryStructure.forEach { song ->
+        val querySong = database.searchSongs(song.song.title)
 
-            CoroutineScope(Dispatchers.IO).launch {
+        runBlocking(Dispatchers.IO) {
 
-                // check if this song is known to the library
-                val songMatch = querySong.first().filter {
-                    return@filter compareSong(it, song, matchStrength, strictFileNames)
-                }
-
-
-                /**
-                 * TODO: update specific fields instead of whole object
-                 */
-                if (songMatch.isNotEmpty()) { // known song, update the song info in the database
-                    Timber.tag(TAG).d("Found in database, updating song: ${song.song.title}")
-                    database.update(song.song)
-                } else { // new song
-                    Timber.tag(TAG).d("NOT found in database, adding song: ${song.song.title}")
-                    database.insert(song.toMediaMetadata())
-                }
-                // do not delete songs from database automatically
+            // check if this song is known to the library
+            val songMatch = querySong.first().filter {
+                return@filter compareSong(it, song, matchStrength, strictFileNames)
             }
+
+            if (SCANNER_DEBUG) {
+                Timber.tag(TAG)
+                    .d("Found songs that match: ${songMatch.size}, Total results from database: ${querySong.first().size}")
+                if (songMatch.isNotEmpty()) {
+                    Timber.tag(TAG).d("FIRST Found songs ${songMatch.first().song.title}")
+                }
+            }
+
+
+            /**
+             * TODO: update specific fields instead of whole object
+             */
+            if (songMatch.isNotEmpty() && refreshExisting == true) { // known song, update the song info in the database
+                Timber.tag(TAG).d("Found in database, updating song: ${song.song.title}")
+                database.update(song.song)
+            } else if (songMatch.isEmpty() ){ // new song
+                Timber.tag(TAG).d("NOT found in database, adding song: ${song.song.title}")
+                database.insert(song.toMediaMetadata())
+            }
+            // do not delete songs from database automatically
         }
     }
 
@@ -614,8 +624,8 @@ fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
 fun compareSong(a: Song, b: Song, matchStrength: ScannerSensitivity, strictFileNames: Boolean): Boolean {
     // if match file names
     if (strictFileNames &&
-        (a.song.localPath?.substringBeforeLast('/') !=
-                b.song.localPath?.substringBeforeLast('/'))
+        (a.song.localPath?.substringAfterLast('/') !=
+                b.song.localPath?.substringAfterLast('/'))
     ) {
         return false
     }

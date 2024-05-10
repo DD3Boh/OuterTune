@@ -286,7 +286,7 @@
 <!--scanner additional settings-->
     <string name="scanner_settings_title">Additional scanner settings</string>
     <string name="scanner_strict_file_name_title">Strict file names</string>
-    <string name="scanner_strict_file_name_description">When enabled extensions will NOT be ignored. Ex. "Song.ogg" will be a different song from "Song.flac"</string>
+    <string name="scanner_strict_file_name_description">When enabled, file names will NOT be ignored. Ex. "Song.ogg" will be a different song from "Song.flac". Scanner sensitivity preference will still apply</string>
     <string name="scanner_sensitivity_title">Configure scanner sensitivity</string>
     <string name="scanner_sensitivity_L1">Match title</string>
     <string name="scanner_sensitivity_L2">Match title and artists</string>
