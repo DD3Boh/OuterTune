@@ -403,7 +403,8 @@ fun scanLocal(
 
                         val artistString = scanner.getMediaStoreSupplement("$sdcardRoot$path$name")
                         // parse data
-                        artistString.artists?.split(';')?.forEach { artistVal ->
+                        artistString.artists?.split(';')?.forEach { element ->
+                            val artistVal = element.trim()
 
                             // check if this artist exists in DB already
                             val databaseArtistMatch =
