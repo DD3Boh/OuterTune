@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
 
 @Immutable
@@ -34,5 +35,9 @@ data class AlbumEntity(
                 YouTube.likePlaylist(playlistId, bookmarkedAt == null)
             this.cancel()
         }
+    }
+
+    companion object {
+        fun generateAlbumId() = "LA" + RandomStringUtils.random(8, true, false)
     }
 }

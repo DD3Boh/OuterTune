@@ -600,7 +600,7 @@ class MusicService : MediaLibraryService(),
             val mediaId = dataSpec.key ?: error("No media id")
 
             // find a better way to detect local files later...
-            if (mediaId.startsWith("1000")) {
+            if (mediaId.startsWith("LA")) {
                 val songPath = runBlocking(Dispatchers.IO) {
                     database.song(mediaId).firstOrNull()?.song?.localPath
                 }

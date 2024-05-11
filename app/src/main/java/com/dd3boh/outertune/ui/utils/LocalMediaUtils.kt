@@ -367,7 +367,7 @@ fun scanLocal(
             val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
 
             while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
+                val id = SongEntity.generateSongId()
                 val name = cursor.getString(nameColumn) // file name
                 val title = cursor.getString(titleColumn) // song title
                 val duration = cursor.getInt(durationColumn)
