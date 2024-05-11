@@ -16,13 +16,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -48,10 +48,11 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
-import com.dd3boh.outertune.constants.ScannerSensitivity
+import com.dd3boh.outertune.constants.LookupYtmArtistsKey
+import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
-import com.dd3boh.outertune.constants.ScannerType
+import com.dd3boh.outertune.constants.ScannerImpl
 import com.dd3boh.outertune.constants.ScannerTypeKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
@@ -61,8 +62,12 @@ import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
 
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.ui.utils.localToRemoteArtist
+import com.dd3boh.outertune.ui.utils.quickSync
+import com.dd3boh.outertune.ui.utils.refreshLocal
 import com.dd3boh.outertune.ui.utils.scanLocal
 import com.dd3boh.outertune.ui.utils.syncDB
+import com.dd3boh.outertune.ui.utils.unloadScanner
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -77,8 +82,9 @@ fun LocalPlayerSettings(
     context: Context,
     database: MusicDatabase,
 ) {
-    val mediaPermissionLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
-    else Manifest.permission.READ_EXTERNAL_STORAGE
+    val mediaPermissionLevel =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
+        else Manifest.permission.READ_EXTERNAL_STORAGE
 
     val coroutineScope = rememberCoroutineScope()
     var isScannerActive by remember { mutableStateOf(false) }
@@ -87,14 +93,17 @@ fun LocalPlayerSettings(
 
     val (scannerType, onScannerTypeChange) = rememberEnumPreference(
         key = ScannerTypeKey,
-        defaultValue = ScannerType.MEDIASTORE
+        defaultValue = ScannerImpl.MEDIASTORE
     )
     val (scannerSensitivity, onScannerSensitivityChange) = rememberEnumPreference(
         key = ScannerSensitivityKey,
-        defaultValue = ScannerSensitivity.LEVEL_2
+        defaultValue = ScannerMatchCriteria.LEVEL_2
     )
     val (strictExtensions, onStrictExtensionsChange) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val (autoScan, onAutoScanChange) = rememberPreference(AutomaticScannerKey, defaultValue = false)
+
+    var fullRescan by remember { mutableStateOf(false) }
+    val (lookupYtmArtists, onlookupYtmArtistsChange) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
 
     Column(
         Modifier
@@ -132,7 +141,8 @@ fun LocalPlayerSettings(
 
                     // check permission
                     if (context.checkSelfPermission(mediaPermissionLevel)
-                        != PackageManager.PERMISSION_GRANTED) {
+                        != PackageManager.PERMISSION_GRANTED
+                    ) {
 
                         Toast.makeText(
                             context,
@@ -140,14 +150,16 @@ fun LocalPlayerSettings(
                             Toast.LENGTH_SHORT
                         ).show()
 
-                        requestPermissions(context as Activity,
+                        requestPermissions(
+                            context as Activity,
                             arrayOf(mediaPermissionLevel), PackageManager.PERMISSION_GRANTED
                         )
 
                         mediaPermission = false
                         return@Button
                     } else if (context.checkSelfPermission(mediaPermissionLevel)
-                        == PackageManager.PERMISSION_GRANTED) {
+                        == PackageManager.PERMISSION_GRANTED
+                    ) {
                         mediaPermission = true
                     }
 
@@ -160,8 +172,28 @@ fun LocalPlayerSettings(
                         Toast.LENGTH_SHORT
                     ).show()
                     coroutineScope.launch(Dispatchers.IO) {
-                        val directoryStructure = scanLocal(context, database, scannerType).value
-                        syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions)
+                        // full rescan
+                        if (fullRescan) {
+                            val directoryStructure = scanLocal(context, database, scannerType, lookupYtmArtists).value
+                            syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
+                            unloadScanner()
+                        } else {
+                            // quick scan
+                            val directoryStructure = scanLocal(context, database, ScannerImpl.MEDIASTORE, false).value
+                            quickSync(
+                                database, directoryStructure.toList(), scannerSensitivity,
+                                strictExtensions, scannerType
+                            )
+                            unloadScanner()
+
+                            // start artist linking job
+                            if (lookupYtmArtists) {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    localToRemoteArtist(database)
+                                }
+                            }
+                        }
+
 
                         isScannerActive = false
                         isScanFinished = true
@@ -200,6 +232,39 @@ fun LocalPlayerSettings(
             )
         }
 
+        // scanner checkboxes
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = fullRescan,
+                    onCheckedChange = { fullRescan = it }
+                )
+                Text(
+                    stringResource(R.string.scanner_variant_rescan), color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 14.sp
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = lookupYtmArtists,
+                    onCheckedChange = onlookupYtmArtistsChange,
+                )
+                Text(
+                    stringResource(R.string.scanner_online_artist_linking), color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 14.sp
+                )
+            }
+        }
+
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -231,9 +296,9 @@ fun LocalPlayerSettings(
             onValueSelected = onScannerTypeChange,
             valueText = {
                 when (it) {
-                    ScannerType.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
-                    ScannerType.FFPROBEKIT_ASYNC -> stringResource(R.string.scanner_type_ffprobekit_async)
-                    ScannerType.FFPROBE -> stringResource(R.string.scanner_type_ffprobe)
+                    ScannerImpl.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
+                    ScannerImpl.FFPROBEKIT_ASYNC -> stringResource(R.string.scanner_type_ffprobekit_async)
+                    ScannerImpl.FFPROBE -> stringResource(R.string.scanner_type_ffprobe)
                 }
             }
         )
@@ -246,9 +311,9 @@ fun LocalPlayerSettings(
             onValueSelected = onScannerSensitivityChange,
             valueText = {
                 when (it) {
-                    ScannerSensitivity.LEVEL_1 -> stringResource(R.string.scanner_sensitivity_L1)
-                    ScannerSensitivity.LEVEL_2 -> stringResource(R.string.scanner_sensitivity_L2)
-                    ScannerSensitivity.LEVEL_3 -> stringResource(R.string.scanner_sensitivity_L3)
+                    ScannerMatchCriteria.LEVEL_1 -> stringResource(R.string.scanner_sensitivity_L1)
+                    ScannerMatchCriteria.LEVEL_2 -> stringResource(R.string.scanner_sensitivity_L2)
+                    ScannerMatchCriteria.LEVEL_3 -> stringResource(R.string.scanner_sensitivity_L3)
                 }
             }
         )

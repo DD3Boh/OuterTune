@@ -140,7 +140,7 @@ val ScannerTypeKey = stringPreferencesKey("scannerType")
 /**
  * Specify how strict the metadata scanner should be
  */
-enum class ScannerSensitivity {
+enum class ScannerMatchCriteria {
     LEVEL_1, // Title only
     LEVEL_2, // Title and artists
     LEVEL_3, // Title, artists, albums
@@ -149,7 +149,7 @@ enum class ScannerSensitivity {
 /**
  *
  */
-enum class ScannerType {
+enum class ScannerImpl {
     MEDIASTORE,
     FFPROBE,
     FFPROBEKIT_ASYNC,
@@ -157,6 +157,7 @@ enum class ScannerType {
 
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
 val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
+val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")
 val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
 val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
 val LyricTrimKey = booleanPreferencesKey("lyricTrim")

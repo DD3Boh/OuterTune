@@ -246,8 +246,16 @@ interface DatabaseDao {
     fun allSongs(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE isLocal = 1")
-    fun allLocalSongsData(): Flow<List<Song>>
+    @Query("SELECT * FROM song WHERE isLocal = 1 and inLibrary IS NOT NULL")
+    fun allLocalSongs(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM artist WHERE isLocal != 1")
+    fun allRemoteArtists(): Flow<List<ArtistEntity>>
+
+    @Transaction
+    @Query("SELECT * FROM artist WHERE isLocal = 1")
+    fun allLocalArtists(): Flow<List<ArtistEntity>>
 
     @Query("SELECT * FROM format WHERE id = :id")
     fun format(id: String?): Flow<FormatEntity?>
@@ -492,6 +500,10 @@ interface DatabaseDao {
     @Transaction
     @Query("SELECT * FROM song WHERE title LIKE '%' || :query || '%' AND inLibrary IS NOT NULL LIMIT :previewSize")
     fun searchSongs(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE title LIKE '%' || :query || '%' LIMIT :previewSize")
+    fun searchSongsInclNotInLibrary(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE name LIKE '%' || :query || '%' AND songCount > 0 LIMIT :previewSize")
@@ -750,6 +762,14 @@ interface DatabaseDao {
             radioEndpointParams = playlistItem.radioEndpoint?.params
         ))
     }
+
+    @Transaction
+    @Query("UPDATE song_artist_map SET artistId = :newId WHERE artistId = :oldId")
+    fun updateSongArtistMap(oldId: String, newId: String)
+
+    @Transaction
+    @Query("UPDATE album_artist_map SET artistId = :newId WHERE artistId = :oldId")
+    fun updateAlbumArtistMap(oldId: String, newId: String)
 
     @Upsert
     fun upsert(map: SongAlbumMap)

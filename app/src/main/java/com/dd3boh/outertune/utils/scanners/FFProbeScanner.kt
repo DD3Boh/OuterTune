@@ -9,6 +9,18 @@ const val DEBUG_SAVE_OUTPUT = false
 const val EXTRACTOR_TAG = "FFProbeExtractor"
 
 class FFProbeScanner : MetadataScanner {
+    // load advanced scanner libs
+    init {
+        System.loadLibrary("avcodec")
+        System.loadLibrary("avdevice")
+        System.loadLibrary("ffprobejni")
+        System.loadLibrary("avfilter")
+        System.loadLibrary("avformat")
+        System.loadLibrary("avutil")
+        System.loadLibrary("swresample")
+        System.loadLibrary("swscale")
+    }
+
     /**
      * Given a path to a file, extract necessary metadata
      *

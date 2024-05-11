@@ -282,7 +282,7 @@
     <string name="auto_scanner_description">Automatically scan for songs when opening the app</string>
 
     <string name="manual_scanner_title">Manual scanner</string>
-    <string name="scanner_warning">Depending on the size of your library, it make take a while. It is highly recommend to wait until the scanner to finish before proceeding. Don\'t say I didn\'t warn you!</string>
+    <string name="scanner_warning">By default, the scanner will NOT reload any metadata of existing songs unless you specify otherwise above. Depending on the size of your library, it make take a while. It is highly recommend to wait until the scanner to finish before proceeding.</string>
 
 <!--scanner additional settings-->
     <string name="scanner_settings_title">Additional scanner settings</string>
@@ -298,6 +298,9 @@
     <string name="scanner_type_mediastore">MediaStore (very fast, inaccurate artist tags)</string>
     <string name="scanner_type_ffprobe">FFProbe (slow, accurate tags)</string>
     <string name="scanner_type_ffprobekit_async">FFProbe-kit (slow, accurate tags)</string>
+
+    <string name="scanner_variant_rescan">Rescan the entire library and reload all songs\' metadata</string>
+    <string name="scanner_online_artist_linking">Try to link local files\' artists with ones on YouTube Music</string>
 
 <!--Folders-->
     <string name="flat_subfolders_title">Flatten subfolders</string>
