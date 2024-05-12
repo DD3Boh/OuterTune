@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
+import androidx.compose.ui.text.toLowerCase
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerImpl
 import com.dd3boh.outertune.db.MusicDatabase
@@ -34,6 +35,7 @@ import timber.log.Timber
 import java.io.File
 import java.lang.Integer.parseInt
 import java.time.LocalDateTime
+import java.util.Locale
 
 const val TAG = "LocalMediaUtils"
 
@@ -573,9 +575,10 @@ fun youtubeArtistLookup(query: String): ArtistEntity? {
     runBlocking(Dispatchers.IO) {
         search(query, YouTube.SearchFilter.FILTER_ARTIST).onSuccess { result ->
 
-            val foundArtist = result.items.first()
+            val foundArtist = result.items.firstOrNull {
+                it.title.lowercase(Locale.getDefault()) == query.lowercase(Locale.getDefault())
+            } ?: throw Exception("Failed to search: Artist not found on YouTube Music")
             ytmResult = ArtistEntity(
-                // I pray the first search result will always be the correct one
                 foundArtist.id,
                 foundArtist.title,
                 foundArtist.thumbnail
@@ -908,6 +911,9 @@ fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
     }
 
     // compare entries
+    if (a.size != b.size) {
+        return false
+    }
     val matchingArtists = a.filter { artist ->
         b.any { it.name == artist.name }
     }
