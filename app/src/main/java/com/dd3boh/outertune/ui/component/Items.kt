@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Folder
@@ -466,6 +467,18 @@ fun ArtistListItem(
                     .padding(end = 2.dp)
             )
         }
+
+        // assume if they have a non local artist ID, they are not local
+        if (artist.artist.isLocalArtist) {
+            Icon(
+                Icons.Rounded.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
     },
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) = ListItem(
@@ -495,6 +508,18 @@ fun ArtistGridItem(
                 painter = painterResource(R.drawable.favorite),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
+
+        // assume if they have a non local artist ID, they are not local
+        if (artist.artist.isLocalArtist) {
+            Icon(
+                Icons.Rounded.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier
                     .size(18.dp)
                     .padding(end = 2.dp)
