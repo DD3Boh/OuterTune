@@ -201,6 +201,7 @@
 
     <!-- Settings -->
     <string name="settings">Settings</string>
+    <string name="settings_debug">Debug</string>
     <string name="appearance">Appearance</string>
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
     <string name="dark_theme">Dark theme</string>

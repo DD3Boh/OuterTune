@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.TextFields
@@ -55,6 +56,7 @@ import com.dd3boh.outertune.constants.ScannerTypeKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
+import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
 
@@ -65,6 +67,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -258,6 +261,41 @@ fun LocalPlayerSettings(
             icon = { Icon(Icons.Rounded.TextFields, null) },
             checked = strictExtensions,
             onCheckedChange = onStrictExtensionsChange
+        )
+
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.settings_debug)
+        )
+        
+        PreferenceEntry(
+            title = { Text("DEBUG: Nuke local lib") },
+            icon = { Icon(Icons.Rounded.Backup, null) },
+            onClick = {
+                Toast.makeText(
+                    context,
+                    "Nuking local files from database...",
+                    Toast.LENGTH_SHORT
+                ).show()
+                coroutineScope.launch(Dispatchers.IO) {
+                    Timber.tag("Settings").d("Nuke database status:  ${database.nukeLocalData()}")
+                }
+            }
+        )
+
+        PreferenceEntry(
+            title = { Text("DEBUG: Force local to remote artist migration NOW") },
+            icon = { Icon(Icons.Rounded.Backup, null) },
+            onClick = {
+                Toast.makeText(
+                    context,
+                    "Starting migration...",
+                    Toast.LENGTH_SHORT
+                ).show()
+                coroutineScope.launch(Dispatchers.IO) {
+//                    localToRemoteArtist(database)
+                }
+            }
         )
     }
 

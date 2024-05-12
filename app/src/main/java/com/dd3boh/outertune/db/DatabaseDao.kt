@@ -784,6 +784,25 @@ interface DatabaseDao {
     @Delete
     fun delete(event: Event)
 
+    @Transaction
+    @Query("DELETE FROM song WHERE isLocal IS NOT NULL")
+    fun nukeLocalSongs()
+
+    @Transaction
+    @Query("DELETE FROM artist WHERE isLocal IS NOT NULL")
+    fun nukeLocalArtists()
+
+//    @Transaction
+//    @Query("DELETE FROM album WHERE isLocal IS NOT NULL")
+//    fun nukeLocalAlbums()
+
+    @Transaction
+    fun nukeLocalData() {
+        nukeLocalSongs()
+        nukeLocalArtists()
+//        nukeLocalAlbums()
+    }
+
     @Query("SELECT * FROM playlist_song_map WHERE songId = :songId")
     fun playlistSongMaps(songId: String): List<PlaylistSongMap>
 
