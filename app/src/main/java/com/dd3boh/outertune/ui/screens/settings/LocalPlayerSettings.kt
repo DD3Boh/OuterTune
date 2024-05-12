@@ -69,6 +69,7 @@ import com.dd3boh.outertune.ui.utils.refreshLocal
 import com.dd3boh.outertune.ui.utils.scanLocal
 import com.dd3boh.outertune.ui.utils.syncDB
 import com.dd3boh.outertune.ui.utils.unloadScanner
+import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -195,6 +196,7 @@ fun LocalPlayerSettings(
                             }
                         }
 
+                        purgeCache()
 
                         isScannerActive = false
                         isScanFinished = true

@@ -249,6 +249,7 @@ class MainActivity : ComponentActivity() {
                             localToRemoteArtist(database)
                         }
                     }
+                    purgeCache() // juuuust to be sure
                 }
             }
             else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {

@@ -2,23 +2,20 @@ package com.dd3boh.outertune.utils
 
 import android.graphics.Bitmap
 
+const val MAX_IMAGE_CACHE = 150 // max cached images to hold
+
 /**
  * Cached image
  */
-class CachedBitmap(var path: String?, var image: Bitmap?, var resizedImage: Bitmap?)
+data class CachedBitmap(var path: String?, var image: Bitmap?, var resizedImage: Bitmap?)
 
-/**
- * TODO: Fix the root cause of the miniplayer constantly needing reloading
- * TODO: Clear the cache on library re-scan
- */
-// memory leak? who cares? speed is king!
-var bitmapCache = ArrayList<CachedBitmap>()
+var bitmapCache = ArrayDeque<CachedBitmap>()
 
 /**
  * Retrieves an image from the cache
  */
 fun retrieveImage(path: String): CachedBitmap? {
-    return bitmapCache.firstOrNull() { it.path == path }
+    return bitmapCache.firstOrNull { it.path == path }
 }
 
 /**
@@ -29,13 +26,18 @@ fun cache(path: String, image: Bitmap?, resize: Boolean) {
         return
     }
 
+    // adhere to limit
+    if (bitmapCache.size >= MAX_IMAGE_CACHE) {
+        bitmapCache.removeFirst()
+    }
+
     val existingCached = retrieveImage(path)
     if (existingCached == null) {
         // add the image
         if (resize) {
-            bitmapCache.add(CachedBitmap(path, null, image))
+            bitmapCache.addLast(CachedBitmap(path, null, image))
         } else {
-            bitmapCache.add(CachedBitmap(path, image, null))
+            bitmapCache.addLast(CachedBitmap(path, image, null))
         }
     } else {
         if (resize) {
@@ -44,4 +46,11 @@ fun cache(path: String, image: Bitmap?, resize: Boolean) {
             existingCached.image = image
         }
     }
+}
+
+/**
+ * Removes all cached images
+ */
+fun purgeCache() {
+    bitmapCache = ArrayDeque()
 }
