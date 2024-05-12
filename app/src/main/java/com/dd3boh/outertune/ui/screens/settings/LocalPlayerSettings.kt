@@ -300,7 +300,6 @@ fun LocalPlayerSettings(
             valueText = {
                 when (it) {
                     ScannerImpl.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
-                    ScannerImpl.FFPROBEKIT_ASYNC -> stringResource(R.string.scanner_type_ffprobekit_async)
                     ScannerImpl.FFPROBE -> stringResource(R.string.scanner_type_ffprobe)
                 }
             }

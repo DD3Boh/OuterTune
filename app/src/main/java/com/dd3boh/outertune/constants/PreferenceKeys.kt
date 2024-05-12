@@ -152,7 +152,6 @@ enum class ScannerMatchCriteria {
 enum class ScannerImpl {
     MEDIASTORE,
     FFPROBE,
-    FFPROBEKIT_ASYNC,
 }
 
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")

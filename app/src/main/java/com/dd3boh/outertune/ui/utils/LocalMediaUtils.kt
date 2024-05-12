@@ -18,7 +18,6 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.utils.MetadataScanner
 import com.dd3boh.outertune.utils.cache
 import com.dd3boh.outertune.utils.retrieveImage
-import com.dd3boh.outertune.utils.scanners.FFProbeKitScanner
 import com.dd3boh.outertune.utils.scanners.FFProbeScanner
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.YouTube.search
@@ -260,7 +259,6 @@ var advancedScannerImpl: MetadataScanner? = null
 fun getScanner(scannerImpl: ScannerImpl): MetadataScanner? {
     // kotlin won't let me return MetadataScanner even if it cant possibly be null broooo
     return when (scannerImpl) {
-        ScannerImpl.FFPROBEKIT_ASYNC -> if (advancedScannerImpl is FFProbeKitScanner) advancedScannerImpl else FFProbeKitScanner()
         ScannerImpl.FFPROBE -> if (advancedScannerImpl is FFProbeScanner) advancedScannerImpl else FFProbeScanner()
         ScannerImpl.MEDIASTORE -> throw Exception("Forcing MediaStore fallback")
     }
