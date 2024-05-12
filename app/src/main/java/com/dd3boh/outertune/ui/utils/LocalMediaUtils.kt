@@ -12,6 +12,7 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.utils.MetadataScanner
@@ -28,6 +29,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.File
@@ -637,10 +639,28 @@ fun syncDB(
 
             if (songMatch.isNotEmpty() && refreshExisting == true) { // known song, update the song info in the database
                 Timber.tag(TAG).d("Found in database, updating song: ${song.song.title}")
-                database.update(song.song)
-                /**
-                 * TODO: update any artist or artist/song map table
-                 */
+                val songToUpdate = songMatch.first()
+                database.update(songToUpdate.song)
+
+                // destroy existing artist links
+                database.unlinkSongArtists(songToUpdate.id)
+
+                // update artists
+                var artistPos = 0
+                song.artists.forEach {
+                    val dbArtist = database.searchArtists(it.name).firstOrNull()?.firstOrNull()
+
+                    if (dbArtist == null) {
+                        // artist does not exist in db, add it then link it
+                        database.insert(it)
+                        database.insert(SongArtistMap(songToUpdate.id, it.id, artistPos))
+                    } else {
+                        // artist does  exist in db, link to it
+                        database.insert(SongArtistMap(songToUpdate.id, dbArtist.artist.id, artistPos))
+                    }
+
+                    artistPos++
+                }
             } else if (songMatch.isEmpty()) { // new song
                 Timber.tag(TAG).d("NOT found in database, adding song: ${song.song.title}")
                 database.insert(song.toMediaMetadata())

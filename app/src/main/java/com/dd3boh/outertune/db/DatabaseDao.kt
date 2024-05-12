@@ -805,6 +805,10 @@ interface DatabaseDao {
     fun delete(event: Event)
 
     @Transaction
+    @Query("DELETE FROM song_artist_map WHERE songId = :songID")
+    fun unlinkSongArtists(songID: String)
+
+    @Transaction
     @Query("DELETE FROM song WHERE isLocal IS NOT NULL")
     fun nukeLocalSongs()
 
