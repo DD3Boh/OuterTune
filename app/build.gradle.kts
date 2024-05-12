@@ -139,12 +139,4 @@ dependencies {
     coreLibraryDesugaring(libs.desugaring)
 
     implementation(libs.timber)
-
-//    *** ffmpeg-kit remote lib
-//    implementation(libs.ffmpegkit)
-
-//    *** ffmpeg-kit self-compiled lib
-    implementation (libs.smartException)
-    // version 6.0-2
-    implementation (files("libs/ffmpeg-kit-release.aar"))
 }
