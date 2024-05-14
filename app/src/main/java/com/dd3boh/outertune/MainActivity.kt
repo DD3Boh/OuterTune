@@ -262,6 +262,16 @@ class MainActivity : ComponentActivity() {
         unbindService(serviceConnection)
         super.onStop()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (playerConnection?.isPlaying?.value == true) {
+            stopService(Intent(this, MusicService::class.java))
+            unbindService(serviceConnection)
+            playerConnection = null
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition",
         "StateFlowValueCalledInComposition"
