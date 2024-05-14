@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Speed
@@ -111,13 +112,13 @@ fun LocalPlayerSettings(
             .verticalScroll(rememberScrollState())
     ) {
         // automatic scanner
-//        SwitchPreference(
-//            title = { Text(stringResource(R.string.auto_scanner_title)) },
-//            description = stringResource(R.string.auto_scanner_description),
-//            icon = { Icon(Icons.Rounded.Autorenew, null) },
-//            checked = autoScan,
-//            onCheckedChange = onAutoScanChange
-//        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.auto_scanner_title)) },
+            description = stringResource(R.string.auto_scanner_description),
+            icon = { Icon(Icons.Rounded.Autorenew, null) },
+            checked = autoScan,
+            onCheckedChange = onAutoScanChange
+        )
 
 
         PreferenceGroupTitle(

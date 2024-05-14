@@ -104,14 +104,20 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
+import com.dd3boh.outertune.ui.utils.localToRemoteArtist
+import com.dd3boh.outertune.ui.utils.quickSync
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
+import com.dd3boh.outertune.ui.utils.scanLocal
+import com.dd3boh.outertune.ui.utils.unloadScanner
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
+import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -169,7 +175,9 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition",
+        "StateFlowValueCalledInComposition"
+    )
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -213,11 +221,34 @@ class MainActivity : ComponentActivity() {
             }
 
             // Check if the permissions for local media access
-            // i have no idea is this will explode under API 33
             if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_GRANTED) {
+                val (scannerType) = rememberEnumPreference(
+                    key = ScannerTypeKey,
+                    defaultValue = ScannerImpl.MEDIASTORE
+                )
+                val (scannerSensitivity) = rememberEnumPreference(
+                    key = ScannerSensitivityKey,
+                    defaultValue = ScannerMatchCriteria.LEVEL_2
+                )
+                val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
+                val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
                 val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = false)
-                if (autoScan == true) {
-//                    Not implemented
+
+                if (autoScan) {
+                    // equivalent to (quick scan)
+                    val directoryStructure = scanLocal(this, database, ScannerImpl.MEDIASTORE, false).value
+                    quickSync(
+                        database, directoryStructure.toList(), scannerSensitivity,
+                        strictExtensions, scannerType
+                    )
+                    unloadScanner()
+
+                    // start artist linking job
+                    if (lookupYtmArtists) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            localToRemoteArtist(database)
+                        }
+                    }
                 }
             }
             else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
