@@ -105,7 +105,6 @@ dependencies {
     implementation(libs.media3.okhttp)
 
     implementation(libs.room.runtime)
-    annotationProcessor(libs.room.compiler)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
 
