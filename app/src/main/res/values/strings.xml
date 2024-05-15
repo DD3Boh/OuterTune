@@ -295,8 +295,9 @@
 
     <string name="scanner_type_title">Scanner Speed</string>
     <string name="scanner_type_description">Choose scanner type</string>
-    <string name="scanner_type_mediastore">MediaStore (very fast, inaccurate artist tags)</string>
-    <string name="scanner_type_ffprobe">FFProbe (slow, accurate tags)</string>
+    <string name="scanner_type_mediastore">MediaStore (Android\'s scanner, possibly inaccurate)</string>
+    <string name="scanner_type_mediastore_ffprobe">Hybrid (MediaStore extractor, but FFProbe for artist extraction)</string>
+    <string name="scanner_type_ffprobe">FFProbe (Prioritize FFmpeg extraction over MediaStore</string>
     <string name="scanner_type_ffprobekit_async">FFProbe-kit (slow, accurate tags)</string>
 
     <string name="scanner_variant_rescan">Rescan the entire library and reload all songs\' metadata</string>

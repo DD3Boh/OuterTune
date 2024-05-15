@@ -6,16 +6,17 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
-import androidx.compose.ui.text.toLowerCase
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerImpl
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
+import com.dd3boh.outertune.db.entities.FormatEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.utils.ExtraMetadataWrapper
 import com.dd3boh.outertune.utils.MetadataScanner
 import com.dd3boh.outertune.utils.cache
 import com.dd3boh.outertune.utils.retrieveImage
@@ -71,6 +72,9 @@ val projection = arrayOf(
     MediaStore.Audio.Media.ALBUM,
     MediaStore.Audio.Media.ALBUM_ID,
     MediaStore.Audio.Media.RELATIVE_PATH,
+    MediaStore.Audio.Media.MIME_TYPE,
+    MediaStore.Audio.Media.BITRATE,
+    MediaStore.Audio.Media.SIZE,
 )
 
 
@@ -261,7 +265,8 @@ var advancedScannerImpl: MetadataScanner? = null
 fun getScanner(scannerImpl: ScannerImpl): MetadataScanner? {
     // kotlin won't let me return MetadataScanner even if it cant possibly be null broooo
     return when (scannerImpl) {
-        ScannerImpl.FFPROBE -> if (advancedScannerImpl is FFProbeScanner) advancedScannerImpl else FFProbeScanner()
+        ScannerImpl.FFPROBE, ScannerImpl.MEDIASTORE_FFPROBE ->
+            if (advancedScannerImpl is FFProbeScanner) advancedScannerImpl else FFProbeScanner()
         ScannerImpl.MEDIASTORE -> throw Exception("Forcing MediaStore fallback")
     }
 }
@@ -342,8 +347,8 @@ fun refreshLocal(
  * For passing along song metadata
  */
 data class SongTempData(
-    val id: String, val path: String, val title: String, val duration: Int,
-    val artist: String?, val artistID: String?, val album: String?, val albumID: String?,
+    val id: String, val path: String, val title: String, val duration: Int, val artist: String?,
+    val artistID: String?, val album: String?, val albumID: String?, val formatEntity: FormatEntity,
 )
 
 /**
@@ -363,9 +368,15 @@ fun advancedScan(
     try {
         // decide which scanner to use
         val scanner = getScanner(scannerImpl)
-        val artistString = scanner?.getMediaStoreSupplement(basicData.path)
+        var ffmpegData: ExtraMetadataWrapper? = null
+        if (scannerImpl == ScannerImpl.MEDIASTORE_FFPROBE) {
+            ffmpegData = scanner?.getMediaStoreSupplement(basicData.path)
+        } else if (scannerImpl == ScannerImpl.FFPROBE){
+            ffmpegData =  scanner?.getAllMetadata(basicData.path, basicData.formatEntity)
+        }
+
         // parse data
-        artistString?.artists?.split(';')?.forEach { element ->
+        ffmpegData?.artists?.split(';')?.forEach { element ->
             val artistVal = element.trim()
 
             // check if this artist exists in DB already
@@ -392,6 +403,21 @@ fun advancedScan(
                 }
             } catch (e: Exception) {
                 artists.add(ArtistEntity("LA${ArtistEntity.generateArtistId()}", artistVal, isLocal = true))
+            }
+        }
+
+        // file format info
+        if (scannerImpl == ScannerImpl.FFPROBE && ffmpegData?.format != null){
+            database.query {
+                upsert(
+                    ffmpegData.format!!
+                )
+            }
+        } else if (scannerImpl == ScannerImpl.MEDIASTORE_FFPROBE) {
+            database.query {
+                upsert(
+                    basicData.formatEntity
+                )
             }
         }
     } catch (e: Exception) {
@@ -495,6 +521,9 @@ fun scanLocal(
             val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
 
+            val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val bitrateColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.BITRATE)
+
             while (cursor.moveToNext()) {
                 val id = SongEntity.generateSongId()
                 val name = cursor.getString(nameColumn) // file name
@@ -505,6 +534,10 @@ fun scanLocal(
                 val albumID = cursor.getString(albumIDColumn)
                 val album = cursor.getString(albumColumn)
                 val path = cursor.getString(pathColumn)
+
+                // extra stream info
+                val bitrate = cursor.getInt(bitrateColumn)
+                val mime = cursor.getString(mimeColumn)
 
                 if (SCANNER_DEBUG)
                     Timber.tag(TAG).d("ID: $id, Name: $name, ARTIST: $artist, PATH: $path")
@@ -521,6 +554,17 @@ fun scanLocal(
                                 SongTempData(
                                     id.toString(), "$sdcardRoot$path$name", title, duration,
                                     artist, artistID, album, albumID,
+                                    FormatEntity(
+                                        id = id,
+                                        itag = -1,
+                                        mimeType = mime,
+                                        codecs = mime.substringAfter('/'),
+                                        bitrate = bitrate,
+                                        sampleRate = -1,
+                                        contentLength = duration.toLong(),
+                                        loudnessDb = null,
+                                        playbackUrl = null
+                                    ),
                                 ), database, scannerImpl, onlineLookup
                             )
                         }
@@ -531,6 +575,17 @@ fun scanLocal(
                         SongTempData(
                             id.toString(), "$sdcardRoot$path$name", title, duration,
                             artist, artistID, album, albumID,
+                            FormatEntity(
+                                id = id,
+                                itag = -1,
+                                mimeType = mime,
+                                codecs = mime.substringAfter('/'),
+                                bitrate = bitrate,
+                                sampleRate = -1,
+                                contentLength = duration.toLong(),
+                                loudnessDb = null,
+                                playbackUrl = null
+                            )
                         ), database, scannerImpl
                     )
                     toInsert.song.localPath?.let { s ->
@@ -725,6 +780,11 @@ fun quickSync(
                 // but Kotlin is too dumb to care. Just ruthlessly suppress the error...
                 val path = "" + s.song.localPath
 
+                // extra stream info
+                val bitrate = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.let { parseInt(it) }
+                val mime = "" + mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+                val sampleRate = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)?.let { parseInt(it) }
+
 
                 if (SCANNER_DEBUG)
                     Timber.tag(TAG).d("ID: $id, Title: $title, ARTIST: $artist, PATH: $path")
@@ -740,6 +800,17 @@ fun quickSync(
                             advancedScan(
                                 SongTempData(
                                     id, path, title, duration, artist, artistID, album, albumID,
+                                    FormatEntity(
+                                        id = id,
+                                        itag = -1,
+                                        mimeType = mime,
+                                        codecs = mime.substringAfter('/'),
+                                        bitrate = bitrate?: -1,
+                                        sampleRate = sampleRate,
+                                        contentLength = duration.toLong(),
+                                        loudnessDb = null,
+                                        playbackUrl = null
+                                    )
                                 ), database, scannerImpl // no online artist lookup
                             )
                         }
@@ -749,6 +820,17 @@ fun quickSync(
                     val toInsert = advancedScan(
                         SongTempData(
                             id, path, title, duration, artist, artistID, album, albumID,
+                            FormatEntity(
+                                id = id,
+                                itag = -1,
+                                mimeType = mime,
+                                codecs = mime.substringAfter('/'),
+                                bitrate = bitrate?: -1,
+                                sampleRate = sampleRate,
+                                contentLength = duration.toLong(),
+                                loudnessDb = null,
+                                playbackUrl = null
+                            )
                         ), database, scannerImpl
                     )
                     artistsWithMetadata.add(toInsert)

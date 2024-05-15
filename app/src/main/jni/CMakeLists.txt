@@ -24,6 +24,15 @@ set_target_properties( # Specifies the target library.
         # Provides the path to the library you want to import.
         ${CMAKE_SOURCE_DIR}/ffmpeg-android-maker/output/lib/${ANDROID_ABI}/libavutil.so )
 
+add_library(avcodec SHARED IMPORTED)
+set_target_properties( # Specifies the target library.
+        avcodec
+
+        # Specifies the parameter you want to define.
+        PROPERTIES IMPORTED_LOCATION
+
+        # Provides the path to the library you want to import.
+        ${CMAKE_SOURCE_DIR}/ffmpeg-android-maker/output/lib/${ANDROID_ABI}/libavcodec.so )
 
 
 # Include FFmpeg headers
@@ -35,6 +44,7 @@ add_library(ffprobejni SHARED ffprobejni.c)
 target_link_libraries(ffprobejni
         avformat
         avutil
+        avcodec
 )
 
 # Set the output directory for the .so file

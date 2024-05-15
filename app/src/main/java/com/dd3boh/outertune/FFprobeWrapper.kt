@@ -5,4 +5,6 @@ package com.dd3boh.outertune
  */
 class FFprobeWrapper {
     external fun getAudioMetadata(filePath: String): String
+
+    external fun getFullAudioMetadata(filePath: String): String
 }

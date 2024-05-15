@@ -151,6 +151,7 @@ enum class ScannerMatchCriteria {
  */
 enum class ScannerImpl {
     MEDIASTORE,
+    MEDIASTORE_FFPROBE,
     FFPROBE,
 }
 
