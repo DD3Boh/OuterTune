@@ -8,5 +8,5 @@ java {
 }
 
 dependencies {
-    compileOnly("com.google.errorprone:error_prone_core:2.16")
+    compileOnly("com.google.errorprone:error_prone_core:2.27.1")
 }
