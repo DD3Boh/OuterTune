@@ -1,6 +1,6 @@
 # OuterTune
 
-<img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/assets/outertune.webp" height="72">
+<img src="./assets/outertune.webp" height="72">
 
 A Material 3 YouTube Music client for Android
 
@@ -33,15 +33,11 @@ A Material 3 YouTube Music client for Android
 
 ## Screenshots
 
-<p float="left">
-  <img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/fastlane/metadata/android/en-US/images/phoneScreenshots/01.jpg" width="200" />
-  <img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/fastlane/metadata/android/en-US/images/phoneScreenshots/02.jpg" width="200" />
-  <img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/fastlane/metadata/android/en-US/images/phoneScreenshots/03.jpg" width="200" />
-</p>
-<p float="left">
-  <img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/fastlane/metadata/android/en-US/images/phoneScreenshots/04.jpg" width="200" />
-  <img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/fastlane/metadata/android/en-US/images/phoneScreenshots/05.jpg" width="200" />
-</p>
+<img src="./assets/main-interface.webp" width="600" alt="Main player interface" />
+<br/><br/>
+<img src="./assets/player.webp" width="600" alt="Player interface"/>
+<br/><br/>
+<img src="./assets/ytm-sync.webp" width="600" alt="Sync with YouTube Music"/>
 
 > **Warning**
 >
@@ -73,7 +69,7 @@ before you create a pull request.
 If you like OuterTune, you're welcome to send a donation. Donations will support the development,
 including bug fixes and new features.
 
-<a href="https://paypal.me/DD3Boh"><img src="https://raw.githubusercontent.com/DD3Boh/OuterTune/dev/assets/paypal.png" alt="PayPal" height="60" ></a>
+<a href="https://paypal.me/DD3Boh"><img src="./assets/paypal.png" alt="PayPal" height="60" ></a>
 
 ## Credit
 
