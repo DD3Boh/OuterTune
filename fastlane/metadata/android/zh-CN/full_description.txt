@@ -13,5 +13,5 @@
 -动态主题
 -良好的本地化
 -支持 Android Auto
--支持 quick picks
+-支持歌曲快选 (quick picks)
 -Material 3 设计
