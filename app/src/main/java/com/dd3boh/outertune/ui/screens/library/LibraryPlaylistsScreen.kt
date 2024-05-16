@@ -85,10 +85,10 @@ fun LibraryPlaylistsScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val viewTypeLocal by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
+    var viewTypeLocal by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
 
-    var viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+    val viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSortTypeKey, PlaylistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSortDescendingKey, true)
@@ -160,13 +160,13 @@ fun LibraryPlaylistsScreen(
             if (libraryFilterContent == null) {
                 IconButton(
                     onClick = {
-                        viewType = viewType.toggle()
+                        viewTypeLocal = viewTypeLocal.toggle()
                     },
                     modifier = Modifier.padding(start = 6.dp, end = 6.dp)
                 ) {
                     Icon(
                         imageVector =
-                        when (viewType) {
+                        when (viewTypeLocal) {
                             LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
                             LibraryViewType.GRID -> Icons.Rounded.GridView
                         },

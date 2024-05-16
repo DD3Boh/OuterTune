@@ -66,10 +66,10 @@ fun LibraryArtistsScreen(
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
     libraryFilterContent?.let { filter = ArtistFilter.LIKED }
 
-    val viewTypeLocal by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
+    var viewTypeLocal by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
 
-    var viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+    val viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
@@ -93,13 +93,13 @@ fun LibraryArtistsScreen(
 
             IconButton(
                 onClick = {
-                    viewType = viewType.toggle()
+                    viewTypeLocal = viewTypeLocal.toggle()
                 },
                 modifier = Modifier.padding(end = 6.dp)
             ) {
                 Icon(
                     imageVector =
-                    when (viewType) {
+                    when (viewTypeLocal) {
                         LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
                         LibraryViewType.GRID -> Icons.Rounded.GridView
                     },
