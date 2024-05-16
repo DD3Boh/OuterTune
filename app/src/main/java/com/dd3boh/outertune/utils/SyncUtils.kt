@@ -93,6 +93,7 @@ class SyncUtils @Inject constructor(
 
             database.artistsBookmarkedByNameAsc().first()
                 .filterNot { it.id in artists.map(ArtistItem::id) }
+                .filterNot { it.artist.isLocal == true }
                 .forEach { database.update(it.artist.localToggleLike()) }
 
             artists.forEach { artist ->
