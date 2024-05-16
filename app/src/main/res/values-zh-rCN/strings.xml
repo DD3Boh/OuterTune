@@ -16,7 +16,7 @@
     <string name="mood_and_genres">情绪和流派</string>
     <string name="account">Account</string>
     <string name="quick_picks">歌曲快选</string>
-    <string name="quick_picks_empty">听一些歌曲来快速挑选</string>
+    <string name="quick_picks_empty">听一些歌曲来生成歌曲快选</string>
     <string name="new_release_albums">新专辑</string>
     <!-- History -->
     <string name="today">今天</string>
