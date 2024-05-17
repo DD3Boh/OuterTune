@@ -1,4 +1,4 @@
-package com.dd3boh.outertune
+package com.dd3boh.outertune.utils.scanners
 
 /**
  * Pain and suffering.

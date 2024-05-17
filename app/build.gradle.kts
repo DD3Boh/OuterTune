@@ -69,14 +69,14 @@ android {
 
     sourceSets {
         getByName("main") {
-            jniLibs.srcDirs("src/main/jni/ffmpeg-android-maker/output/lib/")
+            jniLibs.srcDirs("src/main/java/com/dd3boh/outertune/utils/scanners/jni/ffmpeg-android-maker/output/lib/")
         }
     }
 
     externalNativeBuild {
         cmake {
             version = "3.22.1"
-            path = file("src/main/jni/CMakeLists.txt")
+            path = file("src/main/java/com/dd3boh/outertune/utils/scanners/jni/CMakeLists.txt")
         }
     }
 

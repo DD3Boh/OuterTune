@@ -1,4 +1,4 @@
-package com.dd3boh.outertune.utils
+package com.dd3boh.outertune.utils.scanners
 
 import com.dd3boh.outertune.db.entities.FormatEntity
 

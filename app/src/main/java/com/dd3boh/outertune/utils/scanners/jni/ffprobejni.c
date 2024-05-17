@@ -4,7 +4,7 @@
 #include <libavcodec/avcodec.h>
 
 JNIEXPORT jstring JNICALL
-Java_com_dd3boh_outertune_FFprobeWrapper_getAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
+Java_com_dd3boh_outertune_utils_scanners_FFprobeWrapper_getAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
     const char* file_path = (*env)->GetStringUTFChars(env, filePath, NULL);
     if (!file_path) {
         return (*env)->NewStringUTF(env, "Error getting file path");
@@ -63,7 +63,7 @@ Java_com_dd3boh_outertune_FFprobeWrapper_getAudioMetadata(JNIEnv* env, jobject o
 
 
 JNIEXPORT jstring JNICALL
-Java_com_dd3boh_outertune_FFprobeWrapper_getFullAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
+Java_com_dd3boh_outertune_utils_scanners_FFprobeWrapper_getFullAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
     const char* file_path = (*env)->GetStringUTFChars(env, filePath, NULL);
     if (!file_path) {
         return (*env)->NewStringUTF(env, "Error getting file path");

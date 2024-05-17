@@ -16,8 +16,8 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.utils.ExtraMetadataWrapper
-import com.dd3boh.outertune.utils.MetadataScanner
+import com.dd3boh.outertune.utils.scanners.ExtraMetadataWrapper
+import com.dd3boh.outertune.utils.scanners.MetadataScanner
 import com.dd3boh.outertune.utils.cache
 import com.dd3boh.outertune.utils.retrieveImage
 import com.dd3boh.outertune.utils.scanners.FFProbeScanner

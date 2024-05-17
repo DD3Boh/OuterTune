@@ -1,9 +1,6 @@
 package com.dd3boh.outertune.utils.scanners
 
-import com.dd3boh.outertune.FFprobeWrapper
 import com.dd3boh.outertune.db.entities.FormatEntity
-import com.dd3boh.outertune.utils.ExtraMetadataWrapper
-import com.dd3boh.outertune.utils.MetadataScanner
 import timber.log.Timber
 import java.lang.Integer.parseInt
 import java.lang.Long.parseLong
