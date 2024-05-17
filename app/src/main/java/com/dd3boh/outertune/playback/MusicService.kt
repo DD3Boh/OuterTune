@@ -379,7 +379,12 @@ class MusicService : MediaLibraryService(),
                 playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl
         }
 
-        playbackUrl?.let { YouTube.registerPlayback(queuePlaylistId, playbackUrl) }
+        playbackUrl?.let {
+            try { YouTube.registerPlayback(queuePlaylistId, playbackUrl) }
+            catch (exception: UnknownHostException) {
+                reportException(exception)
+            }
+        }
 
         val song = database.song(mediaId).first()
         val mediaMetadata = withContext(Dispatchers.Main) {
