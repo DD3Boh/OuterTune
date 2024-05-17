@@ -22,7 +22,9 @@ A Material 3 YouTube Music client for Android
 - Library management
     - Cache and download songs for offline playback
     - Personalized quick picks
-- Synchronized lyrics
+- Local media playback
+    - Multi artist support (non MediaStore tag extractor)
+- Synchronized lyrics (LRC format, also includes multi-line support)
 - Audio normalization, tempo/pitch adjustment, and various other audio effects
 - Dynamic Material theme & localization
     - New integrated library screen design
@@ -60,6 +62,23 @@ recommend [Pano Scrobbler](https://play.google.com/store/apps/details?id=com.arn
 Follow the [instructions](https://developer.android.com/guide/topics/resources/localization) and
 create a pull request. If possible, please build the app beforehand and make sure there is no error
 before you create a pull request.
+./app/src/main/java/com/dd3boh/outertune/utils/scanners/jni/ffmpeg-android-maker
+## Building with FFmpeg (non-kit)
+
+By default, we shit a prebuilt library (`/app/prebuilt/ffMetadataEx.arr`), and you *do not* need to care about this.
+However, should you choose to opt for self built libraries and/or work on the extractor itself, keep reading:
+
+1. First you will need to setup the [Android NDK](https://developer.android.com/studio/projects/install-ndk)
+
+2. We use FFMpeg to extract metadata from local files. The FFMpeg (non-kit) implementation must be resolved in one of two ways:
+   
+   - a) Build libraries. Clone [ffmpeg-android-maker](https://github.com/Javernaut/ffmpeg-android-maker) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`, run the build script. Note: It may be helpful to modify the FFmpeg build script disable uneeded FFmpeg fetaures to reduce app size, see [here](https://github.com/mikooomich/ffmpeg-android-maker/blob/master/scripts/ffmpeg/build.sh) for an example.
+  
+   - b) Use prebuilt FFmpeg libraries. Clone [prebuilt ffmpeg-android-maker](https://github.com/mikooomich/ffmpeg-android-maker) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`.
+
+3. Modify `app/build.gradle.kts` and `settings.gradle.kts` to switch to the self built version, with the instructions being in both of the files
+
+Then start the build are you normally would.
 
 ## Donate
 
