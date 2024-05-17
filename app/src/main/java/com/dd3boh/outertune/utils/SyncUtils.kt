@@ -50,6 +50,7 @@ class SyncUtils @Inject constructor(
 
             database.songsByNameAsc().first()
                 .filterNot { it.id in songs.map(SongItem::id) }
+                .filterNot { it.song.isLocal == true }
                 .forEach { database.update(it.song.toggleLibrary()) }
 
             songs.forEach { song ->
