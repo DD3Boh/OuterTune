@@ -148,7 +148,7 @@ class SyncUtils @Inject constructor(
                 val dbPlaylist = database.playlistByBrowseId(playlist.id).first()!!
                 val playlistSongMaps = database.playlistSongMaps(dbPlaylist.id)
 
-                if (dbPlaylist.playlist.isEditable == true || playlistSongMaps.isNotEmpty())
+                if (dbPlaylist.playlist.isEditable || playlistSongMaps.isNotEmpty())
                     syncPlaylist(playlist.id, dbPlaylist.id)
             }
         }

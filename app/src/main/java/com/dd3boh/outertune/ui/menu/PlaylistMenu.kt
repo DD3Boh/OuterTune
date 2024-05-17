@@ -96,7 +96,7 @@ fun PlaylistMenu(
         mutableStateOf(Download.STATE_STOPPED)
     }
 
-    val editable: Boolean = playlist.playlist.isEditable == true
+    val editable: Boolean = playlist.playlist.isEditable
 
     LaunchedEffect(songs) {
         if (songs.isEmpty()) return@LaunchedEffect
@@ -264,7 +264,7 @@ fun PlaylistMenu(
     PlaylistListItem(
         playlist = playlist,
         trailingContent = {
-            if (playlist.playlist.isEditable != true) {
+            if (!playlist.playlist.isEditable) {
                 IconButton(
                     onClick = {
                         database.query {

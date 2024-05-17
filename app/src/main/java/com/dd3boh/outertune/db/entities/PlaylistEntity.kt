@@ -19,7 +19,7 @@ data class PlaylistEntity(
     @PrimaryKey val id: String = generatePlaylistId(),
     val name: String,
     val browseId: String? = null,
-    val isEditable: Boolean? = true,
+    val isEditable: Boolean = true,
     val bookmarkedAt: LocalDateTime? = null,
     val thumbnailUrl: String? = null,
     val remoteSongCount: Int? = null,
