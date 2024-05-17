@@ -4,6 +4,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.utils.reportException
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.pages.HistoryPage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,7 +53,11 @@ class HistoryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            historyPage.value = YouTube.musicHistory().getOrNull()
+            YouTube.musicHistory().onSuccess {
+                historyPage.value = it
+            }.onFailure {
+                reportException(it)
+            }
         }
     }
 }
