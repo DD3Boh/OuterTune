@@ -173,11 +173,23 @@ fun ListItem(
     badges: @Composable RowScope.() -> Unit = {},
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
-    isActive: Boolean = false
+    isActive: Boolean = false,
+    isLocalSong: Boolean? = null,
 ) = ListItem(
     title = title,
     subtitle = {
         badges()
+
+        // local song indicator
+        if (isLocalSong == true) {
+            Icon(
+                Icons.Rounded.FolderCopy,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
 
         if (!subtitle.isNullOrEmpty()) {
             Text(
@@ -1084,7 +1096,8 @@ fun MediaMetadataListItem(
     },
     trailingContent = trailingContent,
     modifier = modifier,
-    isActive = isActive
+    isActive = isActive,
+    isLocalSong = mediaMetadata.isLocal
 )
 
 @Composable
