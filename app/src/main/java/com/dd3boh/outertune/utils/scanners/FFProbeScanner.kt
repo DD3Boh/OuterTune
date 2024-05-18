@@ -2,6 +2,7 @@ package com.dd3boh.outertune.utils.scanners
 
 import com.dd3boh.outertune.db.entities.FormatEntity
 import timber.log.Timber
+import wah.mikooomich.ffMetadataEx.FFprobeWrapper
 import java.lang.Integer.parseInt
 import java.lang.Long.parseLong
 

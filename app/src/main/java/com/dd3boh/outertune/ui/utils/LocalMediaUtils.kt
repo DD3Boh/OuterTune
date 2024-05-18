@@ -16,11 +16,11 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.utils.scanners.ExtraMetadataWrapper
-import com.dd3boh.outertune.utils.scanners.MetadataScanner
 import com.dd3boh.outertune.utils.cache
 import com.dd3boh.outertune.utils.retrieveImage
+import com.dd3boh.outertune.utils.scanners.ExtraMetadataWrapper
 import com.dd3boh.outertune.utils.scanners.FFProbeScanner
+import com.dd3boh.outertune.utils.scanners.MetadataScanner
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.YouTube.search
 import kotlinx.coroutines.Deferred

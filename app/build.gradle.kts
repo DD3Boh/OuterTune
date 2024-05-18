@@ -21,11 +21,6 @@ android {
         versionCode = 19
         versionName = "0.5.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags += ""
-            }
-        }
     }
     buildTypes {
         release {
@@ -67,20 +62,6 @@ android {
         disable += "MissingTranslation"
     }
 
-    sourceSets {
-        getByName("main") {
-            jniLibs.srcDirs("src/main/java/com/dd3boh/outertune/utils/scanners/jni/ffmpeg-android-maker/output/lib/")
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            version = "3.22.1"
-            path = file("src/main/java/com/dd3boh/outertune/utils/scanners/jni/CMakeLists.txt")
-        }
-    }
-
-    ndkVersion = "27.0.11718014"
 }
 
 ksp {
@@ -139,4 +120,14 @@ dependencies {
     coreLibraryDesugaring(libs.desugaring)
 
     implementation(libs.timber)
+
+    /**
+     * Custom FFmpeg metadata extractor
+     *
+     * My boss has requested prebuilt libraries by default. Shall you choose
+     * to work on the scanner itself, switch the implementation below AND
+     * include the project (uncomment the include line) in /settings.gradle.kts
+     */
+//      implementation(files("prebuilt/ffMetadataEx-release.aar")) // prebuilt
+     implementation(project(":ffMetadataEx")) // self built
 }
