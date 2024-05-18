@@ -30,6 +30,7 @@ class SyncUtils @Inject constructor(
 
             database.likedSongsByNameAsc().first()
                 .filterNot { it.id in songs.map(SongItem::id) }
+                .filterNot { it.song.isLocal }
                 .forEach { database.update(it.song.localToggleLike()) }
 
             songs.forEach { song ->
@@ -71,6 +72,7 @@ class SyncUtils @Inject constructor(
 
             database.albumsLikedByNameAsc().first()
                 .filterNot { it.id in albums.map(AlbumItem::id) }
+                .filterNot { it.album.isLocal }
                 .forEach { database.update(it.album.localToggleLike()) }
 
             albums.forEach { album ->
@@ -128,6 +130,7 @@ class SyncUtils @Inject constructor(
 
             dbPlaylists.filterNot { it.playlist.browseId in playlistList.map(PlaylistItem::id) }
                 .filterNot { it.playlist.browseId == null }
+                .filterNot { it.playlist.isLocal }
                 .forEach { database.update(it.playlist.localToggleLike()) }
 
             playlistList.onEach { playlist ->
