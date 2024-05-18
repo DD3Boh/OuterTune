@@ -307,7 +307,7 @@ fun SongListItem(
         }
 
         // local song indicator
-        if (song.song.isLocal == true) {
+        if (song.song.isLocal) {
             Icon(
                 Icons.Rounded.FolderCopy,
                 contentDescription = null,
@@ -369,7 +369,7 @@ fun SongListItem(
                     }
                 }
 
-                if (song.song.isLocal == true) {
+                if (song.song.isLocal) {
                     // local thumbnail arts
                     AsyncLocalImage(
                         image = { getLocalThumbnail(song.song.localPath, true) },
@@ -1051,7 +1051,7 @@ fun MediaMetadataListItem(
         makeTimeString(mediaMetadata.duration * 1000L)
     ),
     thumbnailContent = {
-        if (mediaMetadata.isLocal == true) {
+        if (mediaMetadata.isLocal) {
             // local thumbnail arts
             AsyncLocalImage(
                 image = { getLocalThumbnail(mediaMetadata.localPath, true) },

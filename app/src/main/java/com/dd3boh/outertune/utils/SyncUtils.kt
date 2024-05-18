@@ -50,7 +50,7 @@ class SyncUtils @Inject constructor(
 
             database.songsByNameAsc().first()
                 .filterNot { it.id in songs.map(SongItem::id) }
-                .filterNot { it.song.isLocal == true }
+                .filterNot { it.song.isLocal }
                 .forEach { database.update(it.song.toggleLibrary()) }
 
             songs.forEach { song ->
@@ -94,7 +94,7 @@ class SyncUtils @Inject constructor(
 
             database.artistsBookmarkedByNameAsc().first()
                 .filterNot { it.id in artists.map(ArtistItem::id) }
-                .filterNot { it.artist.isLocal == true }
+                .filterNot { it.artist.isLocal }
                 .forEach { database.update(it.artist.localToggleLike()) }
 
             artists.forEach { artist ->

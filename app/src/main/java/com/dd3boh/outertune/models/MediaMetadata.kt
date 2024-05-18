@@ -16,13 +16,13 @@ data class MediaMetadata(
     val thumbnailUrl: String? = null,
     val album: Album? = null,
     val setVideoId: String? = null,
-    val isLocal: Boolean? = false,
+    val isLocal: Boolean = false,
     val localPath: String? = null,
 ) : Serializable {
     data class Artist(
         val id: String?,
         val name: String,
-        val isLocal: Boolean? = false,
+        val isLocal: Boolean = false,
     ) : Serializable
 
     data class Album(
@@ -38,7 +38,7 @@ data class MediaMetadata(
         albumId = album?.id,
         albumName = album?.title,
         isLocal = isLocal,
-        inLibrary = if (isLocal == true) LocalDateTime.now() else null,
+        inLibrary = if (isLocal) LocalDateTime.now() else null,
         localPath = localPath
     )
 }

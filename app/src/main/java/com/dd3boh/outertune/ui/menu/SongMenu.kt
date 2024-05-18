@@ -223,7 +223,7 @@ fun SongMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
     ) {
-        if (song.song.isLocal != true)
+        if (!song.song.isLocal)
             GridMenuItem(
                 icon = Icons.Rounded.Radio,
                 title = R.string.start_radio
@@ -281,7 +281,7 @@ fun SongMenu(
             }
         }
 
-        if (song.song.isLocal != true)
+        if (!song.song.isLocal)
             DownloadGridMenu(
                 state = download?.state,
                 onDownload = {
@@ -318,7 +318,7 @@ fun SongMenu(
                 showSelectArtistDialog = true
             }
         }
-        if (song.song.albumId != null && song.song.isLocal != true) {
+        if (song.song.albumId != null && !song.song.isLocal) {
             GridMenuItem(
                 icon = Icons.Rounded.Album,
                 title = R.string.view_album
@@ -327,7 +327,7 @@ fun SongMenu(
                 navController.navigate("album/${song.song.albumId}")
             }
         }
-        if (song.song.isLocal != true)
+        if (!song.song.isLocal)
             GridMenuItem(
                 icon = Icons.Rounded.Share,
                 title = R.string.share

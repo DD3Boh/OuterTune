@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.db.entities
 
 import androidx.compose.runtime.Immutable
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.zionhuang.innertube.YouTube
@@ -20,7 +21,7 @@ data class ArtistEntity(
     val channelId: String? = null,
     val lastUpdateTime: LocalDateTime = LocalDateTime.now(),
     val bookmarkedAt: LocalDateTime? = null,
-    val isLocal: Boolean? = false
+    @ColumnInfo(name = "isLocal", defaultValue = "false") val isLocal: Boolean = false
 ) {
     val isYouTubeArtist: Boolean
         get() = id.startsWith("UC")

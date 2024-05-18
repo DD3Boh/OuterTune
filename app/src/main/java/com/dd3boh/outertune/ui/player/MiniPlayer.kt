@@ -133,7 +133,7 @@ fun MiniMediaInfo(
         modifier = modifier
     ) {
         Box(modifier = Modifier.padding(6.dp)) {
-            if (mediaMetadata.isLocal == true) {
+            if (mediaMetadata.isLocal) {
                 // local thumbnail arts
                 AsyncLocalImage(
                     image = { getLocalThumbnail(mediaMetadata.localPath, true) },
