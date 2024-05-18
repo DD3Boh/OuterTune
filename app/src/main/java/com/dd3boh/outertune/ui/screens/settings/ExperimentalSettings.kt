@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.ContentCut
+import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.FolderCopy
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.FlatSubfoldersKey
 import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
@@ -46,6 +48,8 @@ fun ExperimentalSettings(
     val (flatSubfolders, onFlatSubfoldersChange) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
     val (multilineLrc, onMultilineLrcChange) = rememberPreference(MultilineLrcKey, defaultValue = true)
     val (lyricTrim, onLyricTrimChange) = rememberPreference(LyricTrimKey, defaultValue = false)
+
+    val (devSettings, onDevSettingsChange) = rememberPreference(DevSettingsKey, defaultValue = false)
 
     Column(
         Modifier
@@ -81,6 +85,15 @@ fun ExperimentalSettings(
             icon = { Icon(Icons.Rounded.ContentCut, null) },
             checked = lyricTrim,
             onCheckedChange = onLyricTrimChange
+        )
+
+        // dev settings
+        SwitchPreference(
+            title = { Text(stringResource(R.string.dev_settings_title)) },
+            description = stringResource(R.string.dev_settings_description),
+            icon = { Icon(Icons.Rounded.DeveloperMode, null) },
+            checked = devSettings,
+            onCheckedChange = onDevSettingsChange
         )
 
         // next section

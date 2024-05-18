@@ -162,6 +162,8 @@ val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
 val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
 val LyricTrimKey = booleanPreferencesKey("lyricTrim")
 
+val DevSettingsKey = booleanPreferencesKey("devSettings")
+
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",
     "az" to "Azərbaycan",

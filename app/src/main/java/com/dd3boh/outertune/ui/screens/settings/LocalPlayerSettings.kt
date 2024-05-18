@@ -49,6 +49,7 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
+import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.LookupYtmArtistsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
@@ -106,6 +107,8 @@ fun LocalPlayerSettings(
 
     var fullRescan by remember { mutableStateOf(false) }
     val (lookupYtmArtists, onlookupYtmArtistsChange) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
+
+    var (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
 
     Column(
         Modifier
@@ -332,39 +335,42 @@ fun LocalPlayerSettings(
         )
 
 
-        PreferenceGroupTitle(
-            title = stringResource(R.string.settings_debug)
-        )
-        
-        PreferenceEntry(
-            title = { Text("DEBUG: Nuke local lib") },
-            icon = { Icon(Icons.Rounded.Backup, null) },
-            onClick = {
-                Toast.makeText(
-                    context,
-                    "Nuking local files from database...",
-                    Toast.LENGTH_SHORT
-                ).show()
-                coroutineScope.launch(Dispatchers.IO) {
-                    Timber.tag("Settings").d("Nuke database status:  ${database.nukeLocalData()}")
-                }
-            }
-        )
+        if (devSettings) {
+            PreferenceGroupTitle(
+                title = stringResource(R.string.settings_debug)
+            )
 
-        PreferenceEntry(
-            title = { Text("DEBUG: Force local to remote artist migration NOW") },
-            icon = { Icon(Icons.Rounded.Backup, null) },
-            onClick = {
-                Toast.makeText(
-                    context,
-                    "Starting migration...",
-                    Toast.LENGTH_SHORT
-                ).show()
-                coroutineScope.launch(Dispatchers.IO) {
-//                    localToRemoteArtist(database)
+            PreferenceEntry(
+                title = { Text("DEBUG: Nuke local lib") },
+                icon = { Icon(Icons.Rounded.Backup, null) },
+                onClick = {
+                    Toast.makeText(
+                        context,
+                        "Nuking local files from database...",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    coroutineScope.launch(Dispatchers.IO) {
+                        Timber.tag("Settings").d("Nuke database status:  ${database.nukeLocalData()}")
+                    }
                 }
-            }
-        )
+            )
+
+            PreferenceEntry(
+                title = { Text("DEBUG: Force local to remote artist migration NOW") },
+                icon = { Icon(Icons.Rounded.Backup, null) },
+                onClick = {
+                    Toast.makeText(
+                        context,
+                        "Starting migration...",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    coroutineScope.launch(Dispatchers.IO) {
+                        Timber.tag("Settings").d("Nuke database (MANUAL TRIGGERED) status:  ${database.nukeLocalData()}")
+                    }
+                }
+            )
+        }
+
     }
 
 

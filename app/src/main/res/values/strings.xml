@@ -272,9 +272,10 @@
     <string name="about">About</string>
     <string name="app_version">App version</string>
 
-
+<!--experimental settings-->
     <string name="experimental_settings_title">Experimental</string>
-
+    <string name="dev_settings_title">Enable developer settings</string>
+    <string name="dev_settings_description">Reveals additional advanced settings intended for development use</string>
 
     <string name="local_player_settings_title">Local Player</string>
 <!--scanner page settings-->
