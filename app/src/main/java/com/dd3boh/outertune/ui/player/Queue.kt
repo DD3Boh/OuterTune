@@ -443,26 +443,26 @@ fun Queue(
                             Row(
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                IconButton(
-                                    modifier = Modifier
-                                        .align(Alignment.CenterVertically),
-                                    onClick = {
-                                        println(window.mediaItem.metadata!!.title)
-                                        if (window.mediaItem.metadata!! in selectedSongs) {
-                                            selectedSongs.remove(window.mediaItem.metadata!!)
-                                            selectedItems.remove(currentItem)
-                                        } else {
-                                            selectedSongs.add(window.mediaItem.metadata!!)
-                                            selectedItems.add(currentItem)
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
-                                        contentDescription = null,
-                                        tint = LocalContentColor.current
-                                    )
-                                }
+//                                IconButton(
+//                                    modifier = Modifier
+//                                        .align(Alignment.CenterVertically),
+//                                    onClick = {
+//                                        println(window.mediaItem.metadata!!.title)
+//                                        if (window.mediaItem.metadata!! in selectedSongs) {
+//                                            selectedSongs.remove(window.mediaItem.metadata!!)
+//                                            selectedItems.remove(currentItem)
+//                                        } else {
+//                                            selectedSongs.add(window.mediaItem.metadata!!)
+//                                            selectedItems.add(currentItem)
+//                                        }
+//                                    }
+//                                ) {
+//                                    Icon(
+//                                        if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
+//                                        contentDescription = null,
+//                                        tint = LocalContentColor.current
+//                                    )
+//                                }
 
                                 MediaMetadataListItem(
                                     mediaMetadata = window.mediaItem.metadata!!,
