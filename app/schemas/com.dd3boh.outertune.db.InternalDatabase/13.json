@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 13,
-    "identityHash": "c1ce276c3c6283508483c8655e47e52b",
+    "identityHash": "322eee64a08c3369d4dec5dbd7c2efee",
     "entities": [
       {
         "tableName": "song",
@@ -214,7 +214,7 @@
       },
       {
         "tableName": "playlist",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `browseId` TEXT, `isEditable` INTEGER, `bookmarkedAt` INTEGER, `thumbnailUrl` TEXT, `remoteSongCount` INTEGER, `playEndpointParams` TEXT, `shuffleEndpointParams` TEXT, `radioEndpointParams` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `browseId` TEXT, `isEditable` INTEGER, `bookmarkedAt` INTEGER, `thumbnailUrl` TEXT, `remoteSongCount` INTEGER, `playEndpointParams` TEXT, `shuffleEndpointParams` TEXT, `radioEndpointParams` TEXT, `test` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -275,6 +275,12 @@
             "columnName": "radioEndpointParams",
             "affinity": "TEXT",
             "notNull": false
+          },
+          {
+            "fieldPath": "test",
+            "columnName": "test",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -878,7 +884,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c1ce276c3c6283508483c8655e47e52b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '322eee64a08c3369d4dec5dbd7c2efee')"
     ]
   }
 }
