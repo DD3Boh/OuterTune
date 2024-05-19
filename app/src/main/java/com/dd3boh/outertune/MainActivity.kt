@@ -232,7 +232,7 @@ class MainActivity : ComponentActivity() {
                 )
                 val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
                 val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
-                val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = false)
+                val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
 
                 if (autoScan) {
                     // equivalent to (quick scan)
