@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.SdCard
@@ -85,6 +86,13 @@ fun PlayerSettings(
             icon = { Icon(Icons.AutoMirrored.Rounded.VolumeUp, null) },
             checked = audioNormalization,
             onCheckedChange = onAudioNormalizationChange
+        )
+
+        // lyrics settings
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.lyrics_settings_title)) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
+            onClick = { navController.navigate("settings/player/lyrics") }
         )
     }
 

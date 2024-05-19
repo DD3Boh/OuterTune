@@ -238,6 +238,7 @@
     <string name="skip_silence">Skip silence</string>
     <string name="audio_normalization">Audio normalization</string>
     <string name="equalizer">Equalizer</string>
+    <string name="lyrics_settings_title">Lyrics</string>
 
     <string name="storage">Storage</string>
     <string name="cache">Cache</string>

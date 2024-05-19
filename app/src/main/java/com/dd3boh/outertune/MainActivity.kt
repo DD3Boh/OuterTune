@@ -722,6 +722,9 @@ class MainActivity : ComponentActivity() {
                                 composable("settings/player") {
                                     PlayerSettings(navController, scrollBehavior)
                                 }
+                                composable("settings/player/lyrics") {
+                                    LyricsSettings(navController, scrollBehavior)
+                                }
                                 composable("settings/storage") {
                                     StorageSettings(navController, scrollBehavior)
                                 }

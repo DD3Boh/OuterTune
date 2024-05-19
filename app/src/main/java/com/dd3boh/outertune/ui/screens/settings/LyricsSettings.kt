@@ -1,6 +1,6 @@
 package com.dd3boh.outertune.ui.screens.settings
 
-import android.content.Context
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.FolderCopy
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -24,73 +25,85 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DevSettingsKey
+import com.dd3boh.outertune.constants.EnableKugouKey
 import com.dd3boh.outertune.constants.FlatSubfoldersKey
 import com.dd3boh.outertune.constants.LyricTrimKey
+import com.dd3boh.outertune.constants.LyricsTextPositionKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
 
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExperimentalSettings(
+fun LyricsSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
-    context: Context,
-    database: MusicDatabase,
 ) {
 
     // state variables and such
-    val (flatSubfolders, onFlatSubfoldersChange) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
+    val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
+    val (lyricsPosition, onLyricsPositionChange) = rememberEnumPreference(LyricsTextPositionKey, defaultValue = LyricsPosition.CENTER)
     val (multilineLrc, onMultilineLrcChange) = rememberPreference(MultilineLrcKey, defaultValue = true)
     val (lyricTrim, onLyricTrimChange) = rememberPreference(LyricTrimKey, defaultValue = false)
 
-    val (devSettings, onDevSettingsChange) = rememberPreference(DevSettingsKey, defaultValue = false)
 
     Column(
         Modifier
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
     ) {
-
-        PreferenceGroupTitle(
-            title = "We don't know where to put these yet"
-        )
-
-        // flatten subfolders
+        // KuGou
         SwitchPreference(
-            title = { Text(stringResource(R.string.flat_subfolders_title)) },
-            description = stringResource(R.string.flat_subfolders_description),
-            icon = { Icon(Icons.Rounded.FolderCopy, null) },
-            checked = flatSubfolders,
-            onCheckedChange = onFlatSubfoldersChange
+            title = { Text(stringResource(R.string.enable_kugou)) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
+            checked = enableKugou,
+            onCheckedChange = onEnableKugouChange
         )
 
-        // dev settings
+        // lyrics position
+        EnumListPreference(
+            title = { Text(stringResource(R.string.lyrics_text_position)) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
+            selectedValue = lyricsPosition,
+            onValueSelected = onLyricsPositionChange,
+            valueText = {
+                when (it) {
+                    LyricsPosition.LEFT -> stringResource(R.string.left)
+                    LyricsPosition.CENTER -> stringResource(R.string.center)
+                    LyricsPosition.RIGHT -> stringResource(R.string.right)
+                }
+            }
+        )
+
+        // multiline lyrics
         SwitchPreference(
-            title = { Text(stringResource(R.string.dev_settings_title)) },
-            description = stringResource(R.string.dev_settings_description),
-            icon = { Icon(Icons.Rounded.DeveloperMode, null) },
-            checked = devSettings,
-            onCheckedChange = onDevSettingsChange
+            title = { Text(stringResource(R.string.lyrics_multiline_title)) },
+            description = stringResource(R.string.lyrics_multiline_description),
+            icon = { Icon(Icons.AutoMirrored.Rounded.Sort, null) },
+            checked = multilineLrc,
+            onCheckedChange = onMultilineLrcChange
         )
 
-        // next section
-//        VerticalDivider(
-//            thickness = DividerDefaults.Thickness,
-//            modifier = Modifier.padding(horizontal = 32.dp, vertical = 10.dp)
-//        )
+        // trim (remove spaces around) lyrics
+        SwitchPreference(
+            title = { Text(stringResource(R.string.lyrics_trim_title)) },
+            icon = { Icon(Icons.Rounded.ContentCut, null) },
+            checked = lyricTrim,
+            onCheckedChange = onLyricTrimChange
+        )
+
     }
 
 
-
-
     TopAppBar(
-        title = { Text(stringResource(R.string.experimental_settings_title)) },
+        title = { Text(stringResource(R.string.lyrics_settings_title)) },
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,
