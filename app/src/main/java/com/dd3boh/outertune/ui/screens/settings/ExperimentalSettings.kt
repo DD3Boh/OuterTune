@@ -1,14 +1,11 @@
 package com.dd3boh.outertune.ui.screens.settings
 
-import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Sort
-import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.FolderCopy
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
-
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
@@ -25,9 +21,6 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.FlatSubfoldersKey
-import com.dd3boh.outertune.constants.LyricTrimKey
-import com.dd3boh.outertune.constants.MultilineLrcKey
-import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
@@ -40,15 +33,9 @@ import com.dd3boh.outertune.utils.rememberPreference
 fun ExperimentalSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
-    context: Context,
-    database: MusicDatabase,
 ) {
-
     // state variables and such
     val (flatSubfolders, onFlatSubfoldersChange) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
-    val (multilineLrc, onMultilineLrcChange) = rememberPreference(MultilineLrcKey, defaultValue = true)
-    val (lyricTrim, onLyricTrimChange) = rememberPreference(LyricTrimKey, defaultValue = false)
-
     val (devSettings, onDevSettingsChange) = rememberPreference(DevSettingsKey, defaultValue = false)
 
     Column(
@@ -78,12 +65,6 @@ fun ExperimentalSettings(
             checked = devSettings,
             onCheckedChange = onDevSettingsChange
         )
-
-        // next section
-//        VerticalDivider(
-//            thickness = DividerDefaults.Thickness,
-//            modifier = Modifier.padding(horizontal = 32.dp, vertical = 10.dp)
-//        )
     }
 
 

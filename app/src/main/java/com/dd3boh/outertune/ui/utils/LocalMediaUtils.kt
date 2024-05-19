@@ -319,14 +319,14 @@ fun refreshLocal(
         null
     )
     Timber.tag(TAG).d("------------ SCAN: Starting Quick Directory Rebuild ------------")
-    cursor?.use { cursor ->
+    cursor?.use { localCursor ->
         // Columns indices
-        val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
-        val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
+        val nameColumn = localCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+        val pathColumn = localCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
 
-        while (cursor.moveToNext()) {
-            val name = cursor.getString(nameColumn) // file name
-            val path = cursor.getString(pathColumn)
+        while (localCursor.moveToNext()) {
+            val name = localCursor.getString(nameColumn) // file name
+            val path = localCursor.getString(pathColumn)
 
             if (SCANNER_DEBUG)
                 Timber.tag(TAG).d("Quick scanner: PATH: $path")
@@ -491,7 +491,6 @@ fun scanLocal(
         // MediaStore is our "basic" scanner & file discovery
         cursor?.use { cursor ->
             // Columns indices
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
             val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
@@ -751,7 +750,7 @@ fun quickSync(
                 val id = SongEntity.generateSongId()
                 val title =
                     mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE).let { it ?: "" } // song title
-                val duration = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION).let { parseInt(it) }
+                val duration = parseInt(mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!)
                 val artist = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                 val artistID = if (artist == null) ArtistEntity.generateArtistId() else null
                 val album = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
@@ -1025,7 +1024,7 @@ fun compareSong(a: Song, b: Song, matchStrength: ScannerMatchCriteria, strictFil
                 compareArtist(a.artists, b.artists))
 
         ScannerMatchCriteria.LEVEL_3 -> closeEnough() || (a.song.title == b.song.title &&
-                compareArtist(a.artists, b.artists) && true) // album compare go here
+                compareArtist(a.artists, b.artists) /* && album compare goes here */ )
     }
 }
 
