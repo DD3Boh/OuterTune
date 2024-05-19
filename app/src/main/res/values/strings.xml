@@ -277,7 +277,8 @@
     <string name="dev_settings_title">Enable developer settings</string>
     <string name="dev_settings_description">Reveals additional advanced settings intended for development use</string>
 
-    <string name="local_player_settings_title">Local Player</string>
+<!--local player-->
+    <string name="local_player_settings_title">Local Media</string>
 <!--scanner page settings-->
     <string name="local_scanner_title">Local scanner</string>
 

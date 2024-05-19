@@ -55,11 +55,6 @@ fun PlayerSettings(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
     ) {
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.local_player_settings_title)) },
-            icon = { Icon(Icons.Rounded.SdCard, null) },
-            onClick = { navController.navigate("settings/player/local") }
-        )
         EnumListPreference(
             title = { Text(stringResource(R.string.audio_quality)) },
             icon = { Icon(Icons.Rounded.GraphicEq, null) },
