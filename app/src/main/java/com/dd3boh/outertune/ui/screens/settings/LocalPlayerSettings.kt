@@ -96,7 +96,7 @@ fun LocalPlayerSettings(
 
     val (scannerType, onScannerTypeChange) = rememberEnumPreference(
         key = ScannerTypeKey,
-        defaultValue = ScannerImpl.MEDIASTORE
+        defaultValue = ScannerImpl.MEDIASTORE_FFPROBE
     )
     val (scannerSensitivity, onScannerSensitivityChange) = rememberEnumPreference(
         key = ScannerSensitivityKey,
