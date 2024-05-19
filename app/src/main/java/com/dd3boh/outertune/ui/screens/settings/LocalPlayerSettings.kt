@@ -179,12 +179,19 @@ fun LocalPlayerSettings(
                     coroutineScope.launch(Dispatchers.IO) {
                         // full rescan
                         if (fullRescan) {
-                            val directoryStructure = scanLocal(context, database, scannerType, lookupYtmArtists).value
+                            val directoryStructure = scanLocal(context, database, scannerType).value
                             syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
                             unloadScanner()
+
+                            // start artist linking job
+                            if (lookupYtmArtists) {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    localToRemoteArtist(database)
+                                }
+                            }
                         } else {
                             // quick scan
-                            val directoryStructure = scanLocal(context, database, ScannerImpl.MEDIASTORE, false).value
+                            val directoryStructure = scanLocal(context, database, ScannerImpl.MEDIASTORE).value
                             quickSync(
                                 database, directoryStructure.toList(), scannerSensitivity,
                                 strictExtensions, scannerType

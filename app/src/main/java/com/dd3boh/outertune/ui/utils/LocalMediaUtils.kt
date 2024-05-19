@@ -361,7 +361,6 @@ fun advancedScan(
     basicData: SongTempData,
     database: MusicDatabase,
     scannerImpl: ScannerImpl,
-    onlineLookup: Boolean = false
 ): Song {
     val artists = ArrayList<ArtistEntity>()
 //    var generes
@@ -385,32 +384,7 @@ fun advancedScan(
         // parse data
         rawArtists?.split(ARTIST_SEPARATORS)?.forEach { element ->
             val artistVal = element.trim()
-
-            // check if this artist exists in DB already
-            val databaseArtistMatch =
-                runBlocking(Dispatchers.IO) {
-                    database.searchArtists(artistVal).first().filter { artist ->
-                        return@filter artist.artist.name == artistVal
-                    }
-                }
-
-            if (SCANNER_DEBUG)
-                Timber.tag(TAG).d("ARTIST FOUND IN DB??? Results size: ${databaseArtistMatch.size}")
-
-            // resolve artist from YTM if not found in DB
-            try {
-                if (onlineLookup && databaseArtistMatch.isEmpty()) {
-                    youtubeArtistLookup(artistVal)?.let { artists.add(it) }
-                } else if (databaseArtistMatch.isEmpty()) {
-                    artists.add(
-                        databaseArtistMatch.first().artist
-                    )
-                } else {
-                    throw Exception("No artist resolved")
-                }
-            } catch (e: Exception) {
-                artists.add(ArtistEntity("LA${ArtistEntity.generateArtistId()}", artistVal, isLocal = true))
-            }
+            artists.add(ArtistEntity("LA${ArtistEntity.generateArtistId()}", artistVal, isLocal = true))
         }
 
         // file format info
@@ -479,8 +453,8 @@ fun advancedScan(
 /**
  * Dev uses
  */
-fun scanLocal(context: Context, database: MusicDatabase, scannerImpl: ScannerImpl, onlineLookup: Boolean) =
-    scanLocal(context, database, testScanPaths, scannerImpl, onlineLookup)
+fun scanLocal(context: Context, database: MusicDatabase, scannerImpl: ScannerImpl) =
+    scanLocal(context, database, testScanPaths, scannerImpl)
 
 /**
  * Scan MediaStore for songs given a list of paths to scan for.
@@ -497,7 +471,6 @@ fun scanLocal(
     database: MusicDatabase,
     scanPaths: ArrayList<String>,
     scannerImpl: ScannerImpl,
-    onlineLookup: Boolean
 ): MutableStateFlow<DirectoryTree> {
 
     val newDirectoryStructure = DirectoryTree(sdcardRoot)
@@ -572,7 +545,7 @@ fun scanLocal(
                                         loudnessDb = null,
                                         playbackUrl = null
                                     ),
-                                ), database, scannerImpl, onlineLookup
+                                ), database, scannerImpl,
                             )
                         }
                     )
@@ -881,7 +854,7 @@ fun localToRemoteArtist(database: MusicDatabase) {
             val databaseArtistMatch =
                 runBlocking(Dispatchers.IO) {
                     database.searchArtists(artistVal).first().filter { artist ->
-                        // this is different from the regular syncDb operation: only look for remote artists
+                        // only look for remote artists here
                         return@filter artist.artist.name == artistVal && !artist.artist.isLocalArtist
                     }
                 }
@@ -994,11 +967,17 @@ fun destructiveRescanDB(
  *  Both null == same artists
  *  Either null == different artists
  */
-fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
+fun compareArtist(a: List<ArtistEntity>, b: List<ArtistEntity>): Boolean {
+    if (a.isNotEmpty()) {
+        println(a.first().name)
+    }
+    if (b.isNotEmpty()) {
+        println(b.first().name)
+    }
 
-    if (a == null && b == null) {
+    if (a.isEmpty() && b.isEmpty()) {
         return true
-    } else if (a == null || b == null) {
+    } else if (a.isEmpty() || b.isEmpty()) {
         return false
     }
 
@@ -1007,7 +986,7 @@ fun compareArtist(a: List<ArtistEntity>?, b: List<ArtistEntity>?): Boolean {
         return false
     }
     val matchingArtists = a.filter { artist ->
-        b.any { it.name == artist.name }
+        b.any { it.name.lowercase(Locale.getDefault()) == artist.name.lowercase(Locale.getDefault()) }
     }
 
     return matchingArtists.size == a.size
@@ -1025,19 +1004,28 @@ fun compareSong(a: Song, b: Song, matchStrength: ScannerMatchCriteria, strictFil
     // if match file names
     if (strictFileNames &&
         (a.song.localPath?.substringAfterLast('/') !=
-                b.song.localPath?.substringAfterLast('/'))
+            b.song.localPath?.substringAfterLast('/'))
     ) {
         return false
+    }
+
+    /**
+     * Compare file paths
+     *
+     * I draw the "user error" line here
+     */
+    fun closeEnough(): Boolean {
+        return a.song.localPath == b.song.localPath
     }
 
     // compare songs based on scanner strength
     return when (matchStrength) {
         ScannerMatchCriteria.LEVEL_1 -> a.song.title == b.song.title
-        ScannerMatchCriteria.LEVEL_2 -> a.song.title == b.song.title &&
-                compareArtist(a.artists, b.artists)
+        ScannerMatchCriteria.LEVEL_2 -> closeEnough() || (a.song.title == b.song.title &&
+                compareArtist(a.artists, b.artists))
 
-        ScannerMatchCriteria.LEVEL_3 -> a.song.title == b.song.title &&
-                compareArtist(a.artists, b.artists) && true // album compare go here
+        ScannerMatchCriteria.LEVEL_3 -> closeEnough() || (a.song.title == b.song.title &&
+                compareArtist(a.artists, b.artists) && true) // album compare go here
     }
 }
 

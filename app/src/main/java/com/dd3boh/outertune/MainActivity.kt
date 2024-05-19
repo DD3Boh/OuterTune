@@ -236,7 +236,7 @@ class MainActivity : ComponentActivity() {
 
                 if (autoScan) {
                     // equivalent to (quick scan)
-                    val directoryStructure = scanLocal(this, database, ScannerImpl.MEDIASTORE, false).value
+                    val directoryStructure = scanLocal(this, database, ScannerImpl.MEDIASTORE).value
                     quickSync(
                         database, directoryStructure.toList(), scannerSensitivity,
                         strictExtensions, scannerType
