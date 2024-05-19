@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.os.Build
 import android.provider.MediaStore
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerImpl
@@ -57,6 +58,7 @@ val scannerSession = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_JOBS)
 // stuff to make this work
 const val sdcardRoot = "/storage/emulated/0/"
 val testScanPaths = arrayListOf("Music")
+val ARTIST_SEPARATORS = Regex("\\s*;\\s*|\\s*ft\\.\\s*|\\s*feat\\.\\s*|\\s*&\\s*", RegexOption.IGNORE_CASE)
 var directoryUID = 0
 var cachedDirectoryTree: DirectoryTree? = null
 
@@ -267,7 +269,7 @@ fun getScanner(scannerImpl: ScannerImpl): MetadataScanner? {
     return when (scannerImpl) {
         ScannerImpl.FFPROBE, ScannerImpl.MEDIASTORE_FFPROBE ->
             if (advancedScannerImpl is FFProbeScanner) advancedScannerImpl else FFProbeScanner()
-        ScannerImpl.MEDIASTORE -> throw Exception("Forcing MediaStore fallback")
+        ScannerImpl.MEDIASTORE -> null
     }
 }
 
@@ -365,18 +367,23 @@ fun advancedScan(
 //    var generes
 //    var year: String? = null
 
+    // MediaStore mode
+    var rawArtists = basicData.artist
+
     try {
         // decide which scanner to use
         val scanner = getScanner(scannerImpl)
         var ffmpegData: ExtraMetadataWrapper? = null
         if (scannerImpl == ScannerImpl.MEDIASTORE_FFPROBE) {
             ffmpegData = scanner?.getMediaStoreSupplement(basicData.path)
+            rawArtists = ffmpegData?.artists
         } else if (scannerImpl == ScannerImpl.FFPROBE){
             ffmpegData =  scanner?.getAllMetadata(basicData.path, basicData.formatEntity)
+            rawArtists = ffmpegData?.artists
         }
 
         // parse data
-        ffmpegData?.artists?.split(';')?.forEach { element ->
+        rawArtists?.split(ARTIST_SEPARATORS)?.forEach { element ->
             val artistVal = element.trim()
 
             // check if this artist exists in DB already
@@ -407,13 +414,13 @@ fun advancedScan(
         }
 
         // file format info
-        if (scannerImpl == ScannerImpl.FFPROBE && ffmpegData?.format != null){
+        if (scannerImpl == ScannerImpl.FFPROBE && ffmpegData?.format != null) {
             database.query {
                 upsert(
                     ffmpegData.format!!
                 )
             }
-        } else if (scannerImpl == ScannerImpl.MEDIASTORE_FFPROBE) {
+        } else { // MEDIASTORE_FFPROBE and MEDIASTORE
             database.query {
                 upsert(
                     basicData.formatEntity
@@ -421,7 +428,7 @@ fun advancedScan(
             }
         }
     } catch (e: Exception) {
-        if (SCANNER_CRASH_AT_FIRST_ERROR && scannerImpl != ScannerImpl.MEDIASTORE) {
+        if (SCANNER_CRASH_AT_FIRST_ERROR) {
             throw Exception("HALTING AT FIRST SCANNER ERROR " + e.message) // debug
         }
         // fallback on media store
@@ -783,7 +790,10 @@ fun quickSync(
                 // extra stream info
                 val bitrate = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.let { parseInt(it) }
                 val mime = "" + mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
-                val sampleRate = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)?.let { parseInt(it) }
+                var sampleRate = -1
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    sampleRate = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)?.let { parseInt(it) }!!
+                }
 
 
                 if (SCANNER_DEBUG)
