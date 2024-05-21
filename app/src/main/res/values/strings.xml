@@ -90,6 +90,8 @@
     <string name="search_online">Search online</string>
     <string name="sync">Sync</string>
     <string name="advanced">Advanced</string>
+    <string name="select">Select all</string>
+    <string name="like_all">Like all</string>
 
     <!-- Sort menu -->
     <string name="sort_by_create_date">Date added</string>
@@ -201,6 +203,7 @@
 
     <!-- Settings -->
     <string name="settings">Settings</string>
+    <string name="settings_debug">Debug</string>
     <string name="appearance">Appearance</string>
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
     <string name="dark_theme">Dark theme</string>
@@ -235,6 +238,7 @@
     <string name="skip_silence">Skip silence</string>
     <string name="audio_normalization">Audio normalization</string>
     <string name="equalizer">Equalizer</string>
+    <string name="lyrics_settings_title">Lyrics</string>
 
     <string name="storage">Storage</string>
     <string name="cache">Cache</string>
@@ -269,4 +273,45 @@
     <string name="about">About</string>
     <string name="app_version">App version</string>
 
+<!--experimental settings-->
+    <string name="experimental_settings_title">Experimental</string>
+    <string name="dev_settings_title">Enable developer settings</string>
+    <string name="dev_settings_description">Reveals additional advanced settings intended for development use</string>
+
+<!--local player-->
+    <string name="local_player_settings_title">Local Media</string>
+<!--scanner page settings-->
+    <string name="local_scanner_title">Local scanner</string>
+
+    <string name="auto_scanner_title">Scan automatically</string>
+    <string name="auto_scanner_description">Automatically scan for songs when opening the app. This does not reload metadata of existing songs.</string>
+
+    <string name="manual_scanner_title">Manual scanner</string>
+    <string name="scanner_warning">By default, the scanner will NOT reload any metadata of existing songs unless you specify otherwise above. Depending on the size of your library, it make take a while. It is highly recommend to wait until the scanner to finish before proceeding.</string>
+
+<!--scanner additional settings-->
+    <string name="scanner_settings_title">Additional scanner settings</string>
+    <string name="scanner_strict_file_name_title">Strict file names</string>
+    <string name="scanner_strict_file_name_description">When enabled, file names will NOT be ignored. Ex. "Song.ogg" will be a different song from "Song.flac". Scanner sensitivity preference will still apply</string>
+    <string name="scanner_sensitivity_title">Configure scanner sensitivity</string>
+    <string name="scanner_sensitivity_L1">Match title</string>
+    <string name="scanner_sensitivity_L2">Match title and artists</string>
+    <string name="scanner_sensitivity_L3">Match title, artists, albums</string>
+
+    <string name="scanner_type_title">Metadata extractor</string>
+    <string name="scanner_type_mediastore">MediaStore (Android\'s system scanner, possibly inaccurate)</string>
+    <string name="scanner_type_mediastore_ffprobe">Hybrid (MediaStore extractor, but FFProbe for artist extraction)</string>
+    <string name="scanner_type_ffprobe">FFProbe (Prioritize FFmpeg extraction over MediaStore)</string>
+
+    <string name="scanner_variant_rescan">Rescan the entire library and reload all songs\' metadata</string>
+    <string name="scanner_online_artist_linking">Try to link local files\' artists with ones on YouTube Music</string>
+
+<!--Folders-->
+    <string name="flat_subfolders_title">Flatten subfolders</string>
+    <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
+
+<!--Lyrics-->
+    <string name="lyrics_multiline_title">Read multiline lyrics</string>
+    <string name="lyrics_multiline_description">Treat all the lines between sync points as one lyric text</string>
+    <string name="lyrics_trim_title">Remove spaces around lyrics</string>
 </resources>

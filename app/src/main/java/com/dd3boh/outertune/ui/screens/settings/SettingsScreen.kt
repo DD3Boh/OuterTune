@@ -11,8 +11,10 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -58,6 +60,11 @@ fun SettingsScreen(
             onClick = { navController.navigate("settings/player") }
         )
         PreferenceEntry(
+            title = { Text(stringResource(R.string.local_player_settings_title)) },
+            icon = { Icon(Icons.Rounded.SdCard, null) },
+            onClick = { navController.navigate("settings/local") }
+        )
+        PreferenceEntry(
             title = { Text(stringResource(R.string.storage)) },
             icon = { Icon(Icons.Rounded.Storage, null) },
             onClick = { navController.navigate("settings/storage") }
@@ -71,6 +78,11 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.backup_restore)) },
             icon = { Icon(Icons.Rounded.Restore, null) },
             onClick = { navController.navigate("settings/backup_restore") }
+        )
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.experimental_settings_title)) },
+            icon = { Icon(Icons.Rounded.WarningAmber, null) },
+            onClick = { navController.navigate("settings/experimental") }
         )
         PreferenceEntry(
             title = { Text(stringResource(R.string.about)) },

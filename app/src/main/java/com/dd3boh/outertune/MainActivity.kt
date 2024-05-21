@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +51,10 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
@@ -88,6 +93,7 @@ import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryScreen
+import com.dd3boh.outertune.ui.screens.library.LibrarySongsFolderScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
@@ -98,16 +104,20 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
-import com.dd3boh.outertune.ui.utils.backToMain
-import com.dd3boh.outertune.ui.utils.canNavigateUp
+import com.dd3boh.outertune.ui.utils.localToRemoteArtist
+import com.dd3boh.outertune.ui.utils.quickSync
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
+import com.dd3boh.outertune.ui.utils.scanLocal
+import com.dd3boh.outertune.ui.utils.unloadScanner
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
+import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -141,6 +151,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // storage permission helpers
+    private val mediaPermissionLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
+    else Manifest.permission.READ_EXTERNAL_STORAGE
+
+    val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+//                Toast.makeText(this, "Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     override fun onStart() {
         super.onStart()
         startService(Intent(this, MusicService::class.java))
@@ -151,8 +174,10 @@ class MainActivity : ComponentActivity() {
         unbindService(serviceConnection)
         super.onStop()
     }
-
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition",
+        "StateFlowValueCalledInComposition"
+    )
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -193,6 +218,43 @@ class MainActivity : ComponentActivity() {
                         }
                     } else DefaultThemeColor
                 }
+            }
+
+            // Check if the permissions for local media access
+            if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_GRANTED) {
+                val (scannerType) = rememberEnumPreference(
+                    key = ScannerTypeKey,
+                    defaultValue = ScannerImpl.MEDIASTORE
+                )
+                val (scannerSensitivity) = rememberEnumPreference(
+                    key = ScannerSensitivityKey,
+                    defaultValue = ScannerMatchCriteria.LEVEL_2
+                )
+                val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
+                val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
+                val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
+
+                if (autoScan) {
+                    // equivalent to (quick scan)
+                    val directoryStructure = scanLocal(this, database, ScannerImpl.MEDIASTORE).value
+                    quickSync(
+                        database, directoryStructure.toList(), scannerSensitivity,
+                        strictExtensions, scannerType
+                    )
+                    unloadScanner()
+
+                    // start artist linking job
+                    if (lookupYtmArtists) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            localToRemoteArtist(database)
+                        }
+                    }
+                    purgeCache() // juuuust to be sure
+                }
+            }
+            else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
+                // Request the permission using the permission launcher
+                permissionLauncher.launch(mediaPermissionLevel)
             }
 
             OuterTuneTheme(
@@ -536,6 +598,10 @@ class MainActivity : ComponentActivity() {
                                 composable("new_release") {
                                     NewReleaseScreen(navController, scrollBehavior)
                                 }
+                                composable(Screens.SongFolders.route) {
+                                    LibrarySongsFolderScreen(navController)
+                                }
+
                                 composable(
                                     route = "search/{query}",
                                     arguments = listOf(
@@ -656,6 +722,9 @@ class MainActivity : ComponentActivity() {
                                 composable("settings/player") {
                                     PlayerSettings(navController, scrollBehavior)
                                 }
+                                composable("settings/player/lyrics") {
+                                    LyricsSettings(navController, scrollBehavior)
+                                }
                                 composable("settings/storage") {
                                     StorageSettings(navController, scrollBehavior)
                                 }
@@ -664,6 +733,12 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable("settings/backup_restore") {
                                     BackupAndRestore(navController, scrollBehavior)
+                                }
+                                composable("settings/local") {
+                                    LocalPlayerSettings(navController, scrollBehavior, this@MainActivity, database)
+                                }
+                                composable("settings/experimental") {
+                                    ExperimentalSettings(navController, scrollBehavior)
                                 }
                                 composable("settings/about") {
                                     AboutScreen(navController, scrollBehavior)

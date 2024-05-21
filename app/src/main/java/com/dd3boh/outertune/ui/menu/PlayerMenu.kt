@@ -206,45 +206,47 @@ fun PlayerMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
     ) {
-        GridMenuItem(
-            icon = Icons.Rounded.Radio,
-            title = R.string.start_radio
-        ) {
-            playerConnection.service.startRadioSeamlessly()
-            onDismiss()
-        }
+        if (mediaMetadata.isLocal != true)
+            GridMenuItem(
+                icon = Icons.Rounded.Radio,
+                title = R.string.start_radio
+            ) {
+                playerConnection.service.startRadioSeamlessly()
+                onDismiss()
+            }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
         }
-        DownloadGridMenu(
-            state = download?.state,
-            onDownload = {
-                database.transaction {
-                    insert(mediaMetadata)
+        if (mediaMetadata.isLocal != true)
+            DownloadGridMenu(
+                state = download?.state,
+                onDownload = {
+                    database.transaction {
+                        insert(mediaMetadata)
+                    }
+                    val downloadRequest = DownloadRequest.Builder(mediaMetadata.id, mediaMetadata.id.toUri())
+                        .setCustomCacheKey(mediaMetadata.id)
+                        .setData(mediaMetadata.title.toByteArray())
+                        .build()
+                    DownloadService.sendAddDownload(
+                        context,
+                        ExoDownloadService::class.java,
+                        downloadRequest,
+                        false
+                    )
+                },
+                onRemoveDownload = {
+                    DownloadService.sendRemoveDownload(
+                        context,
+                        ExoDownloadService::class.java,
+                        mediaMetadata.id,
+                        false
+                    )
                 }
-                val downloadRequest = DownloadRequest.Builder(mediaMetadata.id, mediaMetadata.id.toUri())
-                    .setCustomCacheKey(mediaMetadata.id)
-                    .setData(mediaMetadata.title.toByteArray())
-                    .build()
-                DownloadService.sendAddDownload(
-                    context,
-                    ExoDownloadService::class.java,
-                    downloadRequest,
-                    false
-                )
-            },
-            onRemoveDownload = {
-                DownloadService.sendRemoveDownload(
-                    context,
-                    ExoDownloadService::class.java,
-                    mediaMetadata.id,
-                    false
-                )
-            }
-        )
+            )
         GridMenuItem(
             icon = R.drawable.artist,
             title = R.string.view_artist
@@ -267,18 +269,20 @@ fun PlayerMenu(
                 onDismiss()
             }
         }
-        GridMenuItem(
-            icon = Icons.Rounded.Share,
-            title = R.string.share
-        ) {
-            val intent = Intent().apply {
-                action = Intent.ACTION_SEND
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${mediaMetadata.id}")
+
+        if (mediaMetadata.isLocal != true)
+            GridMenuItem(
+                icon = Icons.Rounded.Share,
+                title = R.string.share
+            ) {
+                val intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${mediaMetadata.id}")
+                }
+                context.startActivity(Intent.createChooser(intent, null))
+                onDismiss()
             }
-            context.startActivity(Intent.createChooser(intent, null))
-            onDismiss()
-        }
         GridMenuItem(
             icon = Icons.Rounded.Info,
             title = R.string.details

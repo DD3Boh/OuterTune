@@ -245,6 +245,18 @@ interface DatabaseDao {
     @Query("SELECT * FROM song")
     fun allSongs(): Flow<List<Song>>
 
+    @Transaction
+    @Query("SELECT * FROM song WHERE isLocal = 1 and inLibrary IS NOT NULL")
+    fun allLocalSongs(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM artist WHERE isLocal != 1")
+    fun allRemoteArtists(): Flow<List<ArtistEntity>>
+
+    @Transaction
+    @Query("SELECT * FROM artist WHERE isLocal = 1")
+    fun allLocalArtists(): Flow<List<ArtistEntity>>
+
     @Query("SELECT * FROM format WHERE id = :id")
     fun format(id: String?): Flow<FormatEntity?>
 
@@ -327,7 +339,7 @@ interface DatabaseDao {
             ArtistSortType.PLAY_TIME -> artistsByPlayTimeAsc()
         }.map { artists ->
             artists
-                .filter { it.artist.isYouTubeArtist }
+                .filter { it.artist.isYouTubeArtist || it.artist.isLocalArtist } // temp: add ui to filter by local or remote or something idk
                 .reversed(descending)
         }
 
@@ -490,6 +502,10 @@ interface DatabaseDao {
     fun searchSongs(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
 
     @Transaction
+    @Query("SELECT * FROM song WHERE title LIKE '%' || :query || '%' LIMIT :previewSize")
+    fun searchSongsInclNotInLibrary(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE name LIKE '%' || :query || '%' AND songCount > 0 LIMIT :previewSize")
     fun searchArtists(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Artist>>
 
@@ -583,7 +599,8 @@ interface DatabaseDao {
             insert(
                 ArtistEntity(
                     id = artistId,
-                    name = artist.name
+                    name = artist.name,
+                    isLocal = artist.isLocal
                 )
             )
             insert(
@@ -746,6 +763,14 @@ interface DatabaseDao {
         ))
     }
 
+    @Transaction
+    @Query("UPDATE song_artist_map SET artistId = :newId WHERE artistId = :oldId")
+    fun updateSongArtistMap(oldId: String, newId: String)
+
+    @Transaction
+    @Query("UPDATE album_artist_map SET artistId = :newId WHERE artistId = :oldId")
+    fun updateAlbumArtistMap(oldId: String, newId: String)
+
     @Upsert
     fun upsert(map: SongAlbumMap)
 
@@ -778,6 +803,29 @@ interface DatabaseDao {
 
     @Delete
     fun delete(event: Event)
+
+    @Transaction
+    @Query("DELETE FROM song_artist_map WHERE songId = :songID")
+    fun unlinkSongArtists(songID: String)
+
+    @Transaction
+    @Query("DELETE FROM song WHERE isLocal IS NOT NULL")
+    fun nukeLocalSongs()
+
+    @Transaction
+    @Query("DELETE FROM artist WHERE isLocal IS NOT NULL")
+    fun nukeLocalArtists()
+
+//    @Transaction
+//    @Query("DELETE FROM album WHERE isLocal IS NOT NULL")
+//    fun nukeLocalAlbums()
+
+    @Transaction
+    fun nukeLocalData() {
+        nukeLocalSongs()
+        nukeLocalArtists()
+//        nukeLocalAlbums()
+    }
 
     @Query("SELECT * FROM playlist_song_map WHERE songId = :songId")
     fun playlistSongMaps(songId: String): List<PlaylistSongMap>

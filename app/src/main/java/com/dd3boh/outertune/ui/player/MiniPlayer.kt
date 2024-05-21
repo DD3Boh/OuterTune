@@ -48,6 +48,8 @@ import com.dd3boh.outertune.constants.MiniPlayerHeight
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.ui.component.AsyncLocalImage
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 
 @Composable
 fun MiniPlayer(
@@ -131,13 +133,26 @@ fun MiniMediaInfo(
         modifier = modifier
     ) {
         Box(modifier = Modifier.padding(6.dp)) {
-            AsyncImage(
-                model = mediaMetadata.thumbnailUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
-            )
+            if (mediaMetadata.isLocal) {
+                // local thumbnail arts
+                AsyncLocalImage(
+                    image = { getLocalThumbnail(mediaMetadata.localPath, true) },
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                )
+            } else {
+                // YTM thumbnail arts
+                AsyncImage(
+                    model = mediaMetadata.thumbnailUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                )
+            }
+
             androidx.compose.animation.AnimatedVisibility(
                 visible = error != null,
                 enter = fadeIn(),

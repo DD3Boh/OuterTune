@@ -5,6 +5,7 @@ import com.zionhuang.innertube.models.SongItem
 import com.dd3boh.outertune.db.entities.*
 import com.dd3boh.outertune.ui.utils.resize
 import java.io.Serializable
+import java.time.LocalDateTime
 
 @Immutable
 data class MediaMetadata(
@@ -15,10 +16,13 @@ data class MediaMetadata(
     val thumbnailUrl: String? = null,
     val album: Album? = null,
     val setVideoId: String? = null,
+    val isLocal: Boolean = false,
+    val localPath: String? = null,
 ) : Serializable {
     data class Artist(
         val id: String?,
         val name: String,
+        val isLocal: Boolean = false,
     ) : Serializable
 
     data class Album(
@@ -32,7 +36,10 @@ data class MediaMetadata(
         duration = duration,
         thumbnailUrl = thumbnailUrl,
         albumId = album?.id,
-        albumName = album?.title
+        albumName = album?.title,
+        isLocal = isLocal,
+        inLibrary = if (isLocal) LocalDateTime.now() else null,
+        localPath = localPath
     )
 }
 
@@ -42,7 +49,8 @@ fun Song.toMediaMetadata() = MediaMetadata(
     artists = artists.map {
         MediaMetadata.Artist(
             id = it.id,
-            name = it.name
+            name = it.name,
+            isLocal = it.isLocal
         )
     },
     duration = song.duration,
@@ -57,7 +65,9 @@ fun Song.toMediaMetadata() = MediaMetadata(
             id = albumId,
             title = song.albumName.orEmpty()
         )
-    }
+    },
+    isLocal = song.isLocal,
+    localPath = song.localPath
 )
 
 fun SongItem.toMediaMetadata() = MediaMetadata(

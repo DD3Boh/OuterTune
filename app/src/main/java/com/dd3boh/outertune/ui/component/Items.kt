@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,11 +22,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.FolderCopy
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -60,15 +65,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
 import androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
 import androidx.media3.exoplayer.offline.Download.STATE_QUEUED
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
@@ -80,7 +86,6 @@ import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.models.YTItem
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
-import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.GridThumbnailHeight
@@ -95,8 +100,10 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
-import com.dd3boh.outertune.ui.screens.MoodAndGenresButtonHeight
+import com.dd3boh.outertune.ui.menu.FolderMenu
 import com.dd3boh.outertune.ui.theme.extractThemeColor
+import com.dd3boh.outertune.ui.utils.DirectoryTree
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.reportException
@@ -166,11 +173,23 @@ fun ListItem(
     badges: @Composable RowScope.() -> Unit = {},
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
-    isActive: Boolean = false
+    isActive: Boolean = false,
+    isLocalSong: Boolean? = null,
 ) = ListItem(
     title = title,
     subtitle = {
         badges()
+
+        // local song indicator
+        if (isLocalSong == true) {
+            Icon(
+                Icons.Rounded.FolderCopy,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
 
         if (!subtitle.isNullOrEmpty()) {
             Text(
@@ -256,6 +275,7 @@ fun SongListItem(
     showLikedIcon: Boolean = true,
     showInLibraryIcon: Boolean = false,
     showDownloadIcon: Boolean = true,
+    isSelected: Boolean = false,
     badges: @Composable RowScope.() -> Unit = {
         if (showLikedIcon && song.song.liked) {
             Icon(
@@ -297,6 +317,17 @@ fun SongListItem(
                 else -> {}
             }
         }
+
+        // local song indicator
+        if (song.song.isLocal) {
+            Icon(
+                Icons.Rounded.FolderCopy,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
     },
     isActive: Boolean = false,
     isPlaying: Boolean = false,
@@ -319,19 +350,56 @@ fun SongListItem(
                     enter = fadeIn() + expandIn(expandFrom = Alignment.Center),
                     exit = shrinkOut(shrinkTowards = Alignment.Center) + fadeOut()
                 ) {
-                    Text(
-                        text = albumIndex.toString(),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+
+                    if (isSelected) {
+                        Icon(
+                            Icons.Rounded.Done,
+                            modifier = Modifier.align(Alignment.Center),
+                            contentDescription = null
+                        )
+                    }else {
+                        Text(
+                            text = albumIndex.toString(),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             } else {
-                AsyncImage(
-                    model = song.song.thumbnailUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                )
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .zIndex(1000f)
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            Icons.Rounded.Done,
+                            modifier = Modifier.align(Alignment.Center),
+                            contentDescription = null
+                        )
+                    }
+                }
+
+                if (song.song.isLocal) {
+                    // local thumbnail arts
+                    AsyncLocalImage(
+                        image = { getLocalThumbnail(song.song.localPath, true) },
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    )
+                } else {
+                    // YTM thumbnail arts
+                    AsyncImage(
+                        model = song.song.thumbnailUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    )
+                }
             }
 
             PlayingIndicatorBox(
@@ -353,6 +421,74 @@ fun SongListItem(
     modifier = modifier,
     isActive = isActive
 )
+@Composable
+fun SongFolderItem(
+    folderTitle: String,
+    modifier: Modifier = Modifier,
+) = ListItem(title = folderTitle, thumbnailContent = {
+        Icon(
+            Icons.Rounded.Folder,
+            contentDescription = null,
+            modifier = modifier.size(48.dp)
+        )
+    },
+    modifier = modifier
+)
+
+@Composable
+fun SongFolderItem(
+    folderTitle: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier,
+) = ListItem(title = folderTitle,
+    subtitle = subtitle,
+    thumbnailContent = {
+        Icon(
+            Icons.Rounded.Folder,
+            contentDescription = null,
+            modifier = modifier.size(48.dp)
+        )
+    },
+    modifier = modifier
+)
+
+@Composable
+fun SongFolderItem(
+    folder: DirectoryTree,
+    modifier: Modifier = Modifier,
+    folderTitle: String? = null,
+    menuState: MenuState,
+    navController: NavController,
+    subtitle: String
+) = ListItem(title = folderTitle ?: folder.currentDir,
+    subtitle = subtitle,
+    thumbnailContent = {
+    Icon(
+        Icons.Rounded.Folder,
+        contentDescription = null,
+        modifier = modifier.size(48.dp)
+    )
+},
+    trailingContent = {
+        androidx.compose.material3.IconButton(
+            onClick = {
+                menuState.show {
+                    FolderMenu(
+                        folder = folder,
+                        navController = navController,
+                        onDismiss = menuState::dismiss
+                    )
+                }
+            }
+        ) {
+            Icon(
+                Icons.Rounded.MoreVert,
+                contentDescription = null
+            )
+        }
+    },
+    modifier = modifier
+)
 
 @Composable
 fun ArtistListItem(
@@ -364,6 +500,18 @@ fun ArtistListItem(
                 painter = painterResource(R.drawable.favorite),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
+
+        // assume if they have a non local artist ID, they are not local
+        if (artist.artist.isLocalArtist) {
+            Icon(
+                Icons.Rounded.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier
                     .size(18.dp)
                     .padding(end = 2.dp)
@@ -398,6 +546,18 @@ fun ArtistGridItem(
                 painter = painterResource(R.drawable.favorite),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
+
+        // assume if they have a non local artist ID, they are not local
+        if (artist.artist.isLocalArtist) {
+            Icon(
+                Icons.Rounded.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier
                     .size(18.dp)
                     .padding(end = 2.dp)
@@ -903,13 +1063,25 @@ fun MediaMetadataListItem(
         makeTimeString(mediaMetadata.duration * 1000L)
     ),
     thumbnailContent = {
-        AsyncImage(
-            model = mediaMetadata.thumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier
-                .size(ListThumbnailSize)
-                .clip(RoundedCornerShape(ThumbnailCornerRadius))
-        )
+        if (mediaMetadata.isLocal) {
+            // local thumbnail arts
+            AsyncLocalImage(
+                image = { getLocalThumbnail(mediaMetadata.localPath, true) },
+                contentDescription = null,
+                modifier = Modifier
+                    .size(ListThumbnailSize)
+                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+            )
+        } else {
+            // YTM thumbnail arts
+            AsyncImage(
+                model = mediaMetadata.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(ListThumbnailSize)
+                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+            )
+        }
 
         PlayingIndicatorBox(
             isActive = isActive,
@@ -924,7 +1096,8 @@ fun MediaMetadataListItem(
     },
     trailingContent = trailingContent,
     modifier = modifier,
-    isActive = isActive
+    isActive = isActive,
+    isLocalSong = mediaMetadata.isLocal
 )
 
 @Composable
@@ -1353,3 +1526,4 @@ fun YouTubeCardItem(
         }
     }
 }
+

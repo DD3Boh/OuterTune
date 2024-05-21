@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.QueuePlayNext
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
@@ -81,6 +82,7 @@ fun AlbumMenu(
     originalAlbum: Album,
     navController: NavController,
     onDismiss: () -> Unit,
+    selectAction: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -303,6 +305,14 @@ fun AlbumMenu(
                 putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/browse/${album.album.id}")
             }
             context.startActivity(Intent.createChooser(intent, null))
+        }
+
+        GridMenuItem(
+            icon = Icons.Rounded.SelectAll,
+            title = R.string.select
+        ) {
+            onDismiss()
+            selectAction()
         }
     }
 }

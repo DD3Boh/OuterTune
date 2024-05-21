@@ -25,7 +25,8 @@ data class PlaylistEntity(
     val remoteSongCount: Int? = null,
     val playEndpointParams: String? = null,
     val shuffleEndpointParams: String? = null,
-    val radioEndpointParams: String? = null
+    val radioEndpointParams: String? = null,
+    @ColumnInfo(name = "isLocal", defaultValue = "false") val isLocal: Boolean = false,
 ) {
     companion object {
         const val LIKED_PLAYLIST_ID = "LP_LIKED"
@@ -33,6 +34,9 @@ data class PlaylistEntity(
 
         fun generatePlaylistId() = "LP" + RandomStringUtils.random(8, true, false)
     }
+
+    val isLocalPlaylist: Boolean
+        get() = id.startsWith("LP")
 
     val shareLink: String?
         get() {
@@ -52,4 +56,6 @@ data class PlaylistEntity(
             this.cancel()
         }
     }
+
+
 }

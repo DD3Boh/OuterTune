@@ -2,6 +2,7 @@ package com.dd3boh.outertune.ui.menu
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.R
@@ -85,6 +89,14 @@ fun AddToPlaylistDialog(
                         onAdd(playlist)
                         onDismiss()
                     }
+                )
+            }
+
+            item {
+                Text(
+                    text = "Note: Adding local songs to synced/remote playlists is unsupported. Any other combination is valid.",
+                    fontSize = TextUnit(12F, TextUnitType.Sp),
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }

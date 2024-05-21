@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.lyrics
 
 import android.content.Context
+import android.os.Build
 import android.util.LruCache
 import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.dd3boh.outertune.models.MediaMetadata
@@ -8,6 +9,8 @@ import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
+// true will prioritize local lyric files over all cloud providers, true is vice versa
+private const val PREFER_LOCAL_LYRIC = true
 class LyricsHelper @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
@@ -19,6 +22,38 @@ class LyricsHelper @Inject constructor(
         if (cached != null) {
             return cached.lyrics
         }
+
+        val localLyrics = getLocalLyrics(mediaMetadata)
+        var remoteLyrics: String?
+
+        // fallback to secondary provider when primary is unavailable
+        if (PREFER_LOCAL_LYRIC) {
+            if (localLyrics != null) {
+                return localLyrics
+            }
+
+            // "lazy eval" the remote lyrics cuz it is laughably slow
+            remoteLyrics= getRemoteLyrics(mediaMetadata)
+            if (remoteLyrics != null) {
+                return remoteLyrics
+            }
+        } else {
+            remoteLyrics= getRemoteLyrics(mediaMetadata)
+            if (remoteLyrics != null) {
+                return remoteLyrics
+            } else if (localLyrics != null) {
+                return localLyrics
+            }
+
+        }
+
+        return LYRICS_NOT_FOUND
+    }
+
+    /**
+     * Lookup lyrics from remote providers
+     */
+    private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? {
         lyricsProviders.forEach { provider ->
             if (provider.isEnabled(context)) {
                 provider.getLyrics(
@@ -33,7 +68,30 @@ class LyricsHelper @Inject constructor(
                 }
             }
         }
-        return LYRICS_NOT_FOUND
+        return null
+    }
+
+    /**
+     * Lookup lyrics from local disk (.lrc) file
+     */
+    private suspend fun getLocalLyrics(mediaMetadata: MediaMetadata): String? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            throw Exception("Local lyrics are not supported below SDK 26 (Oreo)")
+        }
+        if (LocalLyricsProvider.isEnabled(context)) {
+            LocalLyricsProvider.getLyrics(
+                mediaMetadata.id,
+                "" + mediaMetadata.localPath, // title used as path
+                mediaMetadata.artists.joinToString { it.name },
+                mediaMetadata.duration
+            ).onSuccess { lyrics ->
+                return lyrics
+            }.onFailure {
+                reportException(it)
+            }
+        }
+
+        return null
     }
 
     suspend fun getAllLyrics(

@@ -1,11 +1,14 @@
 package com.dd3boh.outertune.ui.player
 
+import android.annotation.SuppressLint
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,11 +35,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.CheckBox
+import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
+import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Timer
@@ -44,6 +51,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.OutlinedButton
@@ -91,11 +99,13 @@ import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.MediaMetadataListItem
 import com.dd3boh.outertune.ui.menu.PlayerMenu
+import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -109,7 +119,8 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
+@SuppressLint("UnrememberedMutableState")
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun Queue(
     state: BottomSheetState,
@@ -208,6 +219,9 @@ fun Queue(
             }
         )
     }
+
+    val selectedSongs: MutableList<MediaMetadata> = mutableStateListOf()
+    val selectedItems: MutableList<Timeline.Window> = mutableStateListOf()
 
     var showDetailsDialog by rememberSaveable {
         mutableStateOf(false)
@@ -410,10 +424,12 @@ fun Queue(
                                     playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
                                     return@rememberSwipeToDismissBoxState true
                                 }
+
                                 SwipeToDismissBoxValue.EndToStart -> {
                                     playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
                                     return@rememberSwipeToDismissBoxState true
                                 }
+
                                 SwipeToDismissBoxValue.Settled -> {
                                     return@rememberSwipeToDismissBoxState false
                                 }
@@ -424,36 +440,86 @@ fun Queue(
                         state = dismissState,
                         backgroundContent = {},
                         content = {
-                            MediaMetadataListItem(
-                                mediaMetadata = window.mediaItem.metadata!!,
-                                isActive = index == currentWindowIndex,
-                                isPlaying = isPlaying,
-                                trailingContent = {
-                                    IconButton(
-                                        onClick = { },
-                                        modifier = Modifier
-                                            .detectReorder(reorderableState)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.DragHandle,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        coroutineScope.launch(Dispatchers.Main) {
-                                            if (index == currentWindowIndex) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
-                                                playerConnection.player.playWhenReady = true
-                                            }
+                            Row(
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+//                                IconButton(
+//                                    modifier = Modifier
+//                                        .align(Alignment.CenterVertically),
+//                                    onClick = {
+//                                        println(window.mediaItem.metadata!!.title)
+//                                        if (window.mediaItem.metadata!! in selectedSongs) {
+//                                            selectedSongs.remove(window.mediaItem.metadata!!)
+//                                            selectedItems.remove(currentItem)
+//                                        } else {
+//                                            selectedSongs.add(window.mediaItem.metadata!!)
+//                                            selectedItems.add(currentItem)
+//                                        }
+//                                    }
+//                                ) {
+//                                    Icon(
+//                                        if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
+//                                        contentDescription = null,
+//                                        tint = LocalContentColor.current
+//                                    )
+//                                }
+
+                                MediaMetadataListItem(
+                                    mediaMetadata = window.mediaItem.metadata!!,
+                                    isActive = index == currentWindowIndex,
+                                    isPlaying = isPlaying,
+                                    trailingContent = {
+                                        IconButton(
+                                            onClick = { },
+                                            modifier = Modifier
+                                                .detectReorder(reorderableState)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.DragHandle,
+                                                contentDescription = null
+                                            )
                                         }
-                                    }
-                                    .detectReorderAfterLongPress(reorderableState)
-                            )
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (selectedSongs.isEmpty()) {
+                                                    coroutineScope.launch(Dispatchers.Main) {
+                                                        if (index == currentWindowIndex) {
+                                                            playerConnection.player.togglePlayPause()
+                                                        } else {
+                                                            playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                            playerConnection.player.playWhenReady = true
+                                                        }
+                                                    }
+                                                } else {
+                                                    if (window.mediaItem.metadata!! in selectedSongs) {
+                                                        selectedSongs.remove(window.mediaItem.metadata!!)
+                                                        selectedItems.remove(currentItem)
+                                                    } else {
+                                                        selectedSongs.add(window.mediaItem.metadata!!)
+                                                        selectedItems.add(currentItem)
+                                                    }
+                                                }
+                                            },
+                                            onLongClick = {
+                                                menuState.show {
+                                                    PlayerMenu(
+                                                        mediaMetadata = window.mediaItem.metadata!!,
+                                                        navController = navController,
+                                                        playerBottomSheetState = playerBottomSheetState,
+                                                        onShowDetailsDialog = {
+                                                            showDetailsDialog = true
+                                                        },
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
+                                            }
+                                        )
+                                        .detectReorderAfterLongPress(reorderableState)
+                                )
+                            }
                         }
                     )
                 }
@@ -485,6 +551,43 @@ fun Queue(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
+
+                if (selectedSongs.isNotEmpty()) {
+
+                    IconButton(
+                        onClick = {
+                            selectedSongs.clear()
+                            selectedItems.clear()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Rounded.Deselect,
+                            contentDescription = null,
+                            tint = LocalContentColor.current
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            menuState.show {
+                                SelectionMediaMetadataMenu(
+                                    songSelection = selectedSongs,
+                                    onDismiss = menuState::dismiss,
+                                    clearAction = {
+                                        selectedSongs.clear()
+                                        selectedItems.clear()
+                                                  },
+                                    currentItems = selectedItems
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Rounded.MoreVert,
+                            contentDescription = null,
+                            tint = LocalContentColor.current
+                        )
+                    }
+                }
 
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
