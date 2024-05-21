@@ -1073,6 +1073,7 @@ fun getLocalThumbnail(path: String?, resize: Boolean): Bitmap? {
         val art = mData.embeddedPicture
         BitmapFactory.decodeByteArray(art, 0, art!!.size)
     } catch (e: Exception) {
+        cache(path, null, resize)
         null
     } ?: return null
 

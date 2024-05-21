@@ -22,8 +22,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+
+const val MAX_IMAGE_JOBS = 8
+@OptIn(ExperimentalCoroutinesApi::class)
+val imageSession = Dispatchers.IO.limitedParallelism(MAX_IMAGE_JOBS)
 
 /**
  * Non-blocking image
@@ -36,17 +40,13 @@ fun AsyncLocalImage(
 ) {
     var imageBitmapState by remember { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(image) {
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(imageSession).launch {
             try {
-                val bitmap = image.invoke()
-                if (bitmap != null) {
-                    withContext(Dispatchers.Main) {
-                        imageBitmapState = bitmap.asImageBitmap()
-                    }
-                }
+                imageBitmapState = image.invoke()?.asImageBitmap()
             } catch (e: Exception) {
 //                e.printStackTrace()
                 // this probably won't be an issue when debugging...
+                // I'd like to add that this WAS a problem when debugging.
             }
         }
     }
