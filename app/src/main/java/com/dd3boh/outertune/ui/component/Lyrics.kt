@@ -83,7 +83,7 @@ fun Lyrics(
 
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val lyricsEntity by playerConnection.currentLyrics.collectAsState(initial = null)
-    val lyrics = remember(lyricsEntity) { lyricsEntity?.lyrics }
+    val lyrics = remember(lyricsEntity) { lyricsEntity?.lyrics?.trim() }
     val multilineLrc = rememberPreference(MultilineLrcKey, defaultValue = true)
     val lyricTrim = rememberPreference(LyricTrimKey, defaultValue = false)
 
