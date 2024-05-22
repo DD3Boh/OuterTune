@@ -21,11 +21,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -94,11 +97,13 @@ import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
+import com.dd3boh.outertune.ui.menu.SelectionSongMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
+import com.zionhuang.music.ui.utils.ItemWrapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -118,6 +123,11 @@ fun AutoPlaylistScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val songs by viewModel.songs.collectAsState()
+
+    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
+    var selection by remember {
+        mutableStateOf(false)
+    }
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
@@ -421,21 +431,75 @@ fun AutoPlaylistScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        SortHeader(
-                            sortType = sortType,
-                            sortDescending = sortDescending,
-                            onSortTypeChange = onSortTypeChange,
-                            onSortDescendingChange = onSortDescendingChange,
-                            sortTypeText = { sortType ->
-                                when (sortType) {
-                                    SongSortType.CREATE_DATE -> R.string.sort_by_create_date
-                                    SongSortType.NAME -> R.string.sort_by_name
-                                    SongSortType.ARTIST -> R.string.sort_by_artist
-                                    SongSortType.PLAY_TIME -> R.string.sort_by_play_time
-                                }
+                        if (selection) {
+                            val count = wrappedSongs?.count { it.isSelected }
+                            Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                            IconButton(
+                                onClick = {
+                                    if (count == wrappedSongs?.size) {
+                                        wrappedSongs?.forEach { it.isSelected = false }
+                                    }else {
+                                        wrappedSongs?.forEach { it.isSelected = true }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    if (count == wrappedSongs?.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                    contentDescription = null
+                                )
                             }
-                        )
 
+                            IconButton(
+                                onClick = {
+                                    menuState.show {
+                                        SelectionSongMenu(
+                                            songSelection = wrappedSongs?.filter { it.isSelected }!!.map { it.item },
+                                            onDismiss = menuState::dismiss,
+                                            clearAction = {selection = false}
+                                        )
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.MoreVert,
+                                    contentDescription = null
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { selection = false },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = null
+                                )
+                            }
+                        } else {
+                            SortHeader(
+                                sortType = sortType,
+                                sortDescending = sortDescending,
+                                onSortTypeChange = onSortTypeChange,
+                                onSortDescendingChange = onSortDescendingChange,
+                                sortTypeText = { sortType ->
+                                    when (sortType) {
+                                        SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                        SongSortType.NAME -> R.string.sort_by_name
+                                        SongSortType.ARTIST -> R.string.sort_by_artist
+                                        SongSortType.PLAY_TIME -> R.string.sort_by_play_time
+                                    }
+                                }
+                            )
+
+                            IconButton(
+                                onClick = { selection = !selection },
+                                modifier = Modifier.padding(horizontal = 6.dp)
+                            ) {
+                                Icon(
+                                    if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                    contentDescription = null
+                                )
+                            }
+                        }
                         Spacer(Modifier.weight(1f))
 
                         Text(
@@ -457,15 +521,15 @@ fun AutoPlaylistScreen(
 
 
             itemsIndexed(
-                items = mutableSongs,
-                key = { _, song -> song.id }
-            ) { index, song ->
+                items = wrappedSongs,
+                key = { _, song -> song.item.id }
+            ) { index, songWrapper ->
                 SwipeToQueueBox(
-                    item = song.toMediaItem(),
+                    item = songWrapper.item.toMediaItem(),
                     content = {
                         SongListItem(
-                            song = song,
-                            isActive = song.song.id == mediaMetadata?.id,
+                            song = songWrapper.item,
+                            isActive = songWrapper.item.song.id == mediaMetadata?.id,
                             isPlaying = isPlaying,
                             showInLibraryIcon = true,
                             showLikedIcon = false,
@@ -474,7 +538,7 @@ fun AutoPlaylistScreen(
                                     onClick = {
                                         menuState.show {
                                             SongMenu(
-                                                originalSong = song,
+                                                originalSong = songWrapper.item,
                                                 playlistBrowseId = playlist.browseId,
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss
@@ -488,28 +552,33 @@ fun AutoPlaylistScreen(
                                     )
                                 }
                             },
+                            isSelected = songWrapper.isSelected && selection,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background)
                                 .combinedClickable(
                                     onClick = {
-                                        if (song.song.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(
-                                                ListQueue(
-                                                    title = playlist.name,
-                                                    items = songs.map { it.toMediaItem() },
-                                                    startIndex = index,
-                                                    playlistId = playlist.browseId
+                                        if (!selection) {
+                                            if (songWrapper.item.song.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = playlist.name,
+                                                        items = songs.map { it.toMediaItem() },
+                                                        startIndex = index,
+                                                        playlistId = playlist.browseId
+                                                    )
                                                 )
-                                            )
+                                            }
+                                        } else {
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
                                     },
                                     onLongClick = {
                                         menuState.show {
                                             SongMenu(
-                                                originalSong = song,
+                                                originalSong = songWrapper.item,
                                                 playlistBrowseId = playlist.browseId,
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss

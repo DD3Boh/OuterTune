@@ -51,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
+import com.dd3boh.outertune.constants.MultilineLrcKey
 import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.dd3boh.outertune.lyrics.LyricsEntry
 import com.dd3boh.outertune.lyrics.LyricsEntry.Companion.HEAD_LYRICS_ENTRY
@@ -63,6 +65,7 @@ import com.dd3boh.outertune.ui.menu.LyricsMenu
 import com.dd3boh.outertune.ui.screens.settings.LyricsPosition
 import com.dd3boh.outertune.ui.utils.fadingEdge
 import com.dd3boh.outertune.utils.rememberEnumPreference
+import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.time.Duration.Companion.seconds
@@ -80,11 +83,14 @@ fun Lyrics(
 
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val lyricsEntity by playerConnection.currentLyrics.collectAsState(initial = null)
-    val lyrics = remember(lyricsEntity) { lyricsEntity?.lyrics }
+    val lyrics = remember(lyricsEntity) { lyricsEntity?.lyrics?.trim() }
+    val multilineLrc = rememberPreference(MultilineLrcKey, defaultValue = true)
+    val lyricTrim = rememberPreference(LyricTrimKey, defaultValue = false)
 
     val lines = remember(lyrics) {
         if (lyrics == null || lyrics == LYRICS_NOT_FOUND) emptyList()
-        else if (lyrics.startsWith("[")) listOf(HEAD_LYRICS_ENTRY) + parseLyrics(lyrics)
+        else if (lyrics.startsWith("[")) listOf(HEAD_LYRICS_ENTRY) +
+                parseLyrics(lyrics, lyricTrim.value, multilineLrc.value)
         else lyrics.lines().mapIndexed { index, line -> LyricsEntry(index * 100L, line) }
     }
     val isSynced = remember(lyrics) {

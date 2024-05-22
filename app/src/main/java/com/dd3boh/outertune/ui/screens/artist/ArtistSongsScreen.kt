@@ -61,6 +61,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.ArtistSongsViewModel
 import com.zionhuang.innertube.YouTube
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -166,14 +167,17 @@ fun ArtistSongsScreen(
                                                 val playlistId = YouTube.artist(artist?.id!!).getOrNull()
                                                     ?.artist?.shuffleEndpoint?.playlistId
 
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = context.getString(R.string.queue_all_songs),
-                                                        items = songs.map { it.toMediaItem() },
-                                                        startIndex = index,
-                                                        playlistId = playlistId
+                                                // for some reason this get called on the wrong thread and crashes, use main
+                                                CoroutineScope(Dispatchers.Main).launch {
+                                                    playerConnection.playQueue(
+                                                        ListQueue(
+                                                            title = context.getString(R.string.queue_all_songs),
+                                                            items = songs.map { it.toMediaItem() },
+                                                            startIndex = index,
+                                                            playlistId = playlistId
+                                                        )
                                                     )
-                                                )
+                                                }
                                             }
                                         }
                                     },

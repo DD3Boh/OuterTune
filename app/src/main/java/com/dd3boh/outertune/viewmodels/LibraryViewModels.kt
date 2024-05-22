@@ -3,6 +3,7 @@
 package com.dd3boh.outertune.viewmodels
 
 import android.content.Context
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,9 +14,12 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
+import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
+import com.dd3boh.outertune.ui.utils.DirectoryTree
+import com.dd3boh.outertune.ui.utils.refreshLocal
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
@@ -27,6 +31,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.Stack
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,41 +41,19 @@ class LibrarySongsViewModel @Inject constructor(
     downloadUtil: DownloadUtil,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
-    val allSongs = context.dataStore.data
-        .map {
-            Triple(
-                it[SongFilterKey].toEnum(SongFilter.LIKED),
-                it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
-                (it[SongSortDescendingKey] ?: true)
-            )
-        }
-        .distinctUntilChanged()
-        .flatMapLatest { (filter, sortType, descending) ->
-            when (filter) {
-                SongFilter.LIBRARY -> database.songs(sortType, descending)
-                SongFilter.LIKED -> database.likedSongs(sortType, descending)
-                SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
-                    database.allSongs()
-                        .flowOn(Dispatchers.IO)
-                        .map { songs ->
-                            songs.filter {
-                                downloads[it.id]?.state == Download.STATE_COMPLETED
-                            }
-                        }
-                        .map { songs ->
-                            when (sortType) {
-                                SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
-                                SongSortType.NAME -> songs.sortedBy { it.song.title }
-                                SongSortType.ARTIST -> songs.sortedBy { song ->
-                                    song.artists.joinToString(separator = "") { it.name }
-                                }
 
-                                SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
-                            }.reversed(descending)
-                        }
-                }
-            }
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    /**
+     * The top of the stack is the folder that the page will render.
+     * Clicking on a folder pushes, while the back button pops.
+     */
+    var folderPositionStack = Stack<DirectoryTree>()
+    val databaseLink = database
+
+    val allSongs = syncAllSongs(context, database, downloadUtil)
+
+    val localSongDirectoryTree = refreshLocal(context, database)
+
+    val inLocal = mutableStateOf(false)
 
     fun syncLibrarySongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
@@ -78,6 +61,58 @@ class LibrarySongsViewModel @Inject constructor(
 
     fun syncLikedSongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
+    }
+
+
+    /**
+     * Get local songs
+     *
+     * @return DirectoryTree
+     */
+    fun getLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
+        val directoryStructure = refreshLocal(context, database).value
+        return MutableStateFlow(directoryStructure)
+    }
+
+
+    fun syncAllSongs(context: Context, database: MusicDatabase, downloadUtil: DownloadUtil): StateFlow<List<Song>> {
+
+        return context.dataStore.data
+                .map {
+                    Triple(
+                            it[SongFilterKey].toEnum(SongFilter.LIKED),
+                            it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
+                            (it[SongSortDescendingKey] ?: true)
+                    )
+                }
+                .distinctUntilChanged()
+                .flatMapLatest { (filter, sortType, descending) ->
+                    when (filter) {
+                        SongFilter.LIBRARY -> database.songs(sortType, descending)
+                        SongFilter.LIKED -> database.likedSongs(sortType, descending)
+                        SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
+                            database.allSongs()
+                                    .flowOn(Dispatchers.IO)
+                                    .map { songs ->
+                                        songs.filter {
+                                            // show local songs as under downloaded for now
+                                            downloads[it.id]?.state == Download.STATE_COMPLETED || it.song.isLocal
+                                        }
+                                    }
+                                    .map { songs ->
+                                        when (sortType) {
+                                            SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
+                                            SongSortType.NAME -> songs.sortedBy { it.song.title }
+                                            SongSortType.ARTIST -> songs.sortedBy { song ->
+                                                song.artists.joinToString(separator = "") { it.name }
+                                            }
+
+                                            SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
+                                        }.reversed(descending)
+                                    }
+                        }
+                    }
+                }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 }
 

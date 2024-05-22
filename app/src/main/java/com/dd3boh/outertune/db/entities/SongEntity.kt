@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.db.entities
 
 import androidx.compose.runtime.Immutable
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -9,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
 
 @Immutable
@@ -31,7 +33,12 @@ data class SongEntity(
     val likedDate: LocalDateTime? = null,
     val totalPlayTime: Long = 0, // in milliseconds
     val inLibrary: LocalDateTime? = null,
+    @ColumnInfo(name = "isLocal", defaultValue = "false") val isLocal: Boolean = false,
+    val localPath: String?,
 ) {
+    val isLocalSong: Boolean
+        get() = id.startsWith("LA")
+
     fun localToggleLike() = copy(
         liked = !liked,
         likedDate = if (!liked) LocalDateTime.now() else null,
@@ -49,4 +56,8 @@ data class SongEntity(
     }
 
     fun toggleLibrary() = copy(inLibrary = if (inLibrary == null) LocalDateTime.now() else null)
+
+    companion object {
+        fun generateSongId() = "LA" + RandomStringUtils.random(8, true, false)
+    }
 }

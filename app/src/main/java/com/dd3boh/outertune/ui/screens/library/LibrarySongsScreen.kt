@@ -1,13 +1,17 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,13 +44,16 @@ import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
+import com.dd3boh.outertune.ui.menu.SelectionSongMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
+import com.zionhuang.music.ui.utils.ItemWrapper
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -68,6 +76,13 @@ fun LibrarySongsScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
     val songs by viewModel.allSongs.collectAsState()
+
+    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
+    var selection by remember {
+        mutableStateOf(false)
+    }
+
+    var inLocal by viewModel.inLocal
 
     LaunchedEffect(Unit) {
         when (filter) {
@@ -93,133 +108,217 @@ fun LibrarySongsScreen(
         )
     }
 
+    val headerContent = @Composable {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            if (selection) {
+                val count = wrappedSongs.count { it.isSelected }
+                Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        if (count == wrappedSongs.size) {
+                            wrappedSongs.forEach { it.isSelected = false }
+                        } else {
+                            wrappedSongs.forEach { it.isSelected = true }
+                        }
+                    },
+                ) {
+                    Icon(
+                        if (count == wrappedSongs.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                        contentDescription = null
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        menuState.show {
+                            SelectionSongMenu(
+                                songSelection = wrappedSongs.filter { it.isSelected }.map { it.item },
+                                onDismiss = menuState::dismiss,
+                                clearAction = {selection = false}
+                            )
+                        }
+                    },
+                ) {
+                    Icon(
+                        Icons.Rounded.MoreVert,
+                        contentDescription = null
+                    )
+                }
+
+                IconButton(
+                    onClick = { selection = false },
+                ) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = null
+                    )
+                }
+            } else {
+                SortHeader(
+                    sortType = sortType,
+                    sortDescending = sortDescending,
+                    onSortTypeChange = onSortTypeChange,
+                    onSortDescendingChange = onSortDescendingChange,
+                    sortTypeText = { sortType ->
+                        when (sortType) {
+                            SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                            SongSortType.NAME -> R.string.sort_by_name
+                            SongSortType.ARTIST -> R.string.sort_by_artist
+                            SongSortType.PLAY_TIME -> R.string.sort_by_play_time
+                        }
+                    }
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                IconButton(
+                    onClick = { selection = !selection },
+                    modifier = Modifier.padding(horizontal = 6.dp)
+                ) {
+                    Icon(
+                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                        contentDescription = null
+                    )
+                }
+
+                Text(
+                    text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+
     val lazyListState = rememberLazyListState()
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            state = lazyListState,
-            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
-        ) {
-            item(
-                key = "filter",
-                contentType = CONTENT_TYPE_HEADER
+        if (inLocal) {
+            LibrarySongsFolderScreen(
+                navController = navController,
+                filterContent = libraryFilterContent ?: filterContent
+            )
+        } else {
+            LazyColumn(
+                state = lazyListState,
+                contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
             ) {
-                libraryFilterContent?.let { it() } ?: filterContent()
-            }
-
-            item(
-                key = "header",
-                contentType = CONTENT_TYPE_HEADER
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                item(
+                    key = "filter",
+                    contentType = CONTENT_TYPE_HEADER
                 ) {
-                    SortHeader(
-                        sortType = sortType,
-                        sortDescending = sortDescending,
-                        onSortTypeChange = onSortTypeChange,
-                        onSortDescendingChange = onSortDescendingChange,
-                        sortTypeText = { sortType ->
-                            when (sortType) {
-                                SongSortType.CREATE_DATE -> R.string.sort_by_create_date
-                                SongSortType.NAME -> R.string.sort_by_name
-                                SongSortType.ARTIST -> R.string.sort_by_artist
-                                SongSortType.PLAY_TIME -> R.string.sort_by_play_time
-                            }
-                        }
-                    )
+                    libraryFilterContent?.let { it() } ?: filterContent()
+                }
 
-                    Spacer(Modifier.weight(1f))
+                item(
+                    key = "header",
+                    contentType = CONTENT_TYPE_HEADER
+                ) {
+                    if (!inLocal) headerContent()
+                }
 
-                    Text(
-                        text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                // Only show under library filter, subject to change
+                if (filter == SongFilter.LIBRARY)
+                    item(
+                        key = "song_folders"
+                    ) {
+                        // enter folders page
+                        SongFolderItem(
+                            folderTitle = "Internal Storage",
+                            modifier = Modifier
+                                .clickable { inLocal = true }
+                                .animateItemPlacement()
+                        )
+                    }
+
+                itemsIndexed(
+                    items = wrappedSongs,
+                    key = { _, item -> item.item.id },
+                    contentType = { _, _ -> CONTENT_TYPE_SONG }
+                ) { index, songWrapper ->
+                    SwipeToQueueBox(
+                        item = songWrapper.item.toMediaItem(),
+                        content = {
+                            SongListItem(
+                                song = songWrapper.item,
+                                isActive = songWrapper.item.id == mediaMetadata?.id,
+                                isPlaying = isPlaying,
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = songWrapper.item,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.MoreVert,
+                                            contentDescription = null
+                                        )
+                                    }
+                                },
+                                isSelected = songWrapper.isSelected && selection,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (!selection) {
+                                                if (songWrapper.item.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
+                                                } else {
+                                                    playerConnection.playQueue(
+                                                        ListQueue(
+                                                            title = context.getString(R.string.queue_all_songs),
+                                                            items = songs.map { it.toMediaItem() },
+                                                            startIndex = index
+                                                        )
+                                                    )
+                                                }
+                                            } else {
+                                                songWrapper.isSelected = !songWrapper.isSelected
+                                            }
+                                        },
+                                        onLongClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = songWrapper.item,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
+                                        }
+                                    )
+                                    .animateItemPlacement()
+                            )
+                        },
+                        snackbarHostState = snackbarHostState
                     )
                 }
             }
 
-            itemsIndexed(
-                items = songs,
-                key = { _, item -> item.id },
-                contentType = { _, _ -> CONTENT_TYPE_SONG }
-            ) { index, song ->
-
-                SwipeToQueueBox(
-                    item = song.toMediaItem(),
-                    content = {
-                        SongListItem(
-                            song = song,
-                            isActive = song.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        if (song.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(
-                                                ListQueue(
-                                                    title = context.getString(R.string.queue_all_songs),
-                                                    items = songs.map { it.toMediaItem() },
-                                                    startIndex = index
-                                                )
-                                            )
-                                        }
-                                    },
-                                    onLongClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                )
-                                .animateItemPlacement()
+            HideOnScrollFAB(
+                visible = songs.isNotEmpty(),
+                lazyListState = lazyListState,
+                icon = Icons.Rounded.Shuffle,
+                onClick = {
+                    playerConnection.playQueue(
+                        ListQueue(
+                            title = context.getString(R.string.queue_all_songs),
+                            items = songs.shuffled().map { it.toMediaItem() }
                         )
-                    },
-                    snackbarHostState = snackbarHostState
-                )
-            }
-        }
-
-        HideOnScrollFAB(
-            visible = songs.isNotEmpty(),
-            lazyListState = lazyListState,
-            icon = Icons.Rounded.Shuffle,
-            onClick = {
-                playerConnection.playQueue(
-                    ListQueue(
-                        title = context.getString(R.string.queue_all_songs),
-                        items = songs.shuffled().map { it.toMediaItem() }
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         SnackbarHost(
             hostState = snackbarHostState,

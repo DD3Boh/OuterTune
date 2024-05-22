@@ -223,13 +223,14 @@ fun SongMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
     ) {
-        GridMenuItem(
-            icon = Icons.Rounded.Radio,
-            title = R.string.start_radio
-        ) {
-            onDismiss()
-            playerConnection.playQueue(YouTubeQueue(WatchEndpoint(videoId = song.id), song.toMediaMetadata(), playlistId = WatchEndpoint(videoId = song.id).playlistId))
-        }
+        if (!song.song.isLocal)
+            GridMenuItem(
+                icon = Icons.Rounded.Radio,
+                title = R.string.start_radio
+            ) {
+                onDismiss()
+                playerConnection.playQueue(YouTubeQueue(WatchEndpoint(videoId = song.id), song.toMediaMetadata(), playlistId = WatchEndpoint(videoId = song.id).playlistId))
+            }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
             title = R.string.play_next
@@ -280,29 +281,32 @@ fun SongMenu(
             }
         }
 
-        DownloadGridMenu(
-            state = download?.state,
-            onDownload = {
-                val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
-                    .setCustomCacheKey(song.id)
-                    .setData(song.song.title.toByteArray())
-                    .build()
-                DownloadService.sendAddDownload(
-                    context,
-                    ExoDownloadService::class.java,
-                    downloadRequest,
-                    false
-                )
-            },
-            onRemoveDownload = {
-                DownloadService.sendRemoveDownload(
-                    context,
-                    ExoDownloadService::class.java,
-                    song.id,
-                    false
-                )
-            }
-        )
+        if (!song.song.isLocal)
+            DownloadGridMenu(
+                state = download?.state,
+                onDownload = {
+                    val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
+                        .setCustomCacheKey(song.id)
+                        .setData(song.song.title.toByteArray())
+                        .build()
+                    DownloadService.sendAddDownload(
+                        context,
+                        ExoDownloadService::class.java,
+                        downloadRequest,
+                        false
+                    )
+                },
+                onRemoveDownload = {
+                    DownloadService.sendRemoveDownload(
+                        context,
+                        ExoDownloadService::class.java,
+                        song.id,
+                        false
+                    )
+                }
+            )
+
+
         GridMenuItem(
             icon = R.drawable.artist,
             title = R.string.view_artist
@@ -314,7 +318,7 @@ fun SongMenu(
                 showSelectArtistDialog = true
             }
         }
-        if (song.song.albumId != null) {
+        if (song.song.albumId != null && !song.song.isLocal) {
             GridMenuItem(
                 icon = Icons.Rounded.Album,
                 title = R.string.view_album
@@ -323,18 +327,19 @@ fun SongMenu(
                 navController.navigate("album/${song.song.albumId}")
             }
         }
-        GridMenuItem(
-            icon = Icons.Rounded.Share,
-            title = R.string.share
-        ) {
-            onDismiss()
-            val intent = Intent().apply {
-                action = Intent.ACTION_SEND
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
+        if (!song.song.isLocal)
+            GridMenuItem(
+                icon = Icons.Rounded.Share,
+                title = R.string.share
+            ) {
+                onDismiss()
+                val intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
+                }
+                context.startActivity(Intent.createChooser(intent, null))
             }
-            context.startActivity(Intent.createChooser(intent, null))
-        }
         if (event != null) {
             GridMenuItem(
                 icon = Icons.Rounded.Delete,

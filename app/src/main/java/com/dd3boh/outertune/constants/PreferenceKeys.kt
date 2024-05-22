@@ -133,6 +133,37 @@ val AccountNameKey = stringPreferencesKey("accountName")
 val AccountEmailKey = stringPreferencesKey("accountEmail")
 val AccountChannelHandleKey = stringPreferencesKey("accountChannelHandle")
 
+//  local playback
+val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
+val ScannerTypeKey = stringPreferencesKey("scannerType")
+
+/**
+ * Specify how strict the metadata scanner should be
+ */
+enum class ScannerMatchCriteria {
+    LEVEL_1, // Title only
+    LEVEL_2, // Title and artists
+    LEVEL_3, // Title, artists, albums
+}
+
+/**
+ *
+ */
+enum class ScannerImpl {
+    MEDIASTORE,
+    MEDIASTORE_FFPROBE,
+    FFPROBE,
+}
+
+val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
+val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
+val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")
+val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
+val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
+val LyricTrimKey = booleanPreferencesKey("lyricTrim")
+
+val DevSettingsKey = booleanPreferencesKey("devSettings")
+
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",
     "az" to "Azərbaycan",

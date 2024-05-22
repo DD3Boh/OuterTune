@@ -51,7 +51,6 @@ fun PrivacySettings(
     val database = LocalDatabase.current
     val (pauseListenHistory, onPauseListenHistoryChange) = rememberPreference(key = PauseListenHistoryKey, defaultValue = false)
     val (pauseSearchHistory, onPauseSearchHistoryChange) = rememberPreference(key = PauseSearchHistoryKey, defaultValue = false)
-    val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
 
     var showClearListenHistoryDialog by remember {
         mutableStateOf(false)
@@ -149,12 +148,6 @@ fun PrivacySettings(
             title = { Text(stringResource(R.string.clear_search_history)) },
             icon = { Icon(Icons.Rounded.ClearAll, null) },
             onClick = { showClearSearchHistoryDialog = true }
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_kugou)) },
-            icon = { Icon(Icons.Rounded.Lyrics, null) },
-            checked = enableKugou,
-            onCheckedChange = onEnableKugouChange
         )
     }
 

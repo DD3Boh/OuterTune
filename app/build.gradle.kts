@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 34
         versionCode = 19
         versionName = "0.5.3"
@@ -120,4 +120,14 @@ dependencies {
     coreLibraryDesugaring(libs.desugaring)
 
     implementation(libs.timber)
+
+    /**
+     * Custom FFmpeg metadata extractor
+     *
+     * My boss has requested prebuilt libraries by default. Shall you choose
+     * to work on the scanner itself, switch the implementation below AND
+     * include the project (uncomment the include line) in /settings.gradle.kts
+     */
+      implementation(files("prebuilt/ffMetadataEx-release.aar")) // prebuilt
+//     implementation(project(":ffMetadataEx")) // self built
 }
