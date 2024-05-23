@@ -218,45 +218,46 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Check if the permissions for local media access
-            if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_GRANTED) {
-                val (scannerType) = rememberEnumPreference(
-                    key = ScannerTypeKey,
-                    defaultValue = ScannerImpl.MEDIASTORE
-                )
-                val (scannerSensitivity) = rememberEnumPreference(
-                    key = ScannerSensitivityKey,
-                    defaultValue = ScannerMatchCriteria.LEVEL_2
-                )
-                val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
-                val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
-                val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
+            // auto scanner
+            val (scannerType) = rememberEnumPreference(
+                key = ScannerTypeKey,
+                defaultValue = ScannerImpl.MEDIASTORE
+            )
+            val (scannerSensitivity) = rememberEnumPreference(
+                key = ScannerSensitivityKey,
+                defaultValue = ScannerMatchCriteria.LEVEL_2
+            )
+            val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
+            val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
+            val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
+            LaunchedEffect(Unit) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    // Check if the permissions for local media access
+                    if (autoScan && checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_GRANTED) {
+                        val scanner = LocalMediaScanner.getScanner()
 
-                if (autoScan) {
-                    val scanner = LocalMediaScanner.getScanner()
+                        // equivalent to (quick scan)
+                        val directoryStructure =
+                            scanner.scanLocal(this@MainActivity, database, ScannerImpl.MEDIASTORE).value
+                        scanner.quickSync(
+                            database, directoryStructure.toList(), scannerSensitivity,
+                            strictExtensions, scannerType
+                        )
+                        unloadAdvancedScanner()
 
-                    // equivalent to (quick scan)
-                    val directoryStructure = scanner.scanLocal(this, database, ScannerImpl.MEDIASTORE).value
-                    scanner.quickSync(
-                        database, directoryStructure.toList(), scannerSensitivity,
-                        strictExtensions, scannerType
-                    )
-                    unloadAdvancedScanner()
-
-                    // start artist linking job
-                    if (lookupYtmArtists) {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            scanner.localToRemoteArtist(database)
+                        // start artist linking job
+                        if (lookupYtmArtists) {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                scanner.localToRemoteArtist(database)
+                            }
                         }
+                        purgeCache() // juuuust to be sure
+                    } else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
+                        // Request the permission using the permission launcher
+                        permissionLauncher.launch(mediaPermissionLevel)
                     }
-                    purgeCache() // juuuust to be sure
                 }
             }
-            else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
-                // Request the permission using the permission launcher
-                permissionLauncher.launch(mediaPermissionLevel)
-            }
-
             OuterTuneTheme(
                 darkTheme = useDarkTheme,
                 pureBlack = pureBlack,
