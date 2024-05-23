@@ -1,6 +1,6 @@
 plugins {
-    id("com.google.dagger.hilt.android").version("2.51").apply(false)
-    id("com.google.devtools.ksp").version("1.9.23-1.0.19").apply(false)
+    alias(libs.plugins.hilt) apply(false)
+    alias(libs.plugins.kotlin.ksp) apply(false)
 }
 
 buildscript {
@@ -25,12 +25,11 @@ tasks.register<Delete>("Clean") {
 
 subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions {
+        compilerOptions {
             if (project.findProperty("enableComposeCompilerReports") == "true") {
                 arrayOf("reports", "metrics").forEach {
-                    freeCompilerArgs = freeCompilerArgs + listOf(
-                        "-P", "plugin:androidx.compose.compiler.plugins.kotlin:${it}Destination=${project.layout.buildDirectory}/compose_metrics"
-                    )
+                    freeCompilerArgs.add("-P")
+                    freeCompilerArgs.add("plugin:androidx.compose.compiler.plugins.kotlin:${it}Destination=${project.layout.buildDirectory}/compose_metrics")
                 }
             }
         }
