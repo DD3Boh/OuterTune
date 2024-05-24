@@ -18,11 +18,11 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
-import com.dd3boh.outertune.ui.utils.DirectoryTree
-import com.dd3boh.outertune.ui.utils.refreshLocal
+import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.refreshLocal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
