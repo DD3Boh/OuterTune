@@ -26,7 +26,7 @@ import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.SongFolderItem
-import com.dd3boh.outertune.ui.utils.DirectoryTree
+import com.dd3boh.outertune.models.DirectoryTree
 
 @Composable
 fun FolderMenu(

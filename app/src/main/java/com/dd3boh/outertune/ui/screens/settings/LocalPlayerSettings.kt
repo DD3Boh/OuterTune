@@ -64,15 +64,11 @@ import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
 
 import com.dd3boh.outertune.ui.utils.backToMain
-import com.dd3boh.outertune.ui.utils.localToRemoteArtist
-import com.dd3boh.outertune.ui.utils.quickSync
-import com.dd3boh.outertune.ui.utils.refreshLocal
-import com.dd3boh.outertune.ui.utils.scanLocal
-import com.dd3boh.outertune.ui.utils.syncDB
-import com.dd3boh.outertune.ui.utils.unloadScanner
 import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.getScanner
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -177,31 +173,32 @@ fun LocalPlayerSettings(
                         Toast.LENGTH_SHORT
                     ).show()
                     coroutineScope.launch(Dispatchers.IO) {
+                        val scanner = getScanner()
                         // full rescan
                         if (fullRescan) {
-                            val directoryStructure = scanLocal(context, database, scannerType).value
-                            syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
-                            unloadScanner()
+                            val directoryStructure = scanner.scanLocal(context, database, scannerType).value
+                            scanner.syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
+                            unloadAdvancedScanner()
 
                             // start artist linking job
                             if (lookupYtmArtists) {
                                 coroutineScope.launch(Dispatchers.IO) {
-                                    localToRemoteArtist(database)
+                                    scanner.localToRemoteArtist(database)
                                 }
                             }
                         } else {
                             // quick scan
-                            val directoryStructure = scanLocal(context, database, ScannerImpl.MEDIASTORE).value
-                            quickSync(
+                            val directoryStructure =  scanner.scanLocal(context, database, ScannerImpl.MEDIASTORE).value
+                            scanner.quickSync(
                                 database, directoryStructure.toList(), scannerSensitivity,
                                 strictExtensions, scannerType
                             )
-                            unloadScanner()
+                            unloadAdvancedScanner()
 
                             // start artist linking job
                             if (lookupYtmArtists) {
                                 coroutineScope.launch(Dispatchers.IO) {
-                                    localToRemoteArtist(database)
+                                    scanner.localToRemoteArtist(database)
                                 }
                             }
                         }

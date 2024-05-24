@@ -102,7 +102,7 @@ import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.menu.FolderMenu
 import com.dd3boh.outertune.ui.theme.extractThemeColor
-import com.dd3boh.outertune.ui.utils.DirectoryTree
+import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
