@@ -124,7 +124,8 @@ class DirectoryTree(path: String) {
         // add a file
         if (path.indexOf('/') == -1) {
             files.add(song)
-            Timber.tag(TAG).d("Adding song with path: $path")
+            if (SCANNER_DEBUG)
+                Timber.tag(TAG).d("Adding song with path: $path")
             return
         }
 
@@ -341,6 +342,7 @@ fun refreshLocal(
         }
     }
 
+    Timber.tag(TAG).d("------------ SCAN: Finished Quick Directory Rebuild ------------")
     cachedDirectoryTree = newDirectoryStructure
     return MutableStateFlow(newDirectoryStructure)
 }
@@ -593,6 +595,7 @@ fun scanLocal(
         }
     }
 
+    Timber.tag(TAG).d("------------ SCAN: Finished Full Scanner ------------")
     cachedDirectoryTree = newDirectoryStructure
     return MutableStateFlow(newDirectoryStructure)
 }
@@ -697,14 +700,15 @@ fun syncDB(
                     artistPos++
                 }
             } else if (songMatch.isEmpty()) { // new song
-                Timber.tag(TAG).d("NOT found in database, adding song: ${song.song.title}")
+                if (SCANNER_DEBUG)
+                    Timber.tag(TAG).d("NOT found in database, adding song: ${song.song.title}")
                 database.insert(song.toMediaMetadata())
             }
             // do not delete songs from database automatically, we just disable them
             disableSongs(database)
         }
     }
-
+    Timber.tag(TAG).d("------------ SYNC: Finished Local Library Sync ------------")
 }
 
 /**
@@ -836,6 +840,7 @@ fun quickSync(
 
         disableSongs(database)
     }
+    Timber.tag(TAG).d("------------ SYNC: Finished Quick (additive delta) Library Sync ------------")
 }
 
 /**
@@ -967,13 +972,6 @@ fun destructiveRescanDB(
  *  Either null == different artists
  */
 fun compareArtist(a: List<ArtistEntity>, b: List<ArtistEntity>): Boolean {
-    if (a.isNotEmpty()) {
-        println(a.first().name)
-    }
-    if (b.isNotEmpty()) {
-        println(b.first().name)
-    }
-
     if (a.isEmpty() && b.isEmpty()) {
         return true
     } else if (a.isEmpty() || b.isEmpty()) {
@@ -1061,7 +1059,7 @@ fun getLocalThumbnail(path: String?, resize: Boolean): Bitmap? {
     }
 
     if (cachedImage == null) {
-        Timber.tag(TAG).d("Cache miss on $path")
+//        Timber.tag(TAG).d("Cache miss on $path")
     } else {
         return cachedImage
     }
