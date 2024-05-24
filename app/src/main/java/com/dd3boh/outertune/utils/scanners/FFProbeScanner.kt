@@ -6,7 +6,8 @@ import wah.mikooomich.ffMetadataEx.FFprobeWrapper
 import java.lang.Integer.parseInt
 import java.lang.Long.parseLong
 
-const val DEBUG_SAVE_OUTPUT = false
+const val EXTRACTOR_DEBUG = false
+const val DEBUG_SAVE_OUTPUT = false // ignored (will be false) when EXTRACTOR_DEBUG IS false
 const val EXTRACTOR_TAG = "FFProbeExtractor"
 
 class FFProbeScanner : MetadataScanner {
@@ -28,11 +29,12 @@ class FFProbeScanner : MetadataScanner {
      * @param path Full file path
      */
     override fun getMediaStoreSupplement(path: String): ExtraMetadataWrapper {
-        Timber.tag(EXTRACTOR_TAG).d("Starting MediaStoreSupplement session on: $path")
+        if (EXTRACTOR_DEBUG)
+            Timber.tag(EXTRACTOR_TAG).d("Starting MediaStoreSupplement session on: $path")
         val ffprobe = FFprobeWrapper()
         val data = ffprobe.getAudioMetadata(path)
 
-        if (DEBUG_SAVE_OUTPUT) {
+        if (EXTRACTOR_DEBUG && DEBUG_SAVE_OUTPUT) {
             Timber.tag(EXTRACTOR_TAG).d("Full output for: $path \n $data")
         }
 
@@ -61,11 +63,12 @@ class FFProbeScanner : MetadataScanner {
      * @param path Full file path
      */
     override fun getAllMetadata(path: String, og: FormatEntity): ExtraMetadataWrapper {
-        Timber.tag(EXTRACTOR_TAG).d("Starting Full Extractor session on: $path")
+        if (EXTRACTOR_DEBUG)
+            Timber.tag(EXTRACTOR_TAG).d("Starting Full Extractor session on: $path")
         val ffprobe = FFprobeWrapper()
         val data = ffprobe.getFullAudioMetadata(path)
 
-        if (DEBUG_SAVE_OUTPUT) {
+        if (EXTRACTOR_DEBUG && DEBUG_SAVE_OUTPUT) {
             Timber.tag(EXTRACTOR_TAG).d("Full output for: $path \n $data")
         }
 
