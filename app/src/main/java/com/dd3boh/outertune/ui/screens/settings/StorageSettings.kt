@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens.settings
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,13 +19,12 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -48,6 +48,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+@SuppressLint("PrivateResource")
 @OptIn(ExperimentalCoilApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun StorageSettings(
@@ -62,13 +63,13 @@ fun StorageSettings(
     val coroutineScope = rememberCoroutineScope()
 
     var imageCacheSize by remember {
-        mutableStateOf(imageDiskCache.size)
+        mutableLongStateOf(imageDiskCache.size)
     }
     var playerCacheSize by remember {
-        mutableStateOf(tryOrNull { playerCache.cacheSpace } ?: 0)
+        mutableLongStateOf(tryOrNull { playerCache.cacheSpace } ?: 0)
     }
     var downloadCacheSize by remember {
-        mutableStateOf(tryOrNull { downloadCache.cacheSpace } ?: 0)
+        mutableLongStateOf(tryOrNull { downloadCache.cacheSpace } ?: 0)
     }
 
     LaunchedEffect(imageDiskCache) {
@@ -92,6 +93,24 @@ fun StorageSettings(
 
     val (maxImageCacheSize, onMaxImageCacheSizeChange) = rememberPreference(key = MaxImageCacheSizeKey, defaultValue = 512)
     val (maxSongCacheSize, onMaxSongCacheSizeChange) = rememberPreference(key = MaxSongCacheSizeKey, defaultValue = 1024)
+
+    // clear caches when turning off
+    LaunchedEffect(maxImageCacheSize) {
+        if (maxImageCacheSize == 0) {
+            coroutineScope.launch(Dispatchers.IO) {
+                imageDiskCache.clear()
+            }
+        }
+    }
+    LaunchedEffect(maxSongCacheSize) {
+        if (maxSongCacheSize == 0) {
+            coroutineScope.launch(Dispatchers.IO) {
+                playerCache.keys.forEach { key ->
+                    playerCache.removeResource(key)
+                }
+            }
+        }
+    }
 
     Column(
         Modifier
@@ -123,33 +142,39 @@ fun StorageSettings(
             title = stringResource(R.string.song_cache)
         )
 
-        if (maxSongCacheSize == -1) {
-            Text(
-                text = stringResource(R.string.size_used, formatFileSize(playerCacheSize)),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-            )
-        } else {
-            LinearProgressIndicator(
-                progress = { (playerCacheSize.toFloat() / (maxSongCacheSize * 1024 * 1024L)).coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-            )
+        if (maxSongCacheSize != 0) {
+            if (maxSongCacheSize == -1) {
+                Text(
+                    text = stringResource(R.string.size_used, formatFileSize(playerCacheSize)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                )
+            } else {
+                LinearProgressIndicator(
+                    progress = { (playerCacheSize.toFloat() / (maxSongCacheSize * 1024 * 1024L)).coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                )
 
-            Text(
-                text = stringResource(R.string.size_used, "${formatFileSize(playerCacheSize)} / ${formatFileSize(maxSongCacheSize * 1024 * 1024L)}"),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-            )
+                Text(
+                    text = stringResource(R.string.size_used, "${formatFileSize(playerCacheSize)} / ${formatFileSize(maxSongCacheSize * 1024 * 1024L)}"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                )
+            }
         }
 
         ListPreference(
             title = { Text(stringResource(R.string.max_cache_size)) },
             selectedValue = maxSongCacheSize,
-            values = listOf(128, 256, 512, 1024, 2048, 4096, 8192, -1),
+            values = listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192, -1),
             valueText = {
-                if (it == -1) stringResource(R.string.unlimited) else formatFileSize(it * 1024 * 1024L)
+                when (it) {
+                    0 -> stringResource(androidx.compose.ui.R.string.off)
+                    -1 -> stringResource(R.string.unlimited)
+                    else -> formatFileSize(it * 1024 * 1024L)
+                }
             },
             onValueSelected = onMaxSongCacheSizeChange
         )
@@ -169,24 +194,31 @@ fun StorageSettings(
             title = stringResource(R.string.image_cache)
         )
 
-        LinearProgressIndicator(
-            progress = { (imageCacheSize.toFloat() / imageDiskCache.maxSize).coerceIn(0f, 1f) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        )
+        if (maxImageCacheSize > 0) {
+            LinearProgressIndicator(
+                progress = { (imageCacheSize.toFloat() / imageDiskCache.maxSize).coerceIn(0f, 1f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            )
 
-        Text(
-            text = stringResource(R.string.size_used, "${formatFileSize(imageCacheSize)} / ${formatFileSize(imageDiskCache.maxSize)}"),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-        )
+            Text(
+                text = stringResource(R.string.size_used, "${formatFileSize(imageCacheSize)} / ${formatFileSize(imageDiskCache.maxSize)}"),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            )
+        }
 
         ListPreference(
             title = { Text(stringResource(R.string.max_cache_size)) },
             selectedValue = maxImageCacheSize,
-            values = listOf(128, 256, 512, 1024, 2048, 4096, 8192),
-            valueText = { formatFileSize(it * 1024 * 1024L) },
+            values = listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192),
+            valueText = {
+                when (it) {
+                    0 -> stringResource(androidx.compose.ui.R.string.off)
+                    else -> formatFileSize(it * 1024 * 1024L)
+                }
+            },
             onValueSelected = onMaxImageCacheSizeChange
         )
 
