@@ -20,6 +20,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
+import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
@@ -132,6 +133,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
+const val MAX_CONSECUTIVE_ERR = 5
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @AndroidEntryPoint
@@ -186,6 +188,8 @@ class MusicService : MediaLibraryService(),
 
     private var isAudioEffectSessionOpened = false
 
+    var consecutivePlaybackErr = 0
+
     override fun onCreate() {
         super.onCreate()
         setMediaNotificationProvider(
@@ -215,16 +219,47 @@ class MusicService : MediaLibraryService(),
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
                         super.onPlayerError(error)
+                        consecutivePlaybackErr ++
+
                         Toast.makeText(
                             this@MusicService,
-                            "Skipping due to error: ${error.message}",
+                            "Playback error: Could not resolve data: ${error.message} (${error.errorCode})",
                             Toast.LENGTH_SHORT
                         ).show()
 
-                        // Skip to the next media item
+                        /**
+                         * Auto skip to the next media item on error.
+                         *
+                         * To prevent a "runaway diesel engine" scenario, force the user to take action after
+                         * too many errors come up too quickly. Pause to show player "stopped" state
+                         */
                         val nextWindowIndex = player.nextMediaItemIndex
-                        if (nextWindowIndex != C.INDEX_UNSET) {
+                        if (consecutivePlaybackErr < MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
                             player.seekTo(nextWindowIndex, C.TIME_UNSET)
+                            player.prepare()
+                            player.play()
+                        } else {
+                            player.pause()
+                            Toast.makeText(
+                                this@MusicService,
+                                "Playback stopped due to too many errors",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        // dismiss the errors after a cool down time
+                        CoroutineScope(Dispatchers.Main).launch {
+                            delay(1000)
+                            if (consecutivePlaybackErr > 0) {
+                                consecutivePlaybackErr --
+                            }
+                        }
+                    }
+
+                    // start playback again on seek
+                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        super.onMediaItemTransition(mediaItem, reason)
+                        if (reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
                             player.prepare()
                             player.play()
                         }
