@@ -23,11 +23,18 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.CheckBox
+import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,6 +42,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -53,6 +62,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -95,6 +106,9 @@ fun Queue(
 
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
 
+    var selection by remember {
+        mutableStateOf(false)
+    }
     val selectedSongs: MutableList<MediaMetadata> = mutableStateListOf()
     val selectedItems: MutableList<Timeline.Window> = mutableStateListOf()
 
@@ -212,26 +226,29 @@ fun Queue(
                             Row(
                                 horizontalArrangement = Arrangement.Center
                             ) {
-//                                IconButton(
-//                                    modifier = Modifier
-//                                        .align(Alignment.CenterVertically),
-//                                    onClick = {
-//                                        println(window.mediaItem.metadata!!.title)
-//                                        if (window.mediaItem.metadata!! in selectedSongs) {
-//                                            selectedSongs.remove(window.mediaItem.metadata!!)
-//                                            selectedItems.remove(currentItem)
-//                                        } else {
-//                                            selectedSongs.add(window.mediaItem.metadata!!)
-//                                            selectedItems.add(currentItem)
-//                                        }
-//                                    }
-//                                ) {
-//                                    Icon(
-//                                        if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
-//                                        contentDescription = null,
-//                                        tint = LocalContentColor.current
-//                                    )
-//                                }
+                                // selection checkbox. Standard multiselect doesn't work in queue...
+                                if (selection) {
+                                    IconButton(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterVertically),
+                                        onClick = {
+                                            println(window.mediaItem.metadata!!.title)
+                                            if (window.mediaItem.metadata!! in selectedSongs) {
+                                                selectedSongs.remove(window.mediaItem.metadata!!)
+                                                selectedItems.remove(currentItem)
+                                            } else {
+                                                selectedSongs.add(window.mediaItem.metadata!!)
+                                                selectedItems.add(currentItem)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
+                                            contentDescription = null,
+                                            tint = LocalContentColor.current,
+                                        )
+                                    }
+                                }
 
                                 MediaMetadataListItem(
                                     mediaMetadata = window.mediaItem.metadata!!,
@@ -300,28 +317,14 @@ fun Queue(
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = queueTitle.orEmpty(),
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                // handle selection mode
+                if (selection) {
+                    Text(
+                        text = "${selectedSongs.size}/${queueWindows.size} selected",
+                        modifier = Modifier.weight(1f)
+                    )
 
-                if (selectedSongs.isNotEmpty()) {
-
-                    IconButton(
-                        onClick = {
-                            selectedSongs.clear()
-                            selectedItems.clear()
-                        }
-                    ) {
-                        Icon(
-                            Icons.Rounded.Deselect,
-                            contentDescription = null,
-                            tint = LocalContentColor.current
-                        )
-                    }
+                    // option menu
                     IconButton(
                         onClick = {
                             menuState.show {
@@ -331,7 +334,7 @@ fun Queue(
                                     clearAction = {
                                         selectedSongs.clear()
                                         selectedItems.clear()
-                                                  },
+                                    },
                                     currentItems = selectedItems
                                 )
                             }
@@ -343,21 +346,83 @@ fun Queue(
                             tint = LocalContentColor.current
                         )
                     }
-                }
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    horizontalAlignment = Alignment.End
-                ) {
+                    // select/deselect all
+                    if (selectedSongs.size < queueWindows.size) {
+                        IconButton(
+                            onClick = {
+                                selectedSongs.clear()
+                                selectedSongs.addAll(mutableQueueWindows.map { it.mediaItem.metadata!! })
+                                selectedItems.clear()
+                                selectedItems.addAll(mutableQueueWindows)
+                            }
+                        ) {
+                            Icon(
+                                Icons.Rounded.SelectAll,
+                                contentDescription = null,
+                                tint = LocalContentColor.current
+                            )
+                        }
+                    } else {
+                        IconButton(
+                            onClick = {
+                                selectedSongs.clear()
+                                selectedItems.clear()
+                            }
+                        ) {
+                            Icon(
+                                Icons.Rounded.Deselect,
+                                contentDescription = null,
+                                tint = LocalContentColor.current
+                            )
+                        }
+                    }
+
+                    // close selection mode
+                    IconButton(
+                        onClick = { selection = false },
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = null
+                        )
+                    }
+                } else {
+                    // queue title
                     Text(
-                        text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = queueTitle.orEmpty(),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
 
-                    Text(
-                        text = makeTimeString(queueLength * 1000L),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    IconButton(
+                        onClick = {
+                            selection = true
+                        }
+                    ) {
+                        Icon(
+                            Icons.Rounded.CopyAll,
+                            contentDescription = null,
+                            tint = LocalContentColor.current
+                        )
+                    }
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Text(
+                            text = makeTimeString(queueLength * 1000L),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }
