@@ -196,16 +196,6 @@ fun LibrarySongsFolderScreen(
 
                         Spacer(Modifier.weight(1f))
 
-                        IconButton(
-                            onClick = { selection = !selection },
-                            modifier = Modifier.padding(horizontal = 6.dp)
-                        ) {
-                            Icon(
-                                if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                contentDescription = null
-                            )
-                        }
-
                         Text(
                             text = pluralStringResource(
                                 R.plurals.n_song, currDir.toList().size, currDir.toList().size
@@ -322,13 +312,8 @@ fun LibrarySongsFolderScreen(
                                         }
                                     },
                                     onLongClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = songWrapper.item,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
+                                        selection = true
+                                        songWrapper.isSelected = !songWrapper.isSelected
                                     }
                                 )
                                 .animateItemPlacement()

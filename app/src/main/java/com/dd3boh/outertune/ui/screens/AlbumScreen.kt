@@ -297,7 +297,6 @@ fun AlbumScreen(
                                                 originalAlbum = Album(albumWithSongsLocal.album, albumWithSongsLocal.artists),
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss,
-                                                selectAction = { selection = true }
                                             )
                                         }
                                     }
@@ -472,13 +471,8 @@ fun AlbumScreen(
                                             }
                                         },
                                         onLongClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
+                                            selection = true
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
                                     )
                             )

@@ -438,7 +438,7 @@ fun AutoPlaylistScreen(
                                 onClick = {
                                     if (count == wrappedSongs?.size) {
                                         wrappedSongs?.forEach { it.isSelected = false }
-                                    }else {
+                                    } else {
                                         wrappedSongs?.forEach { it.isSelected = true }
                                     }
                                 },
@@ -489,16 +489,6 @@ fun AutoPlaylistScreen(
                                     }
                                 }
                             )
-
-                            IconButton(
-                                onClick = { selection = !selection },
-                                modifier = Modifier.padding(horizontal = 6.dp)
-                            ) {
-                                Icon(
-                                    if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                    contentDescription = null
-                                )
-                            }
                         }
                         Spacer(Modifier.weight(1f))
 
@@ -576,14 +566,8 @@ fun AutoPlaylistScreen(
                                         }
                                     },
                                     onLongClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = songWrapper.item,
-                                                playlistBrowseId = playlist.browseId,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
+                                        selection = true
+                                        songWrapper.isSelected = !songWrapper.isSelected
                                     }
                                 )
                         )

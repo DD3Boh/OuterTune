@@ -290,6 +290,16 @@ fun Queue(
                                                     }
                                                 }
                                             },
+                                            onLongClick = {
+                                                selection = true
+                                                if (window.mediaItem.metadata!! in selectedSongs) {
+                                                    selectedSongs.remove(window.mediaItem.metadata!!)
+                                                    selectedItems.remove(currentItem)
+                                                } else {
+                                                    selectedSongs.add(window.mediaItem.metadata!!)
+                                                    selectedItems.add(currentItem)
+                                                }
+                                            }
                                         )
                                         .detectReorderAfterLongPress(reorderableState)
                                 )
@@ -397,18 +407,6 @@ fun Queue(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-
-                    IconButton(
-                        onClick = {
-                            selection = true
-                        }
-                    ) {
-                        Icon(
-                            Icons.Rounded.CopyAll,
-                            contentDescription = null,
-                            tint = LocalContentColor.current
-                        )
-                    }
 
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp),

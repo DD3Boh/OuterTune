@@ -719,17 +719,6 @@ fun LocalPlaylistScreen(
                                     modifier = Modifier.weight(1f)
                                 )
 
-                                IconButton(
-                                    onClick = { selection = !selection },
-                                    modifier = Modifier.padding(horizontal = 6.dp)
-                                ) {
-                                    Icon(
-                                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                        contentDescription = null
-                                    )
-                                }
-
-
                                 if (editable) {
                                     IconButton(
                                         onClick = { locked = !locked },
@@ -829,15 +818,8 @@ fun LocalPlaylistScreen(
                                             }
                                         },
                                         onLongClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item.song,
-                                                    playlistSong = songWrapper.item,
-                                                    playlistBrowseId = playlist?.playlist?.browseId,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
+                                            selection = true
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
                                     )
                             )
