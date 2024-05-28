@@ -266,6 +266,7 @@ fun Queue(
                                             )
                                         }
                                     },
+                                    isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .combinedClickable(
