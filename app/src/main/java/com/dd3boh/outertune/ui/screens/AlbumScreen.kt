@@ -454,17 +454,21 @@ fun AlbumScreen(
                                     .fillMaxWidth()
                                     .combinedClickable(
                                         onClick = {
-                                            if (songWrapper.item.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = albumWithSongsLocal.album.title,
-                                                        items = albumWithSongsLocal.songs.map { it.toMediaItem() },
-                                                        startIndex = index,
-                                                        playlistId = albumWithSongsLocal.album.playlistId
+                                            if (!selection) {
+                                                if (songWrapper.item.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
+                                                } else {
+                                                    playerConnection.playQueue(
+                                                        ListQueue(
+                                                            title = albumWithSongsLocal.album.title,
+                                                            items = albumWithSongsLocal.songs.map { it.toMediaItem() },
+                                                            startIndex = index,
+                                                            playlistId = albumWithSongsLocal.album.playlistId
+                                                        )
                                                     )
-                                                )
+                                                }
+                                            } else {
+                                                songWrapper.isSelected = !songWrapper.isSelected
                                             }
                                         },
                                         onLongClick = {
