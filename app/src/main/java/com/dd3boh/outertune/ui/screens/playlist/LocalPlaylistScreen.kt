@@ -653,7 +653,10 @@ fun LocalPlaylistScreen(
 
                             if (selection) {
                                 val count = wrappedSongs.count { it.isSelected }
-                                Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                                Text(
+                                    text = "${count}/${wrappedSongs.size} selected",
+                                    modifier = Modifier.weight(1f)
+                                )
                                 IconButton(
                                     onClick = {
                                         if (count == wrappedSongs.size) {
