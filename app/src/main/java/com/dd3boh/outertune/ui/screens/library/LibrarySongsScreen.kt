@@ -53,7 +53,7 @@ import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
-import com.zionhuang.music.ui.utils.ItemWrapper
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
