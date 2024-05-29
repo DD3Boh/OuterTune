@@ -71,8 +71,8 @@ fun Thumbnail(
                             image = { getLocalThumbnail(it.localPath) },
                             contentDescription = null,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(ThumbnailCornerRadius * 2))
                         )
                     }
                 } else {
@@ -81,8 +81,8 @@ fun Thumbnail(
                         model = mediaMetadata?.thumbnailUrl,
                         contentDescription = null,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius * 2))
                     )
                 }
             }
