@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
@@ -84,7 +85,7 @@ import com.dd3boh.outertune.utils.makeTimeString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetPlayer(
     state: BottomSheetState,
@@ -209,6 +210,7 @@ fun BottomSheetPlayer(
                     }
                     sliderPosition = null
                 },
+                thumb = { Spacer(modifier = Modifier.size(0.dp)) },
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
             )
 
