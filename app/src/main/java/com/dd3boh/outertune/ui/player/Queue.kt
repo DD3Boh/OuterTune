@@ -25,14 +25,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
@@ -212,12 +210,6 @@ fun Queue(
                             .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
                     )
             ) {
-                IconButton(onClick = { state.expandSoft() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                        contentDescription = null
-                    )
-                }
                 IconButton(onClick = { showLyrics = !showLyrics }) {
                     Icon(
                         imageVector = Icons.Rounded.Lyrics,
