@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -92,6 +93,7 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.QueuePeekHeight
+import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.extensions.toggleRepeatMode
 import com.dd3boh.outertune.extensions.toggleShuffleMode
@@ -104,6 +106,7 @@ import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.component.rememberBottomSheetState
 import com.dd3boh.outertune.ui.menu.PlayerMenu
 import com.dd3boh.outertune.utils.makeTimeString
+import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -128,6 +131,8 @@ fun BottomSheetPlayer(
 
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
+
+    var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
     var position by rememberSaveable(playbackState) {
         mutableStateOf(playerConnection.player.currentPosition)
@@ -274,6 +279,15 @@ fun BottomSheetPlayer(
                                 .size(32.dp)
                                 .padding(4.dp),
                             onClick = playerConnection::toggleLike
+                        )
+
+                        ResizableIconButton(
+                            icon = Icons.Rounded.Lyrics,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(4.dp)
+                                .alpha(if (showLyrics) 1f else 0.5f),
+                            onClick = { showLyrics = !showLyrics }
                         )
 
                         ResizableIconButton(
