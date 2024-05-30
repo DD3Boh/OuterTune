@@ -6,6 +6,11 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,15 +18,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.VerticalDivider
@@ -50,18 +60,22 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
 import com.dd3boh.outertune.constants.DevSettingsKey
+import com.dd3boh.outertune.constants.DialogCornerRadius
 import com.dd3boh.outertune.constants.LookupYtmArtistsKey
+import com.dd3boh.outertune.constants.ScanPathsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
 import com.dd3boh.outertune.constants.ScannerImpl
 import com.dd3boh.outertune.constants.ScannerTypeKey
+import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
+import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.purgeCache
@@ -81,15 +95,21 @@ fun LocalPlayerSettings(
     context: Context,
     database: MusicDatabase,
 ) {
-    val mediaPermissionLevel =
+   val mediaPermissionLevel =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
         else Manifest.permission.READ_EXTERNAL_STORAGE
 
     val coroutineScope = rememberCoroutineScope()
+
+    // scanner vars
     var isScannerActive by remember { mutableStateOf(false) }
     var isScanFinished by remember { mutableStateOf(false) }
     var mediaPermission by remember { mutableStateOf(true) }
+    var showFilePickerDialog by remember {
+        mutableStateOf(false)
+    }
 
+    // scanner prefs
     val (scannerType, onScannerTypeChange) = rememberEnumPreference(
         key = ScannerTypeKey,
         defaultValue = ScannerImpl.MEDIASTORE_FFPROBE
@@ -100,11 +120,13 @@ fun LocalPlayerSettings(
     )
     val (strictExtensions, onStrictExtensionsChange) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val (autoScan, onAutoScanChange) = rememberPreference(AutomaticScannerKey, defaultValue = true)
+    val (scanPaths, onScanPathsChange) = rememberPreference(ScanPathsKey, defaultValue = DEFAULT_SCAN_PATH)
 
     var fullRescan by remember { mutableStateOf(false) }
     val (lookupYtmArtists, onlookupYtmArtistsChange) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
 
-    var (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
+    // misc
+    val (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
 
     Column(
         Modifier
@@ -119,6 +141,136 @@ fun LocalPlayerSettings(
             checked = autoScan,
             onCheckedChange = onAutoScanChange
         )
+
+        // file path selector
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.scan_paths_title)) },
+            onClick = {
+                showFilePickerDialog = true
+            },
+        )
+
+        if (showFilePickerDialog) {
+            BasicAlertDialog(
+                onDismissRequest = { showFilePickerDialog = false },
+                content = {
+                    Column(modifier = Modifier
+                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(DialogCornerRadius))
+                        .padding(16.dp)
+                    ) {
+                        val dirPickerLauncher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.OpenDocumentTree()
+                        ) { uri ->
+                            if (uri?.path != null && !scanPaths.contains(uri.path!!)) {
+                                onScanPathsChange(scanPaths + "${uri.path}\n")
+                            }
+                        }
+
+                        // main content
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Scan paths",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+
+                            // folders list
+                            Column(
+                                modifier = Modifier
+                                    .padding(vertical = 12.dp)
+                                    .border(
+                                        2.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                        RoundedCornerShape(ThumbnailCornerRadius)
+                                    )
+                            ) {
+                                scanPaths.split('\n').forEach {
+                                    if (it.isNotBlank())
+                                        Row(modifier = Modifier.padding(horizontal = 8.dp).clickable { }) {
+                                            Text(
+                                                // I hate this but I'll do it properly... eventually
+                                                text = if (it.substringAfter("tree/").substringBefore(':') == "primary") {
+                                                    "Internal Storage/${it.substringAfter(':')}"
+                                                } else {
+                                                    "External (${it.substringAfter("tree/").substringBefore(':')})/${it.substringAfter(':')}"
+                                                },
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .align(Alignment.CenterVertically)
+                                            )
+                                            IconButton(
+                                                onClick = {
+                                                    onScanPathsChange(
+                                                        scanPaths.replace("$it\n", "")
+                                                    )
+                                                },
+                                                onLongClick = {}
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close,
+                                                    contentDescription = null,
+                                                )
+                                            }
+                                        }
+                                }
+                            }
+
+                            // add folder button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Button(onClick = { dirPickerLauncher.launch(null) }) {
+                                    Text(stringResource(R.string.scan_paths_add_folder))
+                                }
+
+                                Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                                    Icon(
+                                        Icons.Outlined.Info,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.padding(4.dp)
+                                    )
+
+                                    Text(
+                                        stringResource(R.string.scan_paths_tooltip),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // bottom options
+                        Row() {
+                            Row(modifier = Modifier.weight(1f)) {
+                                TextButton(
+                                    onClick = {
+                                        onScanPathsChange(DEFAULT_SCAN_PATH)
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.reset))
+                                }
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    showFilePickerDialog = false
+                                }
+                            ) {
+                                Text(stringResource(android.R.string.ok))
+                            }
+
+                            TextButton(
+                                onClick = { showFilePickerDialog = false }
+                            ) {
+                                Text(stringResource(android.R.string.cancel))
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
 
 
         PreferenceGroupTitle(
@@ -176,7 +328,7 @@ fun LocalPlayerSettings(
                         val scanner = getScanner()
                         // full rescan
                         if (fullRescan) {
-                            val directoryStructure = scanner.scanLocal(context, database, scannerType).value
+                            val directoryStructure = scanner.scanLocal(context, database, scanPaths.split('\n'), scannerType).value
                             scanner.syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
                             unloadAdvancedScanner()
 
@@ -188,7 +340,7 @@ fun LocalPlayerSettings(
                             }
                         } else {
                             // quick scan
-                            val directoryStructure =  scanner.scanLocal(context, database, ScannerImpl.MEDIASTORE).value
+                            val directoryStructure =  scanner.scanLocal(context, database, scanPaths.split('\n'), ScannerImpl.MEDIASTORE).value
                             scanner.quickSync(
                                 database, directoryStructure.toList(), scannerSensitivity,
                                 strictExtensions, scannerType

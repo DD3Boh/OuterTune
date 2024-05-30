@@ -290,6 +290,10 @@
     <string name="auto_scanner_title">Scan automatically</string>
     <string name="auto_scanner_description">Automatically scan for songs when opening the app. This does not reload metadata of existing songs.</string>
 
+    <string name="scan_paths_title">Configure scan locations…</string>
+    <string name="scan_paths_tooltip">All subdirectories will also be scanned</string>
+    <string name="scan_paths_add_folder">Add new folder</string>
+
     <string name="manual_scanner_title">Manual scanner</string>
     <string name="scanner_warning">By default, the scanner will NOT reload any metadata of existing songs unless you specify otherwise above. Depending on the size of your library, it make take a while. It is highly recommend to wait until the scanner to finish before proceeding.</string>
 

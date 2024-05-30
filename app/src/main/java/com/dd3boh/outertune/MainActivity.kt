@@ -103,6 +103,7 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchResult
 import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
+import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
@@ -239,6 +240,7 @@ class MainActivity : ComponentActivity() {
                 key = ScannerSensitivityKey,
                 defaultValue = ScannerMatchCriteria.LEVEL_2
             )
+            val (scanPaths) = rememberPreference(ScanPathsKey, defaultValue = DEFAULT_SCAN_PATH)
             val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
             val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
             val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
@@ -250,7 +252,7 @@ class MainActivity : ComponentActivity() {
 
                         // equivalent to (quick scan)
                         val directoryStructure =
-                            scanner.scanLocal(this@MainActivity, database, ScannerImpl.MEDIASTORE).value
+                            scanner.scanLocal(this@MainActivity, database, scanPaths.split('\n'), ScannerImpl.MEDIASTORE).value
                         scanner.quickSync(
                             database, directoryStructure.toList(), scannerSensitivity,
                             strictExtensions, scannerType

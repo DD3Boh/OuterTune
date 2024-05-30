@@ -162,6 +162,7 @@ val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")
 val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
 val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
 val LyricTrimKey = booleanPreferencesKey("lyricTrim")
+val ScanPathsKey = stringPreferencesKey("scanPaths")
 
 val DevSettingsKey = booleanPreferencesKey("devSettings")
 

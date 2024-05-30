@@ -9,7 +9,6 @@ import com.dd3boh.outertune.utils.cache
 import com.dd3boh.outertune.utils.retrieveImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import timber.log.Timber
 
 const val TAG = "LocalMediaUtils"
 
@@ -25,8 +24,8 @@ const val SCANNER_DEBUG = false
 val scannerSession = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_JOBS)
 
 // stuff to make this work
-const val sdcardRoot = "/storage/emulated/0/"
-val testScanPaths = arrayListOf("Music")
+const val storageRoot = "/storage/"
+const val DEFAULT_SCAN_PATH = "/tree/primary:Music\n"
 val ARTIST_SEPARATORS = Regex("\\s*;\\s*|\\s*ft\\.\\s*|\\s*feat\\.\\s*|\\s*&\\s*", RegexOption.IGNORE_CASE)
 private var cachedDirectoryTree: DirectoryTree? = null
 
@@ -42,6 +41,7 @@ val projection = arrayOf(
     MediaStore.Audio.Media.ALBUM,
     MediaStore.Audio.Media.ALBUM_ID,
     MediaStore.Audio.Media.RELATIVE_PATH,
+    MediaStore.Audio.Media.VOLUME_NAME,
     MediaStore.Audio.Media.MIME_TYPE,
     MediaStore.Audio.Media.BITRATE,
     MediaStore.Audio.Media.SIZE,

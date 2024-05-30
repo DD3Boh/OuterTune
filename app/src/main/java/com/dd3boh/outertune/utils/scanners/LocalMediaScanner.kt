@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import com.dd3boh.outertune.constants.ScannerImpl
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
@@ -24,8 +25,7 @@ import com.dd3boh.outertune.models.SongTempData
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.projection
 import com.dd3boh.outertune.ui.utils.scannerSession
-import com.dd3boh.outertune.ui.utils.sdcardRoot
-import com.dd3boh.outertune.ui.utils.testScanPaths
+import com.dd3boh.outertune.ui.utils.storageRoot
 import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -140,11 +140,6 @@ class LocalMediaScanner {
         )
     }
 
-    /**
-     * Dev uses
-     */
-    fun scanLocal(context: Context, database: MusicDatabase, scannerImpl: ScannerImpl) =
-        scanLocal(context, database, testScanPaths, scannerImpl)
 
     /**
      * Scan MediaStore for songs given a list of paths to scan for.
@@ -159,18 +154,19 @@ class LocalMediaScanner {
     fun scanLocal(
         context: Context,
         database: MusicDatabase,
-        scanPaths: ArrayList<String>,
+        scanPaths: List<String>,
         scannerImpl: ScannerImpl,
     ): MutableStateFlow<DirectoryTree> {
-        val newDirectoryStructure = DirectoryTree(sdcardRoot)
+        var newDirectoryStructure = DirectoryTree(storageRoot)
         val contentResolver: ContentResolver = context.contentResolver
+        val (selection, selectionArgs) = parseScannerFilter(scanPaths) // path whitelist
 
         // Query for audio files
         val cursor = contentResolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
             projection,
-            "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DATA} LIKE ?",
-            scanPaths.map { "$sdcardRoot$it%" }.toTypedArray(), // whitelist paths
+            selection,
+            selectionArgs.toTypedArray(),
             null
         )
         Timber.tag(TAG).d("------------ SCAN: Starting Full Scanner ------------")
@@ -188,6 +184,7 @@ class LocalMediaScanner {
                 val albumIDColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
                 val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
                 val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
+                val storageVolumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.VOLUME_NAME)
 
                 val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
                 val bitrateColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.BITRATE)
@@ -202,6 +199,7 @@ class LocalMediaScanner {
                     val albumID = cursor.getString(albumIDColumn)
                     val album = cursor.getString(albumColumn)
                     val path = cursor.getString(pathColumn)
+                    val storageVol = cursor.getString(storageVolumeColumn)
 
                     // extra stream info
                     val bitrate = cursor.getInt(bitrateColumn)
@@ -213,7 +211,7 @@ class LocalMediaScanner {
 
                     if (SCANNER_DEBUG)
                         Timber.tag(TAG)
-                            .d("ID: $id, Name: $name, ARTIST: $artist, PATH: $path")
+                            .d("ID: $id, Name: $name, ARTIST: $artist, PATH: $storageVol --> $path")
 
                     // append song to list
                     // media store doesn't support multi artists...
@@ -225,8 +223,8 @@ class LocalMediaScanner {
                             async(scannerSession) {
                                 advancedScan(
                                     SongTempData(
-                                        id, "$sdcardRoot$path$name", title, duration,
-                                        artist, artistID, album, albumID,
+                                        id, getRealPath(storageVol, path, name),
+                                        title, duration, artist, artistID, album, albumID,
                                         FormatEntity(
                                             id = id,
                                             itag = -1,
@@ -247,8 +245,8 @@ class LocalMediaScanner {
                         // force synchronous scanning of songs
                         val toInsert = advancedScan(
                             SongTempData(
-                                id, "$sdcardRoot$path$name", title, duration,
-                                artist, artistID, album, albumID,
+                                id, getRealPath(storageVol, path, name),
+                                title, duration, artist, artistID, album, albumID,
                                 FormatEntity(
                                     id = id,
                                     itag = -1,
@@ -264,7 +262,7 @@ class LocalMediaScanner {
                         )
                         toInsert.song.localPath?.let { s ->
                             newDirectoryStructure.insert(
-                                s.substringAfter(sdcardRoot), toInsert
+                                s.substringAfter(storageRoot), toInsert
                             )
                         }
                     }
@@ -283,13 +281,13 @@ class LocalMediaScanner {
 
             song.song.localPath?.let { s ->
                 newDirectoryStructure.insert(
-                    s.substringAfter(sdcardRoot), song
+                    s.substringAfter(storageRoot), song
                 )
             }
         }
 
         Timber.tag(TAG).d("------------ SCAN: Finished Full Scanner ------------")
-        cacheDirectoryTree(newDirectoryStructure)
+        cacheDirectoryTree(newDirectoryStructure.androidStorageWorkaround())
         return MutableStateFlow(newDirectoryStructure)
     }
 
@@ -678,11 +676,54 @@ class LocalMediaScanner {
          */
 
 
+        data class ScannerFilter(val selection: String, val selectionArgs: MutableList<String>)
+
         /**
-         * Dev uses
+         * Parse a list of paths scan into a format understood by the MediaStore scanner
          */
-        fun refreshLocal(context: Context, database: MusicDatabase) =
-            refreshLocal(context, database, testScanPaths)
+        private fun parseScannerFilter(scanPaths: List<String>): ScannerFilter {
+            val selection = StringBuilder("${MediaStore.Audio.Media.IS_MUSIC} != 0")
+            val selectionArgs = mutableListOf<String>()
+
+            val primaryStorageRoot = Environment.getExternalStorageDirectory().absolutePath
+
+            scanPaths.forEachIndexed { index, path ->
+
+                if (path.isNotBlank()) {
+                    // hax rn
+
+                    println(path)
+                    // Google plz don't change ur api kthx
+                    val storageMedia = path.substringAfter("/tree/").substringBefore(':')
+                    val convertedPath = if (storageMedia == "primary") {
+                        path.replaceFirst("/tree/primary:", "$primaryStorageRoot/")
+                    } else {
+                        "/storage/$storageMedia/${path.substringAfter(':')}"
+                    }
+
+                    if (index == 0) {
+                        selection.append(" AND (")
+                    } else {
+                        selection.append(" OR ")
+                    }
+                    selection.append("${MediaStore.Audio.Media.DATA} LIKE ?")
+                    selectionArgs.add("$convertedPath%")
+                }
+
+            }
+            selection.append(")")
+
+            return ScannerFilter(selection.toString(), selectionArgs)
+        }
+
+        private fun getRealPath(storageVol: String, path:String, name: String): String {
+            return if (storageVol.contains("external_primary")) {
+                "${storageRoot}emulated/0/$path$name"
+            } else {
+                // WHY IS THIS THE LOWERCASE VARIANT WHEN ITS UPPERCASE ON DISK???
+                "$storageRoot${storageVol.uppercase(Locale.getDefault())}/$path$name"
+            }
+        }
 
         /**
          * Quickly rebuild a skeleton directory tree of local files based on the database
@@ -699,9 +740,9 @@ class LocalMediaScanner {
         fun refreshLocal(
             context: Context,
             database: MusicDatabase,
-            scanPaths: ArrayList<String>
+            scanPaths: List<String>
         ): MutableStateFlow<DirectoryTree> {
-            val newDirectoryStructure = DirectoryTree(sdcardRoot)
+            var newDirectoryStructure = DirectoryTree(storageRoot)
 
             // get songs from db
             var existingSongs: List<Song>
@@ -711,11 +752,12 @@ class LocalMediaScanner {
 
             // Query for audio files
             val contentResolver: ContentResolver = context.contentResolver
+            val (selection, selectionArgs) = parseScannerFilter(scanPaths) // path whitelist
             val cursor = contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 projection,
-                "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DATA} LIKE ?",
-                scanPaths.map { "$sdcardRoot$it%" }.toTypedArray(), // whitelist paths
+                selection,
+                selectionArgs.toTypedArray(),
                 null
             )
             Timber.tag(TAG).d("------------ SCAN: Starting Quick Directory Rebuild ------------")
@@ -723,26 +765,30 @@ class LocalMediaScanner {
                 // Columns indices
                 val nameColumn = localCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
                 val pathColumn = localCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
+                val storageVolumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.VOLUME_NAME)
 
                 while (localCursor.moveToNext()) {
                     val name = localCursor.getString(nameColumn) // file name
                     val path = localCursor.getString(pathColumn)
+                    val storageVol = cursor.getString(storageVolumeColumn)
 
                     if (SCANNER_DEBUG)
                         Timber.tag(TAG).d("Quick scanner: PATH: $path")
 
                     // Build directory tree with existing files
-                    val possibleMatch = existingSongs.firstOrNull() { it.song.localPath == "$sdcardRoot$path$name" }
+                    val possibleMatch = existingSongs.firstOrNull() { it.song.localPath == getRealPath(storageVol, path, name) }
 
                     if (possibleMatch != null) {
-                        newDirectoryStructure.insert("$path$name", possibleMatch)
+                        newDirectoryStructure.insert(getRealPath(storageVol, path, name)
+                            .substringAfter(storageRoot), possibleMatch
+                        )
                     }
 
                 }
             }
 
             Timber.tag(TAG).d("------------ SCAN: Finished Quick Directory Rebuild ------------")
-            cacheDirectoryTree(newDirectoryStructure)
+            cacheDirectoryTree(newDirectoryStructure.androidStorageWorkaround())
             return MutableStateFlow(newDirectoryStructure)
         }
 
