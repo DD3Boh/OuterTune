@@ -195,7 +195,7 @@ class LocalMediaScanner {
                 while (cursor.moveToNext()) {
                     val id = SongEntity.generateSongId()
                     val name = cursor.getString(nameColumn) // file name
-                    val title = cursor.getString(titleColumn) // song title
+                    var title = cursor.getString(titleColumn) // song title
                     val duration = cursor.getInt(durationColumn)
                     val artist = cursor.getString(artistColumn)
                     val artistID = cursor.getString(artistIdColumn)
@@ -206,6 +206,10 @@ class LocalMediaScanner {
                     // extra stream info
                     val bitrate = cursor.getInt(bitrateColumn)
                     val mime = cursor.getString(mimeColumn)
+
+                    if (title.isBlank()) { // songs with no title tag
+                        title = name.substringBeforeLast('.')
+                    }
 
                     if (SCANNER_DEBUG)
                         Timber.tag(TAG)
@@ -412,7 +416,7 @@ class LocalMediaScanner {
                     mData.setDataSource(s.song.localPath)
 
                     val id = SongEntity.generateSongId()
-                    val title =
+                    var title =
                         mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE).let { it ?: "" } // song title
                     val duration =
                         Integer.parseInt(mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!)
@@ -438,6 +442,10 @@ class LocalMediaScanner {
                                 it
                             )
                         }
+                    }
+
+                    if (title.isBlank()) { // songs with no title tag
+                        title = path.substringAfterLast('/').substringBeforeLast('.')
                     }
 
 
