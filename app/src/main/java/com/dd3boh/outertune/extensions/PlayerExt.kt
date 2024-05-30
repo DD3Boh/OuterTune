@@ -26,6 +26,10 @@ fun Player.toggleRepeatMode() {
     }
 }
 
+fun Player.toggleShuffleMode() {
+    shuffleModeEnabled = !shuffleModeEnabled
+}
+
 fun Player.getQueueWindows(): List<Timeline.Window> {
     val timeline = currentTimeline
     if (timeline.isEmpty) {

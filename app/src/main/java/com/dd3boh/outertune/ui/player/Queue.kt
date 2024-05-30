@@ -80,6 +80,7 @@ import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.extensions.toggleShuffleMode
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
@@ -514,7 +515,7 @@ fun Queue(
                             if (playerConnection.player.shuffleModeEnabled) playerConnection.player.currentMediaItemIndex else 0
                         )
                     }.invokeOnCompletion {
-                        playerConnection.player.shuffleModeEnabled = !playerConnection.player.shuffleModeEnabled
+                        playerConnection.player.toggleShuffleMode()
                     }
                 }
             ) {
