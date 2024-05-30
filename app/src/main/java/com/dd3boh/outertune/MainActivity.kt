@@ -104,11 +104,7 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
-import com.dd3boh.outertune.ui.utils.localToRemoteArtist
-import com.dd3boh.outertune.ui.utils.quickSync
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
-import com.dd3boh.outertune.ui.utils.scanLocal
-import com.dd3boh.outertune.ui.utils.unloadScanner
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
@@ -116,6 +112,8 @@ import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.reportException
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -235,18 +233,20 @@ class MainActivity : ComponentActivity() {
                 val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
 
                 if (autoScan) {
+                    val scanner = LocalMediaScanner.getScanner()
+
                     // equivalent to (quick scan)
-                    val directoryStructure = scanLocal(this, database, ScannerImpl.MEDIASTORE).value
-                    quickSync(
+                    val directoryStructure = scanner.scanLocal(this, database, ScannerImpl.MEDIASTORE).value
+                    scanner.quickSync(
                         database, directoryStructure.toList(), scannerSensitivity,
                         strictExtensions, scannerType
                     )
-                    unloadScanner()
+                    unloadAdvancedScanner()
 
                     // start artist linking job
                     if (lookupYtmArtists) {
                         CoroutineScope(Dispatchers.IO).launch {
-                            localToRemoteArtist(database)
+                            scanner.localToRemoteArtist(database)
                         }
                     }
                     purgeCache() // juuuust to be sure
