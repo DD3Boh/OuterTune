@@ -1,20 +1,15 @@
 package com.dd3boh.outertune.ui.player
 
 import android.annotation.SuppressLint
-import android.text.format.Formatter
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
@@ -24,25 +19,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.CheckBox
-import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lyrics
-import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Shuffle
@@ -56,7 +44,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -73,25 +60,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.Timeline
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
-import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
@@ -104,7 +85,6 @@ import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.MediaMetadataListItem
-import com.dd3boh.outertune.ui.menu.PlayerMenu
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberPreference
@@ -120,25 +100,18 @@ import org.burnoutcrew.reorderable.reorderable
 import kotlin.math.roundToInt
 
 @SuppressLint("UnrememberedMutableState")
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun Queue(
     state: BottomSheetState,
-    playerBottomSheetState: BottomSheetState,
-    navController: NavController,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     val menuState = LocalMenuState.current
 
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
 
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
-    val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-
-    val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
 
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
@@ -223,70 +196,6 @@ fun Queue(
     val selectedSongs: MutableList<MediaMetadata> = mutableStateListOf()
     val selectedItems: MutableList<Timeline.Window> = mutableStateListOf()
 
-    var showDetailsDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    if (showDetailsDialog) {
-        AlertDialog(
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            onDismissRequest = { showDetailsDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Info,
-                    contentDescription = null
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { showDetailsDialog = false }
-                ) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .sizeIn(minWidth = 280.dp, maxWidth = 560.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    listOf(
-                        stringResource(R.string.song_title) to mediaMetadata?.title,
-                        stringResource(R.string.song_artists) to mediaMetadata?.artists?.joinToString { it.name },
-                        stringResource(R.string.media_id) to mediaMetadata?.id,
-                        "Itag" to currentFormat?.itag?.toString(),
-                        stringResource(R.string.mime_type) to currentFormat?.mimeType,
-                        stringResource(R.string.codecs) to currentFormat?.codecs,
-                        stringResource(R.string.bitrate) to currentFormat?.bitrate?.let { "${it / 1000} Kbps" },
-                        stringResource(R.string.sample_rate) to currentFormat?.sampleRate?.let { "$it Hz" },
-                        stringResource(R.string.loudness) to currentFormat?.loudnessDb?.let { "$it dB" },
-                        stringResource(R.string.volume) to "${(playerConnection.player.volume * 100).toInt()}%",
-                        stringResource(R.string.file_size) to currentFormat?.contentLength?.let { Formatter.formatShortFileSize(context, it) }
-                    ).forEach { (label, text) ->
-                        val displayText = text ?: stringResource(R.string.unknown)
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Text(
-                            text = displayText,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {
-                                    clipboardManager.setText(AnnotatedString(displayText))
-                                    Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                        )
-                        Spacer(Modifier.height(8.dp))
-                    }
-                }
-            }
-        )
-    }
-
     BottomSheet(
         state = state,
         backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation),
@@ -336,24 +245,6 @@ fun Queue(
                             )
                         }
                     }
-                }
-                IconButton(
-                    onClick = {
-                        menuState.show {
-                            PlayerMenu(
-                                mediaMetadata = mediaMetadata,
-                                navController = navController,
-                                playerBottomSheetState = playerBottomSheetState,
-                                onShowDetailsDialog = { showDetailsDialog = true },
-                                onDismiss = menuState::dismiss
-                            )
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreHoriz,
-                        contentDescription = null
-                    )
                 }
             }
         }
@@ -503,19 +394,6 @@ fun Queue(
                                                     }
                                                 }
                                             },
-                                            onLongClick = {
-                                                menuState.show {
-                                                    PlayerMenu(
-                                                        mediaMetadata = window.mediaItem.metadata!!,
-                                                        navController = navController,
-                                                        playerBottomSheetState = playerBottomSheetState,
-                                                        onShowDetailsDialog = {
-                                                            showDetailsDialog = true
-                                                        },
-                                                        onDismiss = menuState::dismiss
-                                                    )
-                                                }
-                                            }
                                         )
                                         .detectReorderAfterLongPress(reorderableState)
                                 )
