@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -251,116 +252,114 @@ fun BottomSheetPlayer(
                     .fillMaxWidth()
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
-                Text(
-                    text = mediaMetadata.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .basicMarquee()
-                        .clickable(enabled = mediaMetadata.album != null) {
-                            navController.navigate("album/${mediaMetadata.album!!.id}")
-                            state.collapseSoft()
-                        }
-                        .weight(1f)
-                )
-
-                Box {
-                    Row(
-                        modifier = Modifier.align(Alignment.CenterEnd)
+                Row {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
                     ) {
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Box(
+                        Text(
+                            text = mediaMetadata.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                        ) {
-                            ResizableIconButton(
-                                icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
-                                color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .size(24.dp),
-                                onClick = playerConnection::toggleLike
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(7.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                        ) {
-                            ResizableIconButton(
-                                icon = Icons.Rounded.Lyrics,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .size(20.dp)
-                                    .alpha(if (showLyrics) 1f else 0.5f),
-                                onClick = { showLyrics = !showLyrics }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(7.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                        ) {
-                            ResizableIconButton(
-                                icon = Icons.Rounded.MoreVert,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .align(Alignment.Center),
-                                onClick = {
-                                    menuState.show {
-                                        PlayerMenu(
-                                            mediaMetadata = mediaMetadata,
-                                            navController = navController,
-                                            playerBottomSheetState = state,
-                                            onShowDetailsDialog = { showDetailsDialog = true },
-                                            onDismiss = menuState::dismiss
-                                        )
-                                    }
+                                .basicMarquee()
+                                .clickable(enabled = mediaMetadata.album != null) {
+                                    navController.navigate("album/${mediaMetadata.album!!.id}")
+                                    state.collapseSoft()
                                 }
-                            )
+                        )
+
+                        Row(
+                            modifier = Modifier.offset(y = 25.dp)
+                        ) {
+                            mediaMetadata.artists.fastForEachIndexed { index, artist ->
+                                Text(
+                                    text = artist.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    maxLines = 1,
+                                    modifier = Modifier.clickable(enabled = artist.id != null) {
+                                        navController.navigate("artist/${artist.id}")
+                                        state.collapseSoft()
+                                    }
+                                )
+
+                                if (index != mediaMetadata.artists.lastIndex) {
+                                    Text(
+                                        text = ", ",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
                         }
                     }
-                }
-            }
 
-            Spacer(Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding)
-            ) {
-                mediaMetadata.artists.fastForEachIndexed { index, artist ->
-                    Text(
-                        text = artist.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        maxLines = 1,
-                        modifier = Modifier.clickable(enabled = artist.id != null) {
-                            navController.navigate("artist/${artist.id}")
-                            state.collapseSoft()
-                        }
-                    )
+                    Box(
+                        modifier = Modifier
+                            .offset(y = 5.dp)
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        ResizableIconButton(
+                            icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
+                            color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(24.dp),
+                            onClick = playerConnection::toggleLike
+                        )
+                    }
 
-                    if (index != mediaMetadata.artists.lastIndex) {
-                        Text(
-                            text = ", ",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.secondary
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .offset(y = 5.dp)
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.Lyrics,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(20.dp)
+                                .alpha(if (showLyrics) 1f else 0.5f),
+                            onClick = { showLyrics = !showLyrics }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .offset(y = 5.dp)
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.MoreVert,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .align(Alignment.Center),
+                            onClick = {
+                                menuState.show {
+                                    PlayerMenu(
+                                        mediaMetadata = mediaMetadata,
+                                        navController = navController,
+                                        playerBottomSheetState = state,
+                                        onShowDetailsDialog = { showDetailsDialog = true },
+                                        onDismiss = menuState::dismiss
+                                    )
+                                }
+                            }
                         )
                     }
                 }
