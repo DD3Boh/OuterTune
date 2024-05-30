@@ -272,41 +272,66 @@ fun BottomSheetPlayer(
                     ) {
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        ResizableIconButton(
-                            icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
-                            color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                        Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .padding(4.dp),
-                            onClick = playerConnection::toggleLike
-                        )
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            ResizableIconButton(
+                                icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
+                                color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(24.dp),
+                                onClick = playerConnection::toggleLike
+                            )
+                        }
 
-                        ResizableIconButton(
-                            icon = Icons.Rounded.Lyrics,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .padding(4.dp)
-                                .alpha(if (showLyrics) 1f else 0.5f),
-                            onClick = { showLyrics = !showLyrics }
-                        )
+                        Spacer(modifier = Modifier.width(7.dp))
 
-                        ResizableIconButton(
-                            icon = Icons.Rounded.MoreVert,
+                        Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .padding(4.dp),
-                            onClick = {
-                                menuState.show {
-                                    PlayerMenu(
-                                        mediaMetadata = mediaMetadata,
-                                        navController = navController,
-                                        playerBottomSheetState = state,
-                                        onShowDetailsDialog = { showDetailsDialog = true },
-                                        onDismiss = menuState::dismiss
-                                    )
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            ResizableIconButton(
+                                icon = Icons.Rounded.Lyrics,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(20.dp)
+                                    .alpha(if (showLyrics) 1f else 0.5f),
+                                onClick = { showLyrics = !showLyrics }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(7.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            ResizableIconButton(
+                                icon = Icons.Rounded.MoreVert,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .align(Alignment.Center),
+                                onClick = {
+                                    menuState.show {
+                                        PlayerMenu(
+                                            mediaMetadata = mediaMetadata,
+                                            navController = navController,
+                                            playerBottomSheetState = state,
+                                            onShowDetailsDialog = { showDetailsDialog = true },
+                                            onDismiss = menuState::dismiss
+                                        )
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
