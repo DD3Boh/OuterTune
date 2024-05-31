@@ -431,13 +431,13 @@ class LocalMediaScanner {
                         )
                     }
                     val mime = "" + mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
-                    var sampleRate = -1
+                    var sampleRate: Int? = null
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         sampleRate = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)?.let {
                             Integer.parseInt(
                                 it
                             )
-                        }!!
+                        }
                     }
 
 
