@@ -1,0 +1,17 @@
+Um cliente Material 3 do YouTube Music para Android
+
+<br><b>Funcionalidades:</b>
+
+- Tocar músicas do YT/YT Music sem anúncios
+- Reprodução em segundo plano
+- Pesquise músicas, vídeos, álbuns, e playlists do YouTube Music
+- Gerenciamento de biblioteca
+- Cache e download de músicas para reprodução offline
+- Letras sincronizadas
+- Pular silêncio em músicas
+- Normalização de áudio
+- Tema dinâmico
+- Tradução
+- Suporte ao Android Auto
+- Escolhas rápidas personalizadas
+- Material 3
