@@ -94,15 +94,29 @@ fun LibraryScreen(
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
 
+    val filterString = when (filter) {
+        LibraryFilter.ALBUMS -> stringResource(R.string.albums)
+        LibraryFilter.ARTISTS -> stringResource(R.string.artists)
+        LibraryFilter.PLAYLISTS -> stringResource(R.string.playlists)
+        LibraryFilter.SONGS -> stringResource(R.string.songs)
+        LibraryFilter.ALL -> ""
+    }
+
     val filterContent = @Composable {
         Row {
             ChipsRow(
-                chips = listOf(
-                    LibraryFilter.ALBUMS to stringResource(R.string.albums),
-                    LibraryFilter.ARTISTS to stringResource(R.string.artists),
-                    LibraryFilter.PLAYLISTS to stringResource(R.string.playlists),
-                    LibraryFilter.SONGS to stringResource(R.string.songs),
-                ),
+                chips =
+                    if (filter == LibraryFilter.ALL)
+                        listOf(
+                            LibraryFilter.ALBUMS to stringResource(R.string.albums),
+                            LibraryFilter.ARTISTS to stringResource(R.string.artists),
+                            LibraryFilter.PLAYLISTS to stringResource(R.string.playlists),
+                            LibraryFilter.SONGS to stringResource(R.string.songs),
+                        )
+                    else
+                        listOf(
+                            filter to filterString
+                        ),
                 currentValue = filter,
                 onValueUpdate = { filter = if (filter == it) LibraryFilter.ALL else it },
                 modifier = Modifier.weight(1f)
