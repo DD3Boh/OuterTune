@@ -138,14 +138,19 @@ fun Lyrics(
     val lazyListState = rememberLazyListState()
 
     LaunchedEffect(currentLineIndex, lastPreviewTime) {
+        fun calculateOffset() = // based on how many lines (\n chars)
+            with(density) { 20.dp.toPx().toInt() * (lines[currentLineIndex].text.count { it == '\n' }) }
+
         if (!isSynced) return@LaunchedEffect
         if (currentLineIndex != -1) {
             deferredCurrentLineIndex = currentLineIndex
             if (lastPreviewTime == 0L) {
                 if (isSeeking) {
-                    lazyListState.scrollToItem(currentLineIndex, with(density) { 36.dp.toPx().toInt() })
+                    lazyListState.scrollToItem(currentLineIndex,
+                        with(density) { 36.dp.toPx().toInt() } + calculateOffset())
                 } else {
-                    lazyListState.animateScrollToItem(currentLineIndex, with(density) { 36.dp.toPx().toInt() })
+                    lazyListState.animateScrollToItem(currentLineIndex,
+                        with(density) { 36.dp.toPx().toInt() } + calculateOffset())
                 }
             }
         }
