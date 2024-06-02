@@ -38,7 +38,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -322,25 +321,6 @@ fun BottomSheetPlayer(
                                 .align(Alignment.Center)
                                 .size(24.dp),
                             onClick = playerConnection::toggleLike
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(7.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 5.dp)
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    ) {
-                        ResizableIconButton(
-                            icon = Icons.Rounded.Lyrics,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(20.dp)
-                                .alpha(if (showLyrics) 1f else 0.5f),
-                            onClick = { showLyrics = !showLyrics }
                         )
                     }
 
