@@ -234,7 +234,7 @@ class MainActivity : ComponentActivity() {
             // auto scanner
             val (scannerType) = rememberEnumPreference(
                 key = ScannerTypeKey,
-                defaultValue = ScannerImpl.MEDIASTORE
+                defaultValue = ScannerImpl.MEDIASTORE_FFPROBE
             )
             val (scannerSensitivity) = rememberEnumPreference(
                 key = ScannerSensitivityKey,
