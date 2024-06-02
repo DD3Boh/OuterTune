@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -73,6 +74,7 @@ fun Thumbnail(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(ThumbnailCornerRadius * 2))
+                                .aspectRatio(ratio = 1f)
                         )
                     }
                 } else {

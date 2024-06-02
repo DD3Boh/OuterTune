@@ -62,14 +62,13 @@ fun AsyncLocalImage(
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = modifier
                     .background(MaterialTheme.colorScheme.surfaceColorAtElevation(16.dp))
-                    .aspectRatio(ratio = 1f)
             )
         } else {
             Image(
                 bitmap = imageBitmap,
                 contentDescription = contentDescription,
                 contentScale = contentScale,
-                modifier = modifier.aspectRatio(ratio = 1f),
+                modifier = modifier,
             )
         }
     }

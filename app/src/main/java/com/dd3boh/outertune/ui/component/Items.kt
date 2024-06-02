@@ -389,6 +389,7 @@ fun SongListItem(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            .aspectRatio(ratio = 1f)
                     )
                 } else {
                     // YTM thumbnail arts
@@ -1071,6 +1072,7 @@ fun MediaMetadataListItem(
                 modifier = Modifier
                     .size(ListThumbnailSize)
                     .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    .aspectRatio(ratio = 1f)
             )
         } else {
             // YTM thumbnail arts
