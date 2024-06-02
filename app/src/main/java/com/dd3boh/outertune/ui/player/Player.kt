@@ -554,7 +554,9 @@ fun BottomSheetPlayer(
                     ) {
                         Thumbnail(
                             sliderPositionProvider = { sliderPosition },
-                            modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
+                            modifier = Modifier
+                                .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                                .clickable { showLyrics = !showLyrics  }
                         )
                     }
 
@@ -588,7 +590,9 @@ fun BottomSheetPlayer(
                     ) {
                         Thumbnail(
                             sliderPositionProvider = { sliderPosition },
-                            modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
+                            modifier = Modifier
+                                .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                                .clickable { showLyrics = !showLyrics  }
                         )
                     }
 
