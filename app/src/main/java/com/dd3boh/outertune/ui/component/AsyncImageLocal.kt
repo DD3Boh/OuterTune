@@ -38,6 +38,7 @@ val imageSession = Dispatchers.IO.limitedParallelism(MAX_IMAGE_JOBS)
 fun AsyncLocalImage(
     image: () -> Bitmap?,
     modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Fit,
     contentDescription: String? = null,
 ) {
     var imageBitmapState by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -67,7 +68,7 @@ fun AsyncLocalImage(
             Image(
                 bitmap = imageBitmap,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
+                contentScale = contentScale,
                 modifier = modifier.aspectRatio(ratio = 1f),
             )
         }

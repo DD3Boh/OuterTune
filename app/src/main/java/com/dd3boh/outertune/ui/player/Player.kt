@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.player
 
 import android.content.res.Configuration
+import android.os.Build
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -68,9 +70,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -90,6 +95,7 @@ import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Player.STATE_READY
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
@@ -99,6 +105,7 @@ import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.extensions.toggleRepeatMode
 import com.dd3boh.outertune.extensions.toggleShuffleMode
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.ui.component.AsyncLocalImage
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.LocalMenuState
@@ -106,6 +113,7 @@ import com.dd3boh.outertune.ui.component.PlayerSliderTrack
 import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.component.rememberBottomSheetState
 import com.dd3boh.outertune.ui.menu.PlayerMenu
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
@@ -228,6 +236,7 @@ fun BottomSheetPlayer(
         state = state,
         modifier = modifier,
         backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation),
+        collapsedBackgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation),
         onDismiss = {
             playerConnection.player.stop()
             playerConnection.player.clearMediaItems()
@@ -500,6 +509,36 @@ fun BottomSheetPlayer(
                     )
                 }
             }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (mediaMetadata?.isLocal == true) {
+                mediaMetadata?.let {
+                    AsyncLocalImage(
+                        image = { getLocalThumbnail(it.localPath) },
+                        contentDescription = null,
+                        contentScale = ContentScale.FillBounds,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .blur(200.dp)
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = mediaMetadata?.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(200.dp)
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+            )
         }
 
         when (LocalConfiguration.current.orientation) {
