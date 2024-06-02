@@ -287,7 +287,7 @@ class LocalMediaScanner {
         }
 
         Timber.tag(TAG).d("------------ SCAN: Finished Full Scanner ------------")
-        cacheDirectoryTree(newDirectoryStructure.androidStorageWorkaround())
+        cacheDirectoryTree(newDirectoryStructure.androidStorageWorkaround().trimRoot())
         return MutableStateFlow(newDirectoryStructure)
     }
 
@@ -788,7 +788,7 @@ class LocalMediaScanner {
             }
 
             Timber.tag(TAG).d("------------ SCAN: Finished Quick Directory Rebuild ------------")
-            cacheDirectoryTree(newDirectoryStructure.androidStorageWorkaround())
+            cacheDirectoryTree(newDirectoryStructure.androidStorageWorkaround().trimRoot())
             return MutableStateFlow(newDirectoryStructure)
         }
 

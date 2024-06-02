@@ -209,6 +209,23 @@ class DirectoryTree(path: String) {
     }
 
     /**
+     * Remove any single empty branches of the tree, aka. DirectoryTrees with no files,
+     * but only one subdirectory.
+     */
+    fun trimRoot(): DirectoryTree {
+        var pointer = this
+        while (pointer.subdirs.size == 1 && pointer.files.isEmpty()) {
+            pointer = pointer.subdirs[0]
+        }
+
+        this.currentDir = pointer.currentDir
+        this.files = pointer.files
+        this.subdirs = pointer.subdirs
+
+        return this
+    }
+
+    /**
      * Crawl the directory tree, add the subdirectories with songs to the list
      * @param it
      * @param result
