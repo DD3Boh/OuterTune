@@ -17,8 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +60,6 @@ fun AsyncLocalImage(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = modifier
-                    .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceColorAtElevation(16.dp))
                     .aspectRatio(ratio = 1f)
             )
@@ -66,7 +67,8 @@ fun AsyncLocalImage(
             Image(
                 bitmap = imageBitmap,
                 contentDescription = contentDescription,
-                modifier = modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                modifier = modifier.aspectRatio(ratio = 1f),
             )
         }
     }
