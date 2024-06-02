@@ -128,6 +128,9 @@ fun LocalPlayerSettings(
     // misc
     val (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
 
+    // other vars
+    var tempScanPaths by remember { mutableStateOf("") }
+
     Column(
         Modifier
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
@@ -151,8 +154,15 @@ fun LocalPlayerSettings(
         )
 
         if (showFilePickerDialog) {
+            if (tempScanPaths.isEmpty()) {
+                tempScanPaths = scanPaths
+            }
+
             BasicAlertDialog(
-                onDismissRequest = { showFilePickerDialog = false },
+                onDismissRequest = {
+                    showFilePickerDialog = false
+                    tempScanPaths = ""
+                },
                 content = {
                     Column(modifier = Modifier
                         .background(MaterialTheme.colorScheme.background, RoundedCornerShape(DialogCornerRadius))
@@ -161,8 +171,8 @@ fun LocalPlayerSettings(
                         val dirPickerLauncher = rememberLauncherForActivityResult(
                             ActivityResultContracts.OpenDocumentTree()
                         ) { uri ->
-                            if (uri?.path != null && !scanPaths.contains(uri.path!!)) {
-                                onScanPathsChange(scanPaths + "${uri.path}\n")
+                            if (uri?.path != null && !tempScanPaths!!.contains(uri.path!!)) {
+                                tempScanPaths += "${uri.path}\n"
                             }
                         }
 
@@ -183,9 +193,11 @@ fun LocalPlayerSettings(
                                         RoundedCornerShape(ThumbnailCornerRadius)
                                     )
                             ) {
-                                scanPaths.split('\n').forEach {
+                                tempScanPaths!!.split('\n').forEach {
                                     if (it.isNotBlank())
-                                        Row(modifier = Modifier.padding(horizontal = 8.dp).clickable { }) {
+                                        Row(modifier = Modifier
+                                            .padding(horizontal = 8.dp)
+                                            .clickable { }) {
                                             Text(
                                                 // I hate this but I'll do it properly... eventually
                                                 text = if (it.substringAfter("tree/").substringBefore(':') == "primary") {
@@ -199,11 +211,7 @@ fun LocalPlayerSettings(
                                                     .align(Alignment.CenterVertically)
                                             )
                                             IconButton(
-                                                onClick = {
-                                                    onScanPathsChange(
-                                                        scanPaths.replace("$it\n", "")
-                                                    )
-                                                },
+                                                onClick = { tempScanPaths = tempScanPaths!!.replace("$it\n", "") },
                                                 onLongClick = {}
                                             ) {
                                                 Icon(
@@ -245,7 +253,7 @@ fun LocalPlayerSettings(
                             Row(modifier = Modifier.weight(1f)) {
                                 TextButton(
                                     onClick = {
-                                        onScanPathsChange(DEFAULT_SCAN_PATH)
+                                        tempScanPaths = DEFAULT_SCAN_PATH
                                     },
                                 ) {
                                     Text(stringResource(R.string.reset))
@@ -255,13 +263,18 @@ fun LocalPlayerSettings(
                             TextButton(
                                 onClick = {
                                     showFilePickerDialog = false
+                                    onScanPathsChange(tempScanPaths!!)
+                                    tempScanPaths = ""
                                 }
                             ) {
                                 Text(stringResource(android.R.string.ok))
                             }
 
                             TextButton(
-                                onClick = { showFilePickerDialog = false }
+                                onClick = {
+                                    showFilePickerDialog = false
+                                    tempScanPaths = ""
+                                }
                             ) {
                                 Text(stringResource(android.R.string.cancel))
                             }
