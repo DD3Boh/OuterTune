@@ -51,6 +51,7 @@ class MusicDatabase(
         SearchHistory::class,
         FormatEntity::class,
         LyricsEntity::class,
+        PlayCountEntity::class,
         Event::class,
         RelatedSongMap::class
     ],

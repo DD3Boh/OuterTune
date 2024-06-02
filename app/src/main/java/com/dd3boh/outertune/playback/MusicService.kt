@@ -135,6 +135,7 @@ import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
 const val MAX_CONSECUTIVE_ERR = 5
+const val MIN_PLAYBACK_THRESHOLD = 0.3 // 0 <= MIN_PLAYBACK_THRESHOLD <= 1
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @AndroidEntryPoint
@@ -778,6 +779,15 @@ class MusicService : MediaLibraryService(),
 
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
+
+        // increment play count
+        if (playbackStats.totalPlayTimeMs / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD) {
+            CoroutineScope(Dispatchers.IO).launch {
+                database.incrementPlayCount(mediaItem.mediaId)
+            }
+        }
+
+        // total play time
         if (playbackStats.totalPlayTimeMs >= 30000 && !dataStore.get(PauseListenHistoryKey, false)) {
             database.query {
                 incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)
