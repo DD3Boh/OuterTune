@@ -894,6 +894,11 @@ class MainActivity : ComponentActivity() {
                             navController = navController
                         )
 
+                        LaunchedEffect(playerBottomSheetState.isExpanded) {
+                            setSystemBarAppearance(playerBottomSheetState.isExpanded
+                                    || useDarkTheme)
+                        }
+
                         NavigationBar(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)

@@ -160,7 +160,7 @@ class BottomSheetState(
     }
 
     val isExpanded by derivedStateOf {
-        value == animatable.upperBound
+        progress > 0.98f
     }
 
     val progress by derivedStateOf {
