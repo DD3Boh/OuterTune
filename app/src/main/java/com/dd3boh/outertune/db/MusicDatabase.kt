@@ -48,6 +48,8 @@ class MusicDatabase(
         SongAlbumMap::class,
         AlbumArtistMap::class,
         PlaylistSongMap::class,
+        GenreEntity::class,
+        SongGenreMap::class,
         SearchHistory::class,
         FormatEntity::class,
         LyricsEntity::class,

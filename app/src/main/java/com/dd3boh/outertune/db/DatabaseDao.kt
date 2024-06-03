@@ -27,6 +27,7 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.EventWithSong
 import com.dd3boh.outertune.db.entities.FormatEntity
+import com.dd3boh.outertune.db.entities.GenreEntity
 import com.dd3boh.outertune.db.entities.LyricsEntity
 import com.dd3boh.outertune.db.entities.PlayCountEntity
 import com.dd3boh.outertune.db.entities.Playlist
@@ -39,6 +40,7 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongAlbumMap
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
+import com.dd3boh.outertune.db.entities.SongGenreMap
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
@@ -593,6 +595,9 @@ interface DatabaseDao {
     @Query("SELECT * FROM artist WHERE name = :name")
     fun artistByName(name: String): ArtistEntity?
 
+    @Query("SELECT * FROM genre WHERE title = :name")
+    fun genreByName(name: String): GenreEntity?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(song: SongEntity): Long
 
@@ -606,6 +611,9 @@ interface DatabaseDao {
     fun insert(playlist: PlaylistEntity)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(genre: GenreEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: SongArtistMap)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -613,6 +621,9 @@ interface DatabaseDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: AlbumArtistMap)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(map: SongGenreMap)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: PlaylistSongMap)
@@ -646,6 +657,23 @@ interface DatabaseDao {
                     songId = mediaMetadata.id,
                     artistId = artistId,
                     position = index
+                )
+            )
+        }
+        mediaMetadata.genre.forEachIndexed { index, genre ->
+            val genreId = genreByName(genre.title)?.id ?: GenreEntity.generateGenreId()
+            insert(
+                GenreEntity(
+                    id = genreId,
+                    title = genre.title,
+                    isLocal = genre.isLocal
+                )
+            )
+            insert(
+                SongGenreMap(
+                    songId = mediaMetadata.id,
+                    genreId = genreId,
+                    index = index
                 )
             )
         }

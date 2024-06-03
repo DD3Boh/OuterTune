@@ -29,10 +29,13 @@ data class SongEntity(
     val thumbnailUrl: String? = null,
     val albumId: String? = null,
     val albumName: String? = null,
+    val year: Int? = null,
+    val date: LocalDateTime? = null, // ID3 tag property
+    val dateModified: LocalDateTime? = null, // file property
     val liked: Boolean = false,
     val likedDate: LocalDateTime? = null,
     val totalPlayTime: Long = 0, // in milliseconds
-    val inLibrary: LocalDateTime? = null,
+    val inLibrary: LocalDateTime? = null, // doubles as "date added"
     val isLocal: Boolean = false,
     val localPath: String?,
 ) {
@@ -56,6 +59,19 @@ data class SongEntity(
     }
 
     fun toggleLibrary() = copy(inLibrary = if (inLibrary == null) LocalDateTime.now() else null)
+
+    /**
+     * Returns a full date string. If no full date is present, returns the year.
+     * This is the song's tag's date/year, NOT dateModified.
+     */
+    fun getDateString(): String? {
+        return date?.toString()
+            ?: if (year != null) {
+                return year.toString()
+            } else {
+                return null
+            }
+    }
 
     companion object {
         fun generateSongId() = "LA" + RandomStringUtils.random(8, true, false)
