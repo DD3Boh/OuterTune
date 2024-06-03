@@ -190,7 +190,11 @@ fun LocalPlayerSettings(
                             ActivityResultContracts.OpenDocumentTree()
                         ) { uri ->
                             if (uri?.path != null && !tempScanPaths.contains(uri.path!!)) {
-                                tempScanPaths += "${uri.path}\n"
+                                if (tempScanPaths.isBlank()) {
+                                    tempScanPaths = "${uri.path}\n"
+                                } else {
+                                    tempScanPaths += "${uri.path}\n"
+                                }
                             }
                         }
 
@@ -294,7 +298,8 @@ fun LocalPlayerSettings(
                             Row(modifier = Modifier.weight(1f)) {
                                 TextButton(
                                     onClick = {
-                                        tempScanPaths = if (showAddFolderDialog as Boolean) DEFAULT_SCAN_PATH else ""
+                                        // reset to whitespace so not empty
+                                        tempScanPaths = if (showAddFolderDialog as Boolean) DEFAULT_SCAN_PATH else " "
                                     },
                                 ) {
                                     Text(stringResource(R.string.reset))
@@ -303,8 +308,12 @@ fun LocalPlayerSettings(
 
                             TextButton(
                                 onClick = {
-                                    onScanPathsChange(tempScanPaths)
-                                    onExcludedScanPathsChange(tempScanPaths)
+                                    if (showAddFolderDialog as Boolean) {
+                                        onScanPathsChange(tempScanPaths)
+                                    } else {
+                                        onExcludedScanPathsChange(tempScanPaths)
+                                    }
+
                                     showAddFolderDialog = null
                                     tempScanPaths = ""
                                 }
