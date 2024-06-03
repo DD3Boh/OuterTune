@@ -16,7 +16,7 @@ const val TAG = "LocalMediaUtils"
  * For easier debugging, set SCANNER_CRASH_AT_FIRST_ERROR to stop at first error
  */
 const val SCANNER_CRASH_AT_FIRST_ERROR = false // crash at ffprobe errors only
-const val SYNC_SCANNER = false // true will not use multithreading for scanner
+const val SYNC_SCANNER = true // true will not use multithreading for scanner
 const val MAX_CONCURRENT_JOBS = 16
 const val SCANNER_DEBUG = false
 
@@ -40,6 +40,9 @@ val projection = arrayOf(
     MediaStore.Audio.Media.ARTIST_ID,
     MediaStore.Audio.Media.ALBUM,
     MediaStore.Audio.Media.ALBUM_ID,
+    MediaStore.Audio.Media.DATE_MODIFIED,
+    MediaStore.Audio.Media.YEAR,
+//    MediaStore.Audio.Media.GENRE, // Need API R
     MediaStore.Audio.Media.RELATIVE_PATH,
     MediaStore.Audio.Media.VOLUME_NAME,
     MediaStore.Audio.Media.MIME_TYPE,

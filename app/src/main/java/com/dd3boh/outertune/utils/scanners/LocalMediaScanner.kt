@@ -12,6 +12,7 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.FormatEntity
+import com.dd3boh.outertune.db.entities.GenreEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
@@ -27,6 +28,7 @@ import com.dd3boh.outertune.ui.utils.projection
 import com.dd3boh.outertune.ui.utils.scannerSession
 import com.dd3boh.outertune.ui.utils.storageRoot
 import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.utils.parseTime
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,6 +40,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.File
+import java.lang.Integer.parseInt
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
 
@@ -53,11 +57,15 @@ class LocalMediaScanner {
         scannerImpl: ScannerImpl,
     ): Song {
         val artists = ArrayList<ArtistEntity>()
-//    var generes
-//    var year: String? = null
+        val genres = ArrayList<GenreEntity>()
+        var year: Int? = null
+        var date: LocalDateTime? = null
 
         // MediaStore mode
         var rawArtists = basicData.artist
+        var rawGenres = basicData.genre
+        var rawDate = basicData.date
+
 
         try {
             // decide which scanner to use
@@ -66,15 +74,38 @@ class LocalMediaScanner {
             if (scannerImpl == ScannerImpl.MEDIASTORE_FFPROBE) {
                 ffmpegData = scanner?.getMediaStoreSupplement(basicData.path)
                 rawArtists = ffmpegData?.artists
+                rawGenres = ffmpegData?.genres
+                rawDate = ffmpegData?.date
             } else if (scannerImpl == ScannerImpl.FFPROBE) {
                 ffmpegData = scanner?.getAllMetadata(basicData.path, basicData.formatEntity)
                 rawArtists = ffmpegData?.artists
+                rawGenres = ffmpegData?.genres
+                rawDate = ffmpegData?.date
             }
 
-            // parse data
+            // parse artist
             rawArtists?.split(ARTIST_SEPARATORS)?.forEach { element ->
                 val artistVal = element.trim()
-                artists.add(ArtistEntity("LA${ArtistEntity.generateArtistId()}", artistVal, isLocal = true))
+                artists.add(ArtistEntity(ArtistEntity.generateArtistId(), artistVal, isLocal = true))
+            }
+
+            // parse genre
+            rawGenres?.split(";")?.forEach { element ->
+                val genreVal = element.trim()
+                genres.add(GenreEntity(GenreEntity.generateGenreId(), genreVal, isLocal = true))
+            }
+
+            // parse year
+            if (scannerImpl == ScannerImpl.MEDIASTORE) {
+                year = basicData.date?.let { parseInt(it) }
+            } else {
+                if (rawDate != null) {
+                    try {
+                        date = LocalDate.parse(rawDate.substringAfter(';').trim()).atStartOfDay()
+                    } catch (e: Exception) { }
+
+                    year = date?.year ?: parseInt(rawDate.trim())
+                }
             }
 
             // file format info
@@ -116,11 +147,14 @@ class LocalMediaScanner {
 
         return Song(
             SongEntity(
-                basicData.id,
-                basicData.title,
-                (basicData.duration / 1000), // we use seconds for duration
+                id = basicData.id,
+                title = basicData.title,
+                duration = (basicData.duration / 1000), // we use seconds for duration
                 albumId = basicData.albumID,
                 albumName = basicData.album,
+                year = year,
+                date = date,
+                dateModified = date,
                 isLocal = true,
                 inLibrary = LocalDateTime.now(),
                 localPath = basicData.path
@@ -136,7 +170,8 @@ class LocalMediaScanner {
                         songCount = 1
                     )
                 }
-            }
+            },
+            genre = genres
         )
     }
 
@@ -184,6 +219,8 @@ class LocalMediaScanner {
                 val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
                 val albumIDColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
                 val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+                val yearColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+                val dateModifiedColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_MODIFIED)
                 val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
                 val storageVolumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.VOLUME_NAME)
 
@@ -199,6 +236,8 @@ class LocalMediaScanner {
                     val artistID = cursor.getString(artistIdColumn)
                     val albumID = cursor.getString(albumIDColumn)
                     val album = cursor.getString(albumColumn)
+                    val year = cursor.getString(yearColumn)
+                    val dateModified = cursor.getString(dateModifiedColumn)
                     val path = cursor.getString(pathColumn)
                     val storageVol = cursor.getString(storageVolumeColumn)
 
@@ -252,7 +291,7 @@ class LocalMediaScanner {
                                             contentLength = duration.toLong(),
                                             loudnessDb = null,
                                             playbackUrl = null
-                                        ),
+                                        ), "", year, dateModified,
                                     ),
                                     database, scannerImpl,
                                 )
@@ -281,7 +320,7 @@ class LocalMediaScanner {
                                     contentLength = duration.toLong(),
                                     loudnessDb = null,
                                     playbackUrl = null
-                                )
+                                ), "", year, dateModified,
                             ), database, scannerImpl
                         )
                         toInsert.song.localPath?.let { s ->
@@ -401,6 +440,7 @@ class LocalMediaScanner {
                     if (SCANNER_DEBUG)
                         Timber.tag(TAG)
                             .d("NOT found in database, adding song: ${song.song.title}")
+
                     database.insert(song.toMediaMetadata())
                 }
                 // do not delete songs from database automatically, we just disable them
@@ -465,6 +505,9 @@ class LocalMediaScanner {
                     val artistID = if (artist == null) ArtistEntity.generateArtistId() else null
                     val album = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
                     val albumID = if (album == null) AlbumEntity.generateAlbumId() else null
+                    val year = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)
+                    val dateModified = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
+                    val genre = mData.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
                     // path should never be null since its coming from directory tree scanner
                     // but Kotlin is too dumb to care. Just ruthlessly suppress the error...
                     val path = "" + s.song.localPath
@@ -515,7 +558,7 @@ class LocalMediaScanner {
                                             contentLength = duration.toLong(),
                                             loudnessDb = null,
                                             playbackUrl = null
-                                        )
+                                        ), "", year, dateModified,
                                     ), database, scannerImpl // no online artist lookup
                                 )
                             }
@@ -535,7 +578,7 @@ class LocalMediaScanner {
                                     contentLength = duration.toLong(),
                                     loudnessDb = null,
                                     playbackUrl = null
-                                )
+                                ), genre, year, dateModified,
                             ), database, scannerImpl
                         )
                         artistsWithMetadata.add(toInsert)

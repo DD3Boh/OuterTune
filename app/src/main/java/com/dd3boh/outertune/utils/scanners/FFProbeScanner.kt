@@ -6,8 +6,8 @@ import wah.mikooomich.ffMetadataEx.FFprobeWrapper
 import java.lang.Integer.parseInt
 import java.lang.Long.parseLong
 
-const val EXTRACTOR_DEBUG = false
-const val DEBUG_SAVE_OUTPUT = false // ignored (will be false) when EXTRACTOR_DEBUG IS false
+const val EXTRACTOR_DEBUG = true
+const val DEBUG_SAVE_OUTPUT = true // ignored (will be false) when EXTRACTOR_DEBUG IS false
 const val EXTRACTOR_TAG = "FFProbeExtractor"
 
 class FFProbeScanner : MetadataScanner {
@@ -45,11 +45,9 @@ class FFProbeScanner : MetadataScanner {
         data.lines().forEach {
             val tag = it.substringBefore(':')
             when (tag) {
-                "ARTISTS" -> artists = it.substringAfter(':')
-                "ARTIST" -> artists = it.substringAfter(':')
-                "artist" -> artists = it.substringAfter(':')
-                "GENRE" -> genres = it.substringAfter(':')
-                "DATE" -> date = it.substringAfter(':')
+                "ARTISTS", "ARTIST", "artist" -> artists = it.substringAfter(':')
+                "GENRE", "genre" -> genres = it.substringAfter(':')
+                "DATE", "date" -> date = it.substringAfter(':')
                 else -> ""
             }
         }
@@ -87,8 +85,8 @@ class FFProbeScanner : MetadataScanner {
             when (tag) {
                 // why the fsck does an error here get swallowed silently????
                 "ARTISTS", "ARTIST", "artist" -> artists = it.substringAfter(':')
-                "GENRE" -> genres = it.substringAfter(':')
-                "DATE" -> date = it.substringAfter(':')
+                "GENRE", "genre" -> genres = it.substringAfter(':')
+                "DATE", "date" -> date = it.substringAfter(':')
                 "codec" -> codec = it.substringAfter(':')
                 "type" -> type = it.substringAfter(':')
                 "bitrate" -> bitrate = it.substringAfter(':')
