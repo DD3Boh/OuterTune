@@ -327,11 +327,11 @@ fun BottomSheetPlayer(
                             .offset(y = 5.dp)
                             .size(36.dp)
                             .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.inversePrimary)
+                            .background(MaterialTheme.colorScheme.primary)
                     ) {
                         ResizableIconButton(
                             icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
-                            color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else onBackgroundColor,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .size(24.dp),
@@ -346,11 +346,11 @@ fun BottomSheetPlayer(
                             .offset(y = 5.dp)
                             .size(36.dp)
                             .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.inversePrimary)
+                            .background(MaterialTheme.colorScheme.primary)
                     ) {
                         ResizableIconButton(
                             icon = Icons.Rounded.MoreVert,
-                            color = onBackgroundColor,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
                                 .size(24.dp)
                                 .align(Alignment.Center),
@@ -460,7 +460,7 @@ fun BottomSheetPlayer(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(RoundedCornerShape(playPauseRoundness))
-                        .background(MaterialTheme.colorScheme.inversePrimary)
+                        .background(MaterialTheme.colorScheme.primary)
                         .clickable {
                             if (playbackState == STATE_ENDED) {
                                 playerConnection.player.seekTo(0, 0)
@@ -473,7 +473,7 @@ fun BottomSheetPlayer(
                     Image(
                         imageVector = if(playbackState == STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(onBackgroundColor),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
                         modifier = Modifier
                             .align(Alignment.Center)
                             .size(36.dp)
