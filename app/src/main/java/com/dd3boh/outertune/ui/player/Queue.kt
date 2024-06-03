@@ -51,6 +51,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +85,7 @@ import org.burnoutcrew.reorderable.reorderable
 @Composable
 fun Queue(
     state: BottomSheetState,
+    onBackgroundColor: Color = Color.Unspecified,
     modifier: Modifier = Modifier,
 ) {
     val menuState = LocalMenuState.current
@@ -114,6 +116,7 @@ fun Queue(
                 IconButton(onClick = { state.expandSoft() }) {
                     Icon(
                         imageVector = Icons.Rounded.ExpandLess,
+                        tint = onBackgroundColor,
                         contentDescription = null,
                     )
                 }

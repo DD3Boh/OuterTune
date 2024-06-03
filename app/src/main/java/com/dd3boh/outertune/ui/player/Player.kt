@@ -51,7 +51,6 @@ import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Slider
@@ -79,7 +78,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -88,7 +86,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.C
-import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
@@ -149,6 +146,14 @@ fun BottomSheetPlayer(
     val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
+
+    val onBackgroundColor = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+        MaterialTheme.colorScheme.secondary
+    else if (useDarkTheme)
+        MaterialTheme.colorScheme.onSurface
+    else
+        MaterialTheme.colorScheme.onPrimary
+
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
     var position by rememberSaveable(playbackState) {
@@ -277,6 +282,7 @@ fun BottomSheetPlayer(
                         Text(
                             text = mediaMetadata.title,
                             style = MaterialTheme.typography.titleLarge,
+                            color = onBackgroundColor,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -295,7 +301,7 @@ fun BottomSheetPlayer(
                                 Text(
                                     text = artist.name,
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.secondary,
+                                    color = onBackgroundColor,
                                     maxLines = 1,
                                     modifier = Modifier.clickable(enabled = artist.id != null) {
                                         navController.navigate("artist/${artist.id}")
@@ -307,7 +313,7 @@ fun BottomSheetPlayer(
                                     Text(
                                         text = ", ",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.secondary
+                                        color = onBackgroundColor
                                     )
                                 }
                             }
@@ -321,11 +327,11 @@ fun BottomSheetPlayer(
                             .offset(y = 5.dp)
                             .size(36.dp)
                             .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .background(MaterialTheme.colorScheme.inversePrimary)
                     ) {
                         ResizableIconButton(
                             icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
-                            color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                            color = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else onBackgroundColor,
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .size(24.dp),
@@ -340,10 +346,11 @@ fun BottomSheetPlayer(
                             .offset(y = 5.dp)
                             .size(36.dp)
                             .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .background(MaterialTheme.colorScheme.inversePrimary)
                     ) {
                         ResizableIconButton(
                             icon = Icons.Rounded.MoreVert,
+                            color = onBackgroundColor,
                             modifier = Modifier
                                 .size(24.dp)
                                 .align(Alignment.Center),
@@ -398,6 +405,7 @@ fun BottomSheetPlayer(
                 Text(
                     text = makeTimeString(sliderPosition ?: position),
                     style = MaterialTheme.typography.labelMedium,
+                    color = onBackgroundColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -405,6 +413,7 @@ fun BottomSheetPlayer(
                 Text(
                     text = if (duration != C.TIME_UNSET) makeTimeString(duration) else "",
                     style = MaterialTheme.typography.labelMedium,
+                    color = onBackgroundColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -428,6 +437,7 @@ fun BottomSheetPlayer(
                             .padding(4.dp)
                             .align(Alignment.Center)
                             .alpha(if (shuffleModeEnabled) 1f else 0.5f),
+                        color = onBackgroundColor,
                         onClick = playerConnection.player::toggleShuffleMode
                     )
                 }
@@ -439,6 +449,7 @@ fun BottomSheetPlayer(
                         modifier = Modifier
                             .size(32.dp)
                             .align(Alignment.Center),
+                        color = onBackgroundColor,
                         onClick = playerConnection.player::seekToPrevious
                     )
                 }
@@ -449,7 +460,7 @@ fun BottomSheetPlayer(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(RoundedCornerShape(playPauseRoundness))
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .background(MaterialTheme.colorScheme.inversePrimary)
                         .clickable {
                             if (playbackState == STATE_ENDED) {
                                 playerConnection.player.seekTo(0, 0)
@@ -462,7 +473,7 @@ fun BottomSheetPlayer(
                     Image(
                         imageVector = if(playbackState == STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                        colorFilter = ColorFilter.tint(onBackgroundColor),
                         modifier = Modifier
                             .align(Alignment.Center)
                             .size(36.dp)
@@ -478,6 +489,7 @@ fun BottomSheetPlayer(
                         modifier = Modifier
                             .size(32.dp)
                             .align(Alignment.Center),
+                        color = onBackgroundColor,
                         onClick = playerConnection.player::seekToNext
                     )
                 }
@@ -494,6 +506,7 @@ fun BottomSheetPlayer(
                             .padding(4.dp)
                             .align(Alignment.Center)
                             .alpha(if (repeatMode == REPEAT_MODE_OFF) 0.5f else 1f),
+                        color = onBackgroundColor,
                         onClick = playerConnection.player::toggleRepeatMode
                     )
                 }
@@ -595,7 +608,8 @@ fun BottomSheetPlayer(
         }
 
         Queue(
-            state = queueSheetState
+            state = queueSheetState,
+            onBackgroundColor = onBackgroundColor
         )
     }
 }
