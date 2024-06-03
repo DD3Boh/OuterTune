@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +44,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,7 +84,11 @@ import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.getScanner
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scannerActive
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scannerFinished
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scannerRequestCancel
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
+import com.dd3boh.outertune.utils.scanners.ScannerAbortException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -102,8 +108,9 @@ fun LocalPlayerSettings(
     val coroutineScope = rememberCoroutineScope()
 
     // scanner vars
-    var isScannerActive by remember { mutableStateOf(false) }
-    var isScanFinished by remember { mutableStateOf(false) }
+    val isScannerActive by scannerActive.collectAsState()
+    val isScanFinished by scannerActive.collectAsState()
+    var scannerFailure = false
     var mediaPermission by remember { mutableStateOf(true) }
     var showFilePickerDialog by remember {
         mutableStateOf(false)
@@ -171,7 +178,7 @@ fun LocalPlayerSettings(
                         val dirPickerLauncher = rememberLauncherForActivityResult(
                             ActivityResultContracts.OpenDocumentTree()
                         ) { uri ->
-                            if (uri?.path != null && !tempScanPaths!!.contains(uri.path!!)) {
+                            if (uri?.path != null && !tempScanPaths.contains(uri.path!!)) {
                                 tempScanPaths += "${uri.path}\n"
                             }
                         }
@@ -193,7 +200,7 @@ fun LocalPlayerSettings(
                                         RoundedCornerShape(ThumbnailCornerRadius)
                                     )
                             ) {
-                                tempScanPaths!!.split('\n').forEach {
+                                tempScanPaths.split('\n').forEach {
                                     if (it.isNotBlank())
                                         Row(modifier = Modifier
                                             .padding(horizontal = 8.dp)
@@ -299,10 +306,10 @@ fun LocalPlayerSettings(
 
         ) {
             Button(
-                enabled = !isScannerActive,
                 onClick = {
+                    // cancel button
                     if (isScannerActive) {
-                        return@Button
+                        scannerRequestCancel = true
                     }
 
                     // check permission
@@ -329,55 +336,107 @@ fun LocalPlayerSettings(
                         mediaPermission = true
                     }
 
-                    isScanFinished = false
-                    isScannerActive = true
+                    scannerFinished.value = false
+                    scannerActive.value = true
+                    scannerFailure = false
 
-                    Toast.makeText(
-                        context,
-                        "Starting full library scan this may take a while...",
-                        Toast.LENGTH_SHORT
-                    ).show()
                     coroutineScope.launch(Dispatchers.IO) {
                         val scanner = getScanner()
                         // full rescan
                         if (fullRescan) {
-                            val directoryStructure = scanner.scanLocal(context, database, scanPaths.split('\n'), scannerType).value
-                            scanner.syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
-                            unloadAdvancedScanner()
+                            try {
+                                val directoryStructure =
+                                    scanner.scanLocal(context, database, scanPaths.split('\n'), scannerType).value
+                                scanner.syncDB(
+                                    database,
+                                    directoryStructure.toList(),
+                                    scannerSensitivity,
+                                    strictExtensions,
+                                    true
+                                )
 
-                            // start artist linking job
-                            if (lookupYtmArtists) {
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    scanner.localToRemoteArtist(database)
+                                // start artist linking job
+                                if (lookupYtmArtists) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        try {
+                                            scanner.localToRemoteArtist(database)
+                                        } catch (e: ScannerAbortException) {
+                                            Looper.prepare()
+                                            Toast.makeText(
+                                                context,
+                                                "Scanner (background task) failed: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
                                 }
+                            } catch (e: ScannerAbortException) {
+                                scannerFailure = true
+
+                                Looper.prepare()
+                                Toast.makeText(
+                                    context,
+                                    "Scanner failed: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } finally {
+                                unloadAdvancedScanner()
                             }
                         } else {
                             // quick scan
-                            val directoryStructure =  scanner.scanLocal(context, database, scanPaths.split('\n'), ScannerImpl.MEDIASTORE).value
-                            scanner.quickSync(
-                                database, directoryStructure.toList(), scannerSensitivity,
-                                strictExtensions, scannerType
-                            )
-                            unloadAdvancedScanner()
+                            try {
+                                val directoryStructure = scanner.scanLocal(
+                                    context,
+                                    database,
+                                    scanPaths.split('\n'),
+                                    ScannerImpl.MEDIASTORE
+                                ).value
+                                scanner.quickSync(
+                                    database, directoryStructure.toList(), scannerSensitivity,
+                                    strictExtensions, scannerType
+                                )
 
-                            // start artist linking job
-                            if (lookupYtmArtists) {
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    scanner.localToRemoteArtist(database)
+                                // start artist linking job
+                                if (lookupYtmArtists) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        try {
+                                            scanner.localToRemoteArtist(database)
+                                        } catch (e: ScannerAbortException) {
+                                            Looper.prepare()
+                                            Toast.makeText(
+                                                context,
+                                                "Scanner (background task) failed: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
                                 }
+                            } catch (e: ScannerAbortException) {
+                                scannerFailure = true
+
+                                Looper.prepare()
+                                Toast.makeText(
+                                    context,
+                                    "Scanner failed: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } finally {
+                                unloadAdvancedScanner()
                             }
                         }
 
                         purgeCache()
 
-                        isScannerActive = false
-                        isScanFinished = true
+                        scannerActive.value = false
+                        scannerFinished.value = true
                     }
                 }
             ) {
                 Text(
                     text = if (isScannerActive) {
-                        "Scanning..."
+                        "Cancel"
+                    } else if (scannerFailure) {
+                        "An Error Occurred"
                     } else if (isScanFinished) {
                         "Scan complete"
                     } else if (!mediaPermission) {

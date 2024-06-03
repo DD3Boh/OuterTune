@@ -221,6 +221,11 @@ class LocalMediaScanner {
                         // use async scanner
                         scannerJobs.add(
                             async(scannerSession) {
+                                if (scannerRequestCancel) {
+                                    if (SCANNER_DEBUG)
+                                        Timber.tag(TAG).d("WARNING: Canceling advanced scanner job.")
+                                    throw ScannerAbortException("")
+                                }
                                 advancedScan(
                                     SongTempData(
                                         id, getRealPath(storageVol, path, name),
@@ -242,6 +247,13 @@ class LocalMediaScanner {
                             }
                         )
                     } else {
+                        if (scannerRequestCancel) {
+                            if (SCANNER_DEBUG)
+                                Timber.tag(TAG).d("WARNING: Requested to cancel Full Scanner. Aborting.")
+                            scannerRequestCancel = false
+                            throw ScannerAbortException("Scanner canceled during Full Scanner (synchronous)")
+                        }
+
                         // force synchronous scanning of songs
                         val toInsert = advancedScan(
                             SongTempData(
@@ -272,6 +284,12 @@ class LocalMediaScanner {
             if (!SYNC_SCANNER) {
                 // use async scanner
                 scannerJobs.awaitAll()
+                if (scannerRequestCancel) {
+                    if (SCANNER_DEBUG)
+                        Timber.tag(TAG).d("WARNING: Requested to cancel Full Scanner. Aborting.")
+                    scannerRequestCancel = false
+                    throw ScannerAbortException("Scanner canceled during Full Scanner (asynchronous)")
+                }
             }
         }
 
@@ -316,6 +334,13 @@ class LocalMediaScanner {
         Timber.tag(TAG).d("Entries to process: ${newSongs.size}")
 
         newSongs.forEach { song ->
+            if (scannerRequestCancel) {
+                if (SCANNER_DEBUG)
+                    Timber.tag(TAG).d("WARNING: Requested to cancel Local Library Sync. Aborting.")
+                scannerRequestCancel = false
+                throw ScannerAbortException("Scanner canceled during Local Library Sync")
+            }
+
             val querySong = database.searchSongsInclNotInLibrary(song.song.title)
 
             runBlocking(Dispatchers.IO) {
@@ -411,6 +436,12 @@ class LocalMediaScanner {
             runBlocking {
                 // Get song basic metadata
                 delta.forEach { s ->
+                    if (scannerRequestCancel) {
+                        if (SCANNER_DEBUG)
+                            Timber.tag(TAG).d("WARNING: Requested to cancel. Aborting.")
+                        scannerRequestCancel = false
+                        throw ScannerAbortException("Scanner canceled during Quick (additive delta) Library Sync")
+                    }
                     mData.setDataSource(s.song.localPath)
 
                     val id = SongEntity.generateSongId()
@@ -545,6 +576,13 @@ class LocalMediaScanner {
 
                 scannerJobs.add(
                     async(scannerSession) {
+                        // cancel here since this is where the real heavy action is
+                        if (scannerRequestCancel) {
+                            if (SCANNER_DEBUG)
+                                Timber.tag(TAG).d("WARNING: Requested to cancel youtubeArtistLookup job. Aborting.")
+                            throw ScannerAbortException("Scanner canceled during youtubeArtistLookup job")
+                        }
+
                         // resolve artist from YTM if not found in DB
                         if (databaseArtistMatch.isEmpty()) {
                             try {
@@ -562,6 +600,14 @@ class LocalMediaScanner {
                         }
                     }
                 )
+            }
+
+            scannerJobs.awaitAll()
+
+            if (scannerRequestCancel) {
+                if (SCANNER_DEBUG)
+                    Timber.tag(TAG).d("WARNING: Requested to cancel during localToRemoteArtist. Aborting.")
+                throw ScannerAbortException("Scanner canceled during localToRemoteArtist")
             }
         }
     }
@@ -628,6 +674,13 @@ class LocalMediaScanner {
 
         private var localScanner: LocalMediaScanner? = null
         private var advancedScannerImpl: MetadataScanner? = null
+
+        /**
+         * TODO: Create a lock for background jobs like youtubeartists and etc
+         */
+        var scannerActive = MutableStateFlow(false)
+        var scannerFinished = MutableStateFlow(false)
+        var scannerRequestCancel = false
 
         /**
          * ==========================
@@ -909,3 +962,5 @@ class LocalMediaScanner {
         }
     }
 }
+
+class ScannerAbortException(message: String) : Throwable(message)
