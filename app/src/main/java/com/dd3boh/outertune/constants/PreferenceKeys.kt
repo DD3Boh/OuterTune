@@ -163,6 +163,7 @@ val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
 val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
 val LyricTrimKey = booleanPreferencesKey("lyricTrim")
 val ScanPathsKey = stringPreferencesKey("scanPaths")
+val ExcludedScanPathsKey = stringPreferencesKey("excludedScanPaths")
 
 val DevSettingsKey = booleanPreferencesKey("devSettings")
 

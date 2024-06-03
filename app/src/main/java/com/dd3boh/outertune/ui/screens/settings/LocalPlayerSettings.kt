@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -63,6 +65,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
 import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.DialogCornerRadius
+import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LookupYtmArtistsKey
 import com.dd3boh.outertune.constants.ScanPathsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
@@ -113,8 +116,14 @@ fun LocalPlayerSettings(
     val isScanFinished by scannerActive.collectAsState()
     var scannerFailure = false
     var mediaPermission by remember { mutableStateOf(true) }
-    var showFilePickerDialog by remember {
-        mutableStateOf(false)
+
+    /**
+     * True = include folders
+     * False = exclude folders
+     * Null = don't show dialog
+     */
+    var showAddFolderDialog: Boolean? by remember {
+        mutableStateOf(null)
     }
 
     // scanner prefs
@@ -129,6 +138,7 @@ fun LocalPlayerSettings(
     val (strictExtensions, onStrictExtensionsChange) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val (autoScan, onAutoScanChange) = rememberPreference(AutomaticScannerKey, defaultValue = true)
     val (scanPaths, onScanPathsChange) = rememberPreference(ScanPathsKey, defaultValue = DEFAULT_SCAN_PATH)
+    val (excludedScanPaths, onExcludedScanPathsChange) = rememberPreference(ExcludedScanPathsKey, defaultValue = "")
 
     var fullRescan by remember { mutableStateOf(false) }
     val (lookupYtmArtists, onlookupYtmArtistsChange) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
@@ -157,18 +167,18 @@ fun LocalPlayerSettings(
         PreferenceEntry(
             title = { Text(stringResource(R.string.scan_paths_title)) },
             onClick = {
-                showFilePickerDialog = true
+                showAddFolderDialog = true
             },
         )
 
-        if (showFilePickerDialog) {
+        if (showAddFolderDialog != null) {
             if (tempScanPaths.isEmpty()) {
-                tempScanPaths = scanPaths
+                tempScanPaths = if (showAddFolderDialog == true) scanPaths else excludedScanPaths
             }
 
             BasicAlertDialog(
                 onDismissRequest = {
-                    showFilePickerDialog = false
+                    showAddFolderDialog = null
                     tempScanPaths = ""
                 },
                 content = {
@@ -186,10 +196,29 @@ fun LocalPlayerSettings(
 
                         // main content
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "Scan paths",
-                                style = MaterialTheme.typography.titleLarge,
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = stringResource(
+                                        if (showAddFolderDialog as Boolean) R.string.scan_paths_incl
+                                        else R.string.scan_paths_excl
+                                    ),
+                                    style = MaterialTheme.typography.titleLarge,
+                                )
+
+                                // switch between include and exclude
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Switch(
+                                        checked = showAddFolderDialog!!,
+                                        onCheckedChange = {
+                                            showAddFolderDialog = !showAddFolderDialog!!
+                                            tempScanPaths = if (showAddFolderDialog == true) scanPaths else excludedScanPaths
+                                            },
+                                        )
+                                }
+                            }
 
                             // folders list
                             Column(
@@ -208,10 +237,14 @@ fun LocalPlayerSettings(
                                             .clickable { }) {
                                             Text(
                                                 // I hate this but I'll do it properly... eventually
-                                                text = if (it.substringAfter("tree/").substringBefore(':') == "primary") {
+                                                text = if (it.substringAfter("tree/")
+                                                        .substringBefore(':') == "primary"
+                                                ) {
                                                     "Internal Storage/${it.substringAfter(':')}"
                                                 } else {
-                                                    "External (${it.substringAfter("tree/").substringBefore(':')})/${it.substringAfter(':')}"
+                                                    "External (${
+                                                        it.substringAfter("tree/").substringBefore(':')
+                                                    })/${it.substringAfter(':')}"
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 modifier = Modifier
@@ -219,7 +252,7 @@ fun LocalPlayerSettings(
                                                     .align(Alignment.CenterVertically)
                                             )
                                             IconButton(
-                                                onClick = { tempScanPaths = tempScanPaths!!.replace("$it\n", "") },
+                                                onClick = { tempScanPaths = tempScanPaths.replace("$it\n", "") },
                                                 onLongClick = {}
                                             ) {
                                                 Icon(
@@ -261,7 +294,7 @@ fun LocalPlayerSettings(
                             Row(modifier = Modifier.weight(1f)) {
                                 TextButton(
                                     onClick = {
-                                        tempScanPaths = DEFAULT_SCAN_PATH
+                                        tempScanPaths = if (showAddFolderDialog as Boolean) DEFAULT_SCAN_PATH else ""
                                     },
                                 ) {
                                     Text(stringResource(R.string.reset))
@@ -270,8 +303,9 @@ fun LocalPlayerSettings(
 
                             TextButton(
                                 onClick = {
-                                    showFilePickerDialog = false
-                                    onScanPathsChange(tempScanPaths!!)
+                                    onScanPathsChange(tempScanPaths)
+                                    onExcludedScanPathsChange(tempScanPaths)
+                                    showAddFolderDialog = null
                                     tempScanPaths = ""
                                 }
                             ) {
@@ -280,7 +314,7 @@ fun LocalPlayerSettings(
 
                             TextButton(
                                 onClick = {
-                                    showFilePickerDialog = false
+                                    showAddFolderDialog = null
                                     tempScanPaths = ""
                                 }
                             ) {
@@ -347,7 +381,7 @@ fun LocalPlayerSettings(
                         if (fullRescan) {
                             try {
                                 val directoryStructure =
-                                    scanner.scanLocal(context, database, scanPaths.split('\n'), scannerType).value
+                                    scanner.scanLocal(context, database, scannerType, scanPaths.split('\n'), excludedScanPaths.split('\n')).value
                                 scanner.syncDB(
                                     database,
                                     directoryStructure.toList(),
@@ -389,8 +423,9 @@ fun LocalPlayerSettings(
                                 val directoryStructure = scanner.scanLocal(
                                     context,
                                     database,
+                                    ScannerImpl.MEDIASTORE,
                                     scanPaths.split('\n'),
-                                    ScannerImpl.MEDIASTORE
+                                    excludedScanPaths.split('\n'),
                                 ).value
                                 scanner.quickSync(
                                     database, directoryStructure.toList(), scannerSensitivity,

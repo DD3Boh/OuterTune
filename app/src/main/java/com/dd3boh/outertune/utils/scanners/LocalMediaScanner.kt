@@ -154,8 +154,9 @@ class LocalMediaScanner {
     fun scanLocal(
         context: Context,
         database: MusicDatabase,
-        scanPaths: List<String>,
         scannerImpl: ScannerImpl,
+        scanPaths: List<String>,
+        excludedScanPaths: List<String>,
     ): MutableStateFlow<DirectoryTree> {
         var newDirectoryStructure = DirectoryTree(storageRoot)
         val contentResolver: ContentResolver = context.contentResolver
@@ -213,6 +214,17 @@ class LocalMediaScanner {
                         Timber.tag(TAG)
                             .d("ID: $id, Name: $name, ARTIST: $artist, PATH: $storageVol --> $path")
 
+                    val exclPaths = excludedScanPaths.map { getRealPathFromUri(it) }
+                    val realPath = getRealPath(storageVol, path, name)
+
+                    // excluded paths
+                    val realPathDir = realPath.substringBeforeLast('/') // get dir
+                    if (exclPaths.any { realPathDir.startsWith(it) }) {
+                        if (SCANNER_DEBUG)
+                            Timber.tag(TAG).d("$realPathDir is excluded")
+                        continue
+                    }
+
                     // append song to list
                     // media store doesn't support multi artists...
                     // do not link album (and whatever song id) with youtube yet, figure that out later
@@ -228,7 +240,7 @@ class LocalMediaScanner {
                                 }
                                 advancedScan(
                                     SongTempData(
-                                        id, getRealPath(storageVol, path, name),
+                                        id, realPath,
                                         title, duration, artist, artistID, album, albumID,
                                         FormatEntity(
                                             id = id,
@@ -257,7 +269,7 @@ class LocalMediaScanner {
                         // force synchronous scanning of songs
                         val toInsert = advancedScan(
                             SongTempData(
-                                id, getRealPath(storageVol, path, name),
+                                id, realPath,
                                 title, duration, artist, artistID, album, albumID,
                                 FormatEntity(
                                     id = id,
@@ -738,21 +750,10 @@ class LocalMediaScanner {
             val selection = StringBuilder("${MediaStore.Audio.Media.IS_MUSIC} != 0")
             val selectionArgs = mutableListOf<String>()
 
-            val primaryStorageRoot = Environment.getExternalStorageDirectory().absolutePath
-
             scanPaths.forEachIndexed { index, path ->
 
                 if (path.isNotBlank()) {
-                    // hax rn
-
-                    println(path)
-                    // Google plz don't change ur api kthx
-                    val storageMedia = path.substringAfter("/tree/").substringBefore(':')
-                    val convertedPath = if (storageMedia == "primary") {
-                        path.replaceFirst("/tree/primary:", "$primaryStorageRoot/")
-                    } else {
-                        "/storage/$storageMedia/${path.substringAfter(':')}"
-                    }
+                    val convertedPath = getRealPathFromUri(path)
 
                     if (index == 0) {
                         selection.append(" AND (")
@@ -769,12 +770,30 @@ class LocalMediaScanner {
             return ScannerFilter(selection.toString(), selectionArgs)
         }
 
+        /**
+         * I honestly do not remember what that is for but its necessary
+         */
         private fun getRealPath(storageVol: String, path:String, name: String): String {
             return if (storageVol.contains("external_primary")) {
                 "${storageRoot}emulated/0/$path$name"
             } else {
                 // WHY IS THIS THE LOWERCASE VARIANT WHEN ITS UPPERCASE ON DISK???
                 "$storageRoot${storageVol.uppercase(Locale.getDefault())}/$path$name"
+            }
+        }
+
+        /**
+         * Get real path from UI
+         * @param path in format "/tree/<media>:<rest of path>"
+         */
+        private fun getRealPathFromUri(path: String): String {
+            val primaryStorageRoot = Environment.getExternalStorageDirectory().absolutePath
+            // Google plz don't change ur api kthx
+            val storageMedia = path.substringAfter("/tree/").substringBefore(':')
+            return if (storageMedia == "primary") {
+                path.replaceFirst("/tree/primary:", "$primaryStorageRoot/")
+            } else {
+                "/storage/$storageMedia/${path.substringAfter(':')}"
             }
         }
 
