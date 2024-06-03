@@ -16,6 +16,7 @@ import com.dd3boh.outertune.db.entities.GenreEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
+import com.dd3boh.outertune.db.entities.SongGenreMap
 import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.ARTIST_SEPARATORS
@@ -28,7 +29,6 @@ import com.dd3boh.outertune.ui.utils.projection
 import com.dd3boh.outertune.ui.utils.scannerSession
 import com.dd3boh.outertune.ui.utils.storageRoot
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.utils.parseTime
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -414,8 +414,8 @@ class LocalMediaScanner {
                 if (songMatch.isNotEmpty() && refreshExisting == true) { // known song, update the song info in the database
                     Timber.tag(TAG)
                         .d("Found in database, updating song: ${song.song.title}")
-                    val songToUpdate = songMatch.first()
-                    database.update(songToUpdate.song)
+                    val songToUpdate = songMatch.first().song.getNewSong(song.song)
+                    database.update(songToUpdate)
 
                     // destroy existing artist links
                     database.unlinkSongArtists(songToUpdate.id)
@@ -436,6 +436,23 @@ class LocalMediaScanner {
 
                         artistPos++
                     }
+
+                    artistPos = 0 // reuse this var for genres
+                    song.genre.forEach {
+                        val dbGenre = database.genreByAproxName(it.title).firstOrNull()?.firstOrNull()
+
+                        if (dbGenre == null) {
+                            // genre does not exist in db, add it then link it
+                            database.insert(it)
+                            database.insert(SongGenreMap(songToUpdate.id, it.id, artistPos))
+                        } else {
+                            // genre does exist in db, link to it
+                            database.insert(SongGenreMap(songToUpdate.id, dbGenre.id, artistPos))
+                        }
+
+                        artistPos++
+                    }
+
                 } else if (songMatch.isEmpty()) { // new song
                     if (SCANNER_DEBUG)
                         Timber.tag(TAG)
