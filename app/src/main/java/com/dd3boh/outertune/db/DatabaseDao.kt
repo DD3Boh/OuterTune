@@ -809,22 +809,27 @@ interface DatabaseDao {
     fun unlinkSongArtists(songID: String)
 
     @Transaction
-    @Query("DELETE FROM song WHERE isLocal IS NOT NULL")
+    @Query("DELETE FROM song WHERE isLocal = 1")
     fun nukeLocalSongs()
 
     @Transaction
-    @Query("DELETE FROM artist WHERE isLocal IS NOT NULL")
+    @Query("DELETE FROM artist WHERE isLocal = 1")
     fun nukeLocalArtists()
 
-//    @Transaction
-//    @Query("DELETE FROM album WHERE isLocal IS NOT NULL")
-//    fun nukeLocalAlbums()
+    @Transaction
+    @Query("DELETE FROM album WHERE isLocal = 1")
+    fun nukeLocalAlbums()
+
+    @Transaction
+    @Query("DELETE FROM genre WHERE isLocal = 1")
+    fun nukeLocalGenre()
 
     @Transaction
     fun nukeLocalData() {
         nukeLocalSongs()
         nukeLocalArtists()
-//        nukeLocalAlbums()
+        nukeLocalAlbums()
+        nukeLocalGenre()
     }
 
     @Query("SELECT * FROM playlist_song_map WHERE songId = :songId")
