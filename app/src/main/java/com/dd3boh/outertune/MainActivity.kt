@@ -107,6 +107,7 @@ import com.dd3boh.outertune.ui.theme.*
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
+import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
@@ -287,6 +288,7 @@ class MainActivity : ComponentActivity() {
                             unloadAdvancedScanner()
                         }
                         purgeCache() // juuuust to be sure
+                        cacheDirectoryTree(null)
                     } else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
                         // Request the permission using the permission launcher
                         permissionLauncher.launch(mediaPermissionLevel)

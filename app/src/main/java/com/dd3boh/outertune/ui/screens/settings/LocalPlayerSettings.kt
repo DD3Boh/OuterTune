@@ -80,6 +80,7 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -426,6 +427,7 @@ fun LocalPlayerSettings(
                         }
 
                         purgeCache()
+                        cacheDirectoryTree(null)
 
                         scannerActive.value = false
                         scannerFinished.value = true
