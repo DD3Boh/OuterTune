@@ -589,6 +589,14 @@ fun BottomSheetPlayer(
             )
         }
 
+        if (playerBackground != PlayerBackgroundStyle.DEFAULT && showLyrics) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+            )
+        }
+
         when (LocalConfiguration.current.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 Row(
