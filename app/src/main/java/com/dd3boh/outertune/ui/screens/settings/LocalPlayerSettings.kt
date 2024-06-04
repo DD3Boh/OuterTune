@@ -102,7 +102,7 @@ fun LocalPlayerSettings(
     context: Context,
     database: MusicDatabase,
 ) {
-   val mediaPermissionLevel =
+    val mediaPermissionLevel =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
         else Manifest.permission.READ_EXTERNAL_STORAGE
 
@@ -175,9 +175,10 @@ fun LocalPlayerSettings(
                     tempScanPaths = ""
                 },
                 content = {
-                    Column(modifier = Modifier
-                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(DialogCornerRadius))
-                        .padding(16.dp)
+                    Column(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(DialogCornerRadius))
+                            .padding(16.dp)
                     ) {
                         val dirPickerLauncher = rememberLauncherForActivityResult(
                             ActivityResultContracts.OpenDocumentTree()
@@ -211,9 +212,10 @@ fun LocalPlayerSettings(
                                         checked = showAddFolderDialog!!,
                                         onCheckedChange = {
                                             showAddFolderDialog = !showAddFolderDialog!!
-                                            tempScanPaths = if (showAddFolderDialog == true) scanPaths else excludedScanPaths
-                                            },
-                                        )
+                                            tempScanPaths =
+                                                if (showAddFolderDialog == true) scanPaths else excludedScanPaths
+                                        },
+                                    )
                                 }
                             }
 
@@ -383,7 +385,11 @@ fun LocalPlayerSettings(
                         if (fullRescan) {
                             try {
                                 val directoryStructure =
-                                    scanner.scanLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n')).value
+                                    scanner.scanLocal(
+                                        database,
+                                        scanPaths.split('\n'),
+                                        excludedScanPaths.split('\n')
+                                    ).value
                                 scanner.syncDB(
                                     database,
                                     directoryStructure.toList(),
@@ -616,7 +622,8 @@ fun LocalPlayerSettings(
                         Toast.LENGTH_SHORT
                     ).show()
                     coroutineScope.launch(Dispatchers.IO) {
-                        Timber.tag("Settings").d("Nuke database (MANUAL TRIGGERED) status:  ${database.nukeLocalData()}")
+                        Timber.tag("Settings")
+                            .d("Nuke database (MANUAL TRIGGERED) status:  ${database.nukeLocalData()}")
                     }
                 }
             )

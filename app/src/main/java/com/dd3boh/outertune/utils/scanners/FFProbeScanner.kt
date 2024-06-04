@@ -176,13 +176,17 @@ class FFProbeScanner : MetadataScanner {
         }
 
         // parse date and year
-        if (rawDate != null) {
-            try {
-                date = LocalDate.parse(rawDate!!.substringAfter(';').trim()).atStartOfDay()
-            } catch (e: Exception) {
-            }
+        try {
+            if (rawDate != null) {
+                try {
+                    date = LocalDate.parse(rawDate!!.substringAfter(';').trim()).atStartOfDay()
+                } catch (e: Exception) {
+                }
 
-            year = date?.year ?: parseInt(rawDate!!.trim())
+                year = date?.year ?: parseInt(rawDate!!.trim())
+            }
+        } catch (e: Exception) {
+            // user error at this point. I am not parsing all the weird ways the string can come in
         }
 
 
