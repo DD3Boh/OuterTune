@@ -15,7 +15,7 @@ data class MediaMetadata(
     val duration: Int,
     val thumbnailUrl: String? = null,
     val album: Album? = null,
-    val genre: List<Genre>,
+    val genre: List<Genre>?,
     val year: Int? = null,
     val date: LocalDateTime? = null, // ID3 tag property
     val dateModified: LocalDateTime? = null, // file property
@@ -83,7 +83,7 @@ fun Song.toMediaMetadata() = MediaMetadata(
             // no possible local albums somehow
         )
     },
-    genre = genre.map {
+    genre = genre?.map {
         MediaMetadata.Genre(
             id = it.id,
             title = it.title,

@@ -2,7 +2,7 @@ package com.dd3boh.outertune.models
 
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.ui.utils.SCANNER_DEBUG
-import com.dd3boh.outertune.ui.utils.storageRoot
+import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import timber.log.Timber
 
 /**
@@ -165,7 +165,7 @@ class DirectoryTree(path: String) {
      * All folders are recognized to be top level folders
      */
     fun toFlattenedTree(): DirectoryTree {
-        val result = DirectoryTree(storageRoot)
+        val result = DirectoryTree(STORAGE_ROOT)
         getSubdirsRecursive(this, result.subdirs)
         return result
     }

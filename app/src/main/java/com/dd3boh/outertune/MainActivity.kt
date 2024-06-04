@@ -235,10 +235,6 @@ class MainActivity : ComponentActivity() {
             }
 
             // auto scanner
-            val (scannerType) = rememberEnumPreference(
-                key = ScannerTypeKey,
-                defaultValue = ScannerImpl.MEDIASTORE_FFPROBE
-            )
             val (scannerSensitivity) = rememberEnumPreference(
                 key = ScannerSensitivityKey,
                 defaultValue = ScannerMatchCriteria.LEVEL_2
@@ -257,15 +253,14 @@ class MainActivity : ComponentActivity() {
                         // equivalent to (quick scan)
                         try {
                             val directoryStructure = scanner.scanLocal(
-                                    this@MainActivity,
                                     database,
-                                    ScannerImpl.MEDIASTORE,
                                     scanPaths.split('\n'),
-                                    excludedScanPaths.split('\n')
+                                    excludedScanPaths.split('\n'),
+                                    pathsOnly = true
                             ).value
                             scanner.quickSync(
                                 database, directoryStructure.toList(), scannerSensitivity,
-                                strictExtensions, scannerType
+                                strictExtensions,
                             )
 
                             // start artist linking job

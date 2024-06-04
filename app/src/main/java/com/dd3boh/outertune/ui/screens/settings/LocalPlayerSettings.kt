@@ -29,7 +29,6 @@ import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.BasicAlertDialog
@@ -71,8 +70,6 @@ import com.dd3boh.outertune.constants.ScanPathsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
-import com.dd3boh.outertune.constants.ScannerImpl
-import com.dd3boh.outertune.constants.ScannerTypeKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
@@ -127,10 +124,6 @@ fun LocalPlayerSettings(
     }
 
     // scanner prefs
-    val (scannerType, onScannerTypeChange) = rememberEnumPreference(
-        key = ScannerTypeKey,
-        defaultValue = ScannerImpl.MEDIASTORE_FFPROBE
-    )
     val (scannerSensitivity, onScannerSensitivityChange) = rememberEnumPreference(
         key = ScannerSensitivityKey,
         defaultValue = ScannerMatchCriteria.LEVEL_2
@@ -390,7 +383,7 @@ fun LocalPlayerSettings(
                         if (fullRescan) {
                             try {
                                 val directoryStructure =
-                                    scanner.scanLocal(context, database, scannerType, scanPaths.split('\n'), excludedScanPaths.split('\n')).value
+                                    scanner.scanLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n')).value
                                 scanner.syncDB(
                                     database,
                                     directoryStructure.toList(),
@@ -430,15 +423,14 @@ fun LocalPlayerSettings(
                             // quick scan
                             try {
                                 val directoryStructure = scanner.scanLocal(
-                                    context,
                                     database,
-                                    ScannerImpl.MEDIASTORE,
                                     scanPaths.split('\n'),
                                     excludedScanPaths.split('\n'),
+                                    pathsOnly = true
                                 ).value
                                 scanner.quickSync(
                                     database, directoryStructure.toList(), scannerSensitivity,
-                                    strictExtensions, scannerType
+                                    strictExtensions
                                 )
 
                                 // start artist linking job
@@ -566,21 +558,6 @@ fun LocalPlayerSettings(
 
         PreferenceGroupTitle(
             title = stringResource(R.string.scanner_settings_title)
-        )
-
-        // scanner type
-        EnumListPreference(
-            title = { Text(stringResource(R.string.scanner_type_title)) },
-            icon = { Icon(Icons.Rounded.Speed, null) },
-            selectedValue = scannerType,
-            onValueSelected = onScannerTypeChange,
-            valueText = {
-                when (it) {
-                    ScannerImpl.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
-                    ScannerImpl.MEDIASTORE_FFPROBE -> stringResource(R.string.scanner_type_mediastore_ffprobe)
-                    ScannerImpl.FFPROBE -> stringResource(R.string.scanner_type_ffprobe)
-                }
-            }
         )
 
         // scanner sensitivity

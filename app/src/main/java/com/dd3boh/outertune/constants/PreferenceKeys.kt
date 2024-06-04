@@ -147,15 +147,6 @@ enum class ScannerMatchCriteria {
     LEVEL_3, // Title, artists, albums
 }
 
-/**
- *
- */
-enum class ScannerImpl {
-    MEDIASTORE,
-    MEDIASTORE_FFPROBE,
-    FFPROBE,
-}
-
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
 val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
 val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")

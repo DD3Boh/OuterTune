@@ -40,7 +40,7 @@ data class Song @JvmOverloads constructor(
             entityColumn = "genreId"
         )
     )
-    val genre:List<GenreEntity>,
+    val genre: List<GenreEntity>? = null,
 ) : LocalItem() {
     override val id: String
         get() = song.id

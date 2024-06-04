@@ -573,6 +573,11 @@ interface DatabaseDao {
     @Query("UPDATE song SET inLibrary = :inLibrary WHERE id = :songId")
     fun inLibrary(songId: String, inLibrary: LocalDateTime?)
 
+    @Query("UPDATE song SET inLibrary = null WHERE localPath = null")
+    fun disableInvalidLocalSongs()
+    @Query("UPDATE song SET inLibrary = null, localPath = null WHERE id = :songId")
+    fun disableLocalSong(songId: String)
+
     @Query("SELECT COUNT(1) FROM related_song_map WHERE songId = :songId LIMIT 1")
     fun hasRelatedSongs(songId: String): Boolean
 
@@ -664,7 +669,7 @@ interface DatabaseDao {
                 )
             )
         }
-        mediaMetadata.genre.forEachIndexed { index, genre ->
+        mediaMetadata.genre?.forEachIndexed { index, genre ->
             val genreId = genreByName(genre.title)?.id ?: GenreEntity.generateGenreId()
             insert(
                 GenreEntity(

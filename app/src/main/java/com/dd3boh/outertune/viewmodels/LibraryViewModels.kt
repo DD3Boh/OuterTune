@@ -54,7 +54,9 @@ class LibrarySongsViewModel @Inject constructor(
     val allSongs = syncAllSongs(context, database, downloadUtil)
 
     private val scanPaths = context.dataStore[ScanPathsKey]?: DEFAULT_SCAN_PATH
-    val localSongDirectoryTree = refreshLocal(context, database, scanPaths.split('\n'))
+    private val excludedScanPaths = context.dataStore[ExcludedScanPathsKey]?: ""
+    val localSongDirectoryTree =
+        refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
 
     val inLocal = mutableStateOf(false)
 
@@ -73,7 +75,9 @@ class LibrarySongsViewModel @Inject constructor(
      * @return DirectoryTree
      */
     fun getLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
-        val directoryStructure = refreshLocal(context, database, scanPaths.split('\n')).value
+        val directoryStructure =
+            refreshLocal(database, scanPaths.split('\n'),
+                excludedScanPaths.split('\n')).value
         return MutableStateFlow(directoryStructure)
     }
 
