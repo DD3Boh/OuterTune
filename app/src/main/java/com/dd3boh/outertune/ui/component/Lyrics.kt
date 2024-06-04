@@ -283,7 +283,8 @@ fun Lyrics(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = textColor
                     )
                 }
                 IconButton(
@@ -299,7 +300,8 @@ fun Lyrics(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.MoreHoriz,
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = textColor
                     )
                 }
             }
