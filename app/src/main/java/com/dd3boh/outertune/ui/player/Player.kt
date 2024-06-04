@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.player
 
 import android.content.res.Configuration
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.text.format.Formatter
 import android.widget.Toast
@@ -64,6 +65,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -92,7 +95,9 @@ import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Player.STATE_READY
 import androidx.navigation.NavController
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DarkModeKey
@@ -112,12 +117,15 @@ import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.component.rememberBottomSheetState
 import com.dd3boh.outertune.ui.menu.PlayerMenu
 import com.dd3boh.outertune.ui.screens.settings.DarkMode
+import com.dd3boh.outertune.ui.theme.extractGradientColors
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -164,6 +172,31 @@ fun BottomSheetPlayer(
     }
     var sliderPosition by remember {
         mutableStateOf<Long?>(null)
+    }
+
+    var gradientColors by remember {
+        mutableStateOf<List<Color>>(emptyList())
+    }
+
+    LaunchedEffect(mediaMetadata) {
+        withContext(Dispatchers.IO) {
+            if (mediaMetadata?.isLocal == true) {
+                getLocalThumbnail(mediaMetadata?.localPath)?.extractGradientColors()?.let {
+                    gradientColors = it
+                }
+            } else {
+                val result = (ImageLoader(context).execute(
+                    ImageRequest.Builder(context)
+                        .data(mediaMetadata?.thumbnailUrl)
+                        .allowHardware(false)
+                        .build()
+                ).drawable as? BitmapDrawable)?.bitmap?.extractGradientColors()
+
+                result?.let {
+                    gradientColors = it
+                }
+            }
+        }
     }
 
     LaunchedEffect(playbackState) {
@@ -541,6 +574,12 @@ fun BottomSheetPlayer(
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.3f))
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(gradientColors))
+            )
         }
 
         when (LocalConfiguration.current.orientation) {
@@ -558,7 +597,7 @@ fun BottomSheetPlayer(
                             sliderPositionProvider = { sliderPosition },
                             modifier = Modifier
                                 .nestedScroll(state.preUpPostDownNestedScrollConnection)
-                                .clickable { showLyrics = !showLyrics  }
+                                .clickable { showLyrics = !showLyrics }
                         )
                     }
 
@@ -594,7 +633,7 @@ fun BottomSheetPlayer(
                             sliderPositionProvider = { sliderPosition },
                             modifier = Modifier
                                 .nestedScroll(state.preUpPostDownNestedScrollConnection)
-                                .clickable { showLyrics = !showLyrics  }
+                                .clickable { showLyrics = !showLyrics }
                         )
                     }
 
