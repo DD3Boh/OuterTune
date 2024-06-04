@@ -1,11 +1,13 @@
 package com.dd3boh.outertune.ui.screens.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Lyrics
@@ -28,6 +30,7 @@ import com.dd3boh.outertune.constants.DefaultOpenTabNewKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
 import com.dd3boh.outertune.constants.NewInterfaceKey
+import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PureBlackKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
@@ -43,11 +46,16 @@ fun AppearanceSettings(
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
     val (dynamicTheme, onDynamicThemeChange) = rememberPreference(DynamicThemeKey, defaultValue = true)
+    val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(key = PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
     val (darkMode, onDarkModeChange) = rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(DefaultOpenTabKey, defaultValue = NavigationTab.HOME)
     val (defaultOpenTabNew, onDefaultOpenTabNewChange) = rememberEnumPreference(DefaultOpenTabNewKey, defaultValue = NavigationTabNew.HOME)
     val (newInterfaceStyle, onNewInterfaceStyleChange) = rememberPreference(key = NewInterfaceKey, defaultValue = true)
+
+    val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
+        it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    }
 
     Column(
         Modifier
@@ -59,6 +67,20 @@ fun AppearanceSettings(
             icon = { Icon(Icons.Rounded.Palette, null) },
             checked = dynamicTheme,
             onCheckedChange = onDynamicThemeChange
+        )
+        EnumListPreference(
+            title = { Text(stringResource(R.string.player_background_style)) },
+            icon = { Icon(Icons.Rounded.BlurOn, null) },
+            selectedValue = playerBackground,
+            onValueSelected = onPlayerBackgroundChange,
+            valueText = {
+                when (it) {
+                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.player_background_default)
+                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.player_background_gradient)
+                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                }
+            },
+            values = availableBackgroundStyles
         )
         EnumListPreference(
             title = { Text(stringResource(R.string.dark_theme)) },
@@ -137,6 +159,10 @@ fun AppearanceSettings(
 
 enum class DarkMode {
     ON, OFF, AUTO
+}
+
+enum class PlayerBackgroundStyle {
+    DEFAULT, GRADIENT, BLUR
 }
 
 enum class NavigationTab {

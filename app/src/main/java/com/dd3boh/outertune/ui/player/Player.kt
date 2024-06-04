@@ -2,7 +2,6 @@ package com.dd3boh.outertune.ui.player
 
 import android.content.res.Configuration
 import android.graphics.drawable.BitmapDrawable
-import android.os.Build
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
@@ -101,6 +100,7 @@ import coil.request.ImageRequest
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DarkModeKey
+import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.QueuePeekHeight
 import com.dd3boh.outertune.constants.ShowLyricsKey
@@ -117,6 +117,7 @@ import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.component.rememberBottomSheetState
 import com.dd3boh.outertune.ui.menu.PlayerMenu
 import com.dd3boh.outertune.ui.screens.settings.DarkMode
+import com.dd3boh.outertune.ui.screens.settings.PlayerBackgroundStyle
 import com.dd3boh.outertune.ui.theme.extractGradientColors
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.makeTimeString
@@ -149,18 +150,22 @@ fun BottomSheetPlayer(
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
+    val playerBackground by rememberEnumPreference(key = PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
+
     val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val isSystemInDarkTheme = isSystemInDarkTheme()
     val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
 
-    val onBackgroundColor = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
-        MaterialTheme.colorScheme.secondary
-    else if (useDarkTheme)
-        MaterialTheme.colorScheme.onSurface
-    else
-        MaterialTheme.colorScheme.onPrimary
+    val onBackgroundColor = when (playerBackground) {
+        PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.secondary
+        else ->
+            if (useDarkTheme)
+                MaterialTheme.colorScheme.onSurface
+            else
+                MaterialTheme.colorScheme.onPrimary
+    }
 
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
@@ -179,6 +184,8 @@ fun BottomSheetPlayer(
     }
 
     LaunchedEffect(mediaMetadata) {
+        if (playerBackground != PlayerBackgroundStyle.GRADIENT) return@LaunchedEffect
+
         withContext(Dispatchers.IO) {
             if (mediaMetadata?.isLocal == true) {
                 getLocalThumbnail(mediaMetadata?.localPath)?.extractGradientColors()?.let {
@@ -546,7 +553,7 @@ fun BottomSheetPlayer(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (playerBackground == PlayerBackgroundStyle.BLUR) {
             if (mediaMetadata?.isLocal == true) {
                 mediaMetadata?.let {
                     AsyncLocalImage(
@@ -574,7 +581,7 @@ fun BottomSheetPlayer(
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.3f))
             )
-        } else {
+        } else if (playerBackground == PlayerBackgroundStyle.GRADIENT && gradientColors.size >= 2) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

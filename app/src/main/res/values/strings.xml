@@ -206,6 +206,10 @@
     <string name="settings_debug">Debug</string>
     <string name="appearance">Appearance</string>
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
+    <string name="player_background_style">Player background style</string>
+    <string name="player_background_default">Follow theme</string>
+    <string name="player_background_gradient">Gradient</string>
+    <string name="player_background_blur">Blur</string>
     <string name="dark_theme">Dark theme</string>
     <string name="dark_theme_on">On</string>
     <string name="dark_theme_off">Off</string>

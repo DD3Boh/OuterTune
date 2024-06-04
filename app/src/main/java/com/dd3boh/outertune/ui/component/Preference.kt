@@ -149,13 +149,14 @@ inline fun <reified T : Enum<T>> EnumListPreference(
     noinline valueText: @Composable (T) -> String,
     noinline onValueSelected: (T) -> Unit,
     isEnabled: Boolean = true,
+    values: List<T> = enumValues<T>().toList()
 ) {
     ListPreference(
         modifier = modifier,
         title = title,
         icon = icon,
         selectedValue = selectedValue,
-        values = enumValues<T>().toList(),
+        values = values,
         valueText = valueText,
         onValueSelected = onValueSelected,
         isEnabled = isEnabled
