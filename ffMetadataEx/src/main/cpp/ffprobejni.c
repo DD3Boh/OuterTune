@@ -131,7 +131,7 @@ Java_wah_mikooomich_ffMetadataEx_FFprobeWrapper_getFullAudioMetadata(JNIEnv* env
         // other stream data
         strcat(string, "\nduration: ");
         char duration[20];
-        sprintf(duration, "%lld", audio_stream->duration);
+        sprintf(duration, "%lld", format_context->duration);
         strcat(string, duration);
 
         strcat(string, "\nsampleRate: ");
