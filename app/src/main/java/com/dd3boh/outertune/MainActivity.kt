@@ -198,6 +198,11 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(DefaultThemeColor)
             }
 
+            val playerBackground by rememberEnumPreference(
+                key = PlayerBackgroundStyleKey,
+                defaultValue = PlayerBackgroundStyle.DEFAULT
+            )
+
             LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme) {
                 val playerConnection = playerConnection
                 if (!enableDynamicTheme || playerConnection == null) {
@@ -895,8 +900,8 @@ class MainActivity : ComponentActivity() {
                         )
 
                         LaunchedEffect(playerBottomSheetState.isExpanded) {
-                            setSystemBarAppearance(playerBottomSheetState.isExpanded
-                                    || useDarkTheme)
+                            setSystemBarAppearance((playerBottomSheetState.isExpanded
+                                    && playerBackground != PlayerBackgroundStyle.DEFAULT) || useDarkTheme)
                         }
 
                         NavigationBar(
