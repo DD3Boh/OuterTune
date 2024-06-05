@@ -115,5 +115,6 @@ fun SongItem.toMediaMetadata() = MediaMetadata(
             title = it.name
         )
     },
+    genre = null,
     setVideoId = setVideoId
 )
