@@ -39,6 +39,52 @@ android {
         buildConfig = true
     }
 
+// build variants and stuff
+    splits {
+        abi {
+            isEnable = true
+            reset()
+
+            // all common abis
+            // include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
+            isUniversalApk = false
+        }
+    }
+
+    flavorDimensions.add("abi")
+
+    productFlavors {
+        // universal
+        create("universal") {
+            isDefault = true
+            dimension = "abi"
+            ndk {
+                abiFilters.addAll(listOf("x86", "x86_64", "armeabi-v7a", "arm64-v8a"))
+            }
+        }
+        // arm64 only
+        create("arm64") {
+            dimension = "abi"
+            ndk {
+                abiFilters.add("arm64-v8a")
+            }
+        }
+        // x86_64 only
+        create("x86_64") {
+            dimension = "abi"
+            ndk {
+                abiFilters.add("x86_64")
+            }
+        }
+        // for uncommon, but non-obscure architectures
+        create("uncommon_abi") {
+            dimension = "abi"
+            ndk {
+                abiFilters.addAll(listOf("x86", "x86_64", "armeabi-v7a"))
+            }
+        }
+    }
+
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17

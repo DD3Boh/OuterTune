@@ -88,7 +88,14 @@ lint/outputs/
 lint/tmp/
 # lint/reports/
 
-.DS_Store
+# build outputs
 /app/release/
+/app/universal
+/app/arm64
+/app/uncommon_abi
+/app/x86_64
+
+# misc
+.DS_Store
 app/src/main/java/com/dd3boh/outertune/utils/scanners/jni/ffmpeg-android-maker
 app/src/main/java/com/dd3boh/outertune/utils/scanners/jni/src/
