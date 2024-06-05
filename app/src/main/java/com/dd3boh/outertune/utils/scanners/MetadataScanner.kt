@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.utils.scanners
 
 import com.dd3boh.outertune.db.entities.FormatEntity
+import com.dd3boh.outertune.models.SongTempData
 
 
 /**
@@ -22,7 +23,7 @@ interface MetadataScanner {
      * @param path Full file path
      * @param og Initial FormatEntity data to build upon
      */
-    fun getAllMetadata(path: String, og: FormatEntity): ExtraMetadataWrapper
+    fun getAllMetadata(path: String): SongTempData
 }
 
 /**

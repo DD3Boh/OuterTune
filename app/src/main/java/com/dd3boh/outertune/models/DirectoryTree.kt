@@ -2,7 +2,7 @@ package com.dd3boh.outertune.models
 
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.ui.utils.SCANNER_DEBUG
-import com.dd3boh.outertune.ui.utils.sdcardRoot
+import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import timber.log.Timber
 
 /**
@@ -38,9 +38,17 @@ class DirectoryTree(path: String) {
     }
 
     /**
-     * Instantiate a directory tree directly
+     * Instantiate a directory tree directly with songs
      */
     constructor(path: String, files: ArrayList<Song>) : this(path) {
+        this.files = files
+    }
+
+    /**
+     * Instantiate a directory tree directly with subdirectories and songs
+     */
+    constructor(path: String, subdirs: ArrayList<DirectoryTree>, files: ArrayList<Song>) : this(path) {
+        this.subdirs = subdirs
         this.files = files
     }
 
@@ -157,9 +165,64 @@ class DirectoryTree(path: String) {
      * All folders are recognized to be top level folders
      */
     fun toFlattenedTree(): DirectoryTree {
-        val result = DirectoryTree(sdcardRoot)
+        val result = DirectoryTree(STORAGE_ROOT)
         getSubdirsRecursive(this, result.subdirs)
         return result
+    }
+
+    /**
+     * Migrate emulated/0 path to "Internal" within the DirectoryTree.
+     * This operation makes these edits directly to this object.
+     * Calling this method on a tree that already has been migrated does nothing.
+     *
+     *
+     * Why is this even necessary? Android internal volume is stored under "storage/emulated/0",
+     * however for external volumes (like ext. sdcards), they are stored under "storage/<id>".
+     * Flatten this to make the UI require less pointless clicks.
+     *
+     * @return This object, after migrating
+     */
+    fun androidStorageWorkaround(): DirectoryTree {
+        var emulated: DirectoryTree? = null
+        var zero: DirectoryTree? = null
+
+        subdirs.forEach { subdir ->
+            if (subdir.currentDir == "emulated") {
+                emulated = subdir
+
+                subdir.subdirs.forEach {
+                    if (it.currentDir == "0") {
+                        zero = it
+                    }
+                }
+            }
+        }
+
+        // replace the emulated/0 path with "Internal"
+        if (emulated != null && zero != null) {
+            val newInternalStorage = DirectoryTree("Internal", zero!!.subdirs, zero!!.files)
+            subdirs = ArrayList(subdirs.filterNot { it.currentDir == "emulated"})
+           subdirs.add(newInternalStorage)
+        }
+
+        return this
+    }
+
+    /**
+     * Remove any single empty branches of the tree, aka. DirectoryTrees with no files,
+     * but only one subdirectory.
+     */
+    fun trimRoot(): DirectoryTree {
+        var pointer = this
+        while (pointer.subdirs.size == 1 && pointer.files.isEmpty()) {
+            pointer = pointer.subdirs[0]
+        }
+
+        this.currentDir = pointer.currentDir
+        this.files = pointer.files
+        this.subdirs = pointer.subdirs
+
+        return this
     }
 
     /**

@@ -9,6 +9,7 @@ import android.media.audiofx.AudioEffect
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Binder
+import android.widget.Toast
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
@@ -19,6 +20,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
+import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
@@ -30,6 +32,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
+import androidx.media3.datasource.cache.CacheWriter
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -58,6 +61,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
+import com.dd3boh.outertune.constants.MaxSongCacheSizeKey
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleShuffle
@@ -130,6 +134,8 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
+const val MAX_CONSECUTIVE_ERR = 5
+const val MIN_PLAYBACK_THRESHOLD = 0.3 // 0 <= MIN_PLAYBACK_THRESHOLD <= 1
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @AndroidEntryPoint
@@ -184,6 +190,8 @@ class MusicService : MediaLibraryService(),
 
     private var isAudioEffectSessionOpened = false
 
+    var consecutivePlaybackErr = 0
+
     override fun onCreate() {
         super.onCreate()
         setMediaNotificationProvider(
@@ -208,6 +216,57 @@ class MusicService : MediaLibraryService(),
             .build()
             .apply {
                 addListener(this@MusicService)
+
+                // skip on error
+                addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        super.onPlayerError(error)
+                        consecutivePlaybackErr ++
+
+                        Toast.makeText(
+                            this@MusicService,
+                            "Playback error: Could not resolve data: ${error.message} (${error.errorCode})",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        /**
+                         * Auto skip to the next media item on error.
+                         *
+                         * To prevent a "runaway diesel engine" scenario, force the user to take action after
+                         * too many errors come up too quickly. Pause to show player "stopped" state
+                         */
+                        val nextWindowIndex = player.nextMediaItemIndex
+                        if (consecutivePlaybackErr < MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
+                            player.seekTo(nextWindowIndex, C.TIME_UNSET)
+                            player.prepare()
+                            player.play()
+                        } else {
+                            player.pause()
+                            Toast.makeText(
+                                this@MusicService,
+                                "Playback stopped due to too many errors",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        // dismiss the errors after a cool down time
+                        CoroutineScope(Dispatchers.Main).launch {
+                            delay(1000)
+                            if (consecutivePlaybackErr > 0) {
+                                consecutivePlaybackErr --
+                            }
+                        }
+                    }
+
+                    // start playback again on seek
+                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        super.onMediaItemTransition(mediaItem, reason)
+                        if (reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
+                            player.prepare()
+                            player.play()
+                        }
+                    }
+                })
                 sleepTimer = SleepTimer(scope, this)
                 addListener(sleepTimer)
                 addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
@@ -585,6 +644,7 @@ class MusicService : MediaLibraryService(),
                             )
                         )
                     )
+                    .setCacheWriteDataSinkFactory(null) // write is handled externally
             )
             .setCacheWriteDataSinkFactory(null)
             .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
@@ -672,8 +732,29 @@ class MusicService : MediaLibraryService(),
             }
             scope.launch(Dispatchers.IO) { recoverSong(mediaId, playerResponse) }
 
+            // write to cache
             songUrlCache[mediaId] = format.url!! to playerResponse.streamingData!!.expiresInSeconds * 1000L
-            dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+            val resultDataSpec = dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+
+            if (dataStore[MaxSongCacheSizeKey] == 0) { // cache disabled
+                // null pref will use caching (default caching on)
+                return@Factory resultDataSpec
+            }
+
+            val cache = CacheDataSource.Factory()
+                .setCache(downloadCache)
+                .setUpstreamDataSourceFactory(
+                    CacheDataSource.Factory()
+                        .setCache(playerCache)
+                        .setUpstreamDataSourceFactory(
+                            DefaultDataSource.Factory(this)
+                        )
+                )
+                .setCacheWriteDataSinkFactory(null)
+                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+            CacheWriter(cache.createDataSource(), resultDataSpec, null, null).cache()
+
+            resultDataSpec
         }
     }
 
@@ -698,6 +779,15 @@ class MusicService : MediaLibraryService(),
 
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
+
+        // increment play count
+        if (playbackStats.totalPlayTimeMs / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD) {
+            CoroutineScope(Dispatchers.IO).launch {
+                database.incrementPlayCount(mediaItem.mediaId)
+            }
+        }
+
+        // total play time
         if (playbackStats.totalPlayTimeMs >= 30000 && !dataStore.get(PauseListenHistoryKey, false)) {
             database.query {
                 incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)

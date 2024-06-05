@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
+import coil.request.CachePolicy
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.YouTubeLocale
 import com.zionhuang.kugou.KuGou
@@ -84,15 +85,29 @@ class App : Application(), ImageLoaderFactory {
         }
     }
 
-    override fun newImageLoader() = ImageLoader.Builder(this)
+    override fun newImageLoader(): ImageLoader {
+        val cacheSize = dataStore[MaxImageCacheSizeKey]
+
+        // will crash app if you set to 0 after cache starts being used
+        if (cacheSize == 0) {
+            return ImageLoader.Builder(this)
+                .crossfade(true)
+                .respectCacheHeaders(false)
+                .allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                .diskCachePolicy(CachePolicy.DISABLED)
+                .build()
+        }
+
+        return ImageLoader.Builder(this)
         .crossfade(true)
         .respectCacheHeaders(false)
         .allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
         .diskCache(
             DiskCache.Builder()
                 .directory(cacheDir.resolve("coil"))
-                .maxSizeBytes((dataStore[MaxImageCacheSizeKey] ?: 512) * 1024 * 1024L)
+                .maxSizeBytes((cacheSize ?: 512) * 1024 * 1024L)
                 .build()
         )
         .build()
+    }
 }

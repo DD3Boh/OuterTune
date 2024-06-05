@@ -19,8 +19,10 @@ import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.models.DirectoryTree
+import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
+import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.refreshLocal
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,7 +53,10 @@ class LibrarySongsViewModel @Inject constructor(
 
     val allSongs = syncAllSongs(context, database, downloadUtil)
 
-    val localSongDirectoryTree = refreshLocal(context, database)
+    private val scanPaths = context.dataStore[ScanPathsKey]?: DEFAULT_SCAN_PATH
+    private val excludedScanPaths = context.dataStore[ExcludedScanPathsKey]?: ""
+    val localSongDirectoryTree =
+        refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
 
     val inLocal = mutableStateOf(false)
 
@@ -70,7 +75,9 @@ class LibrarySongsViewModel @Inject constructor(
      * @return DirectoryTree
      */
     fun getLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
-        val directoryStructure = refreshLocal(context, database).value
+        val directoryStructure =
+            refreshLocal(database, scanPaths.split('\n'),
+                excludedScanPaths.split('\n')).value
         return MutableStateFlow(directoryStructure)
     }
 

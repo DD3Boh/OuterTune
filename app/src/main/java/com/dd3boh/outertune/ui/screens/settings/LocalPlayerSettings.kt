@@ -5,7 +5,14 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Looper
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,26 +20,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,25 +63,33 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
 import com.dd3boh.outertune.constants.DevSettingsKey
+import com.dd3boh.outertune.constants.DialogCornerRadius
+import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LookupYtmArtistsKey
+import com.dd3boh.outertune.constants.ScanPathsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
-import com.dd3boh.outertune.constants.ScannerImpl
-import com.dd3boh.outertune.constants.ScannerTypeKey
+import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
+import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.utils.purgeCache
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.getScanner
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scannerActive
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scannerFinished
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scannerRequestCancel
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
+import com.dd3boh.outertune.utils.scanners.ScannerAbortException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -86,25 +107,40 @@ fun LocalPlayerSettings(
         else Manifest.permission.READ_EXTERNAL_STORAGE
 
     val coroutineScope = rememberCoroutineScope()
-    var isScannerActive by remember { mutableStateOf(false) }
-    var isScanFinished by remember { mutableStateOf(false) }
+
+    // scanner vars
+    val isScannerActive by scannerActive.collectAsState()
+    val isScanFinished by scannerActive.collectAsState()
+    var scannerFailure = false
     var mediaPermission by remember { mutableStateOf(true) }
 
-    val (scannerType, onScannerTypeChange) = rememberEnumPreference(
-        key = ScannerTypeKey,
-        defaultValue = ScannerImpl.MEDIASTORE_FFPROBE
-    )
+    /**
+     * True = include folders
+     * False = exclude folders
+     * Null = don't show dialog
+     */
+    var showAddFolderDialog: Boolean? by remember {
+        mutableStateOf(null)
+    }
+
+    // scanner prefs
     val (scannerSensitivity, onScannerSensitivityChange) = rememberEnumPreference(
         key = ScannerSensitivityKey,
         defaultValue = ScannerMatchCriteria.LEVEL_2
     )
     val (strictExtensions, onStrictExtensionsChange) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val (autoScan, onAutoScanChange) = rememberPreference(AutomaticScannerKey, defaultValue = true)
+    val (scanPaths, onScanPathsChange) = rememberPreference(ScanPathsKey, defaultValue = DEFAULT_SCAN_PATH)
+    val (excludedScanPaths, onExcludedScanPathsChange) = rememberPreference(ExcludedScanPathsKey, defaultValue = "")
 
     var fullRescan by remember { mutableStateOf(false) }
     val (lookupYtmArtists, onlookupYtmArtistsChange) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
 
-    var (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
+    // misc
+    val (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
+
+    // other vars
+    var tempScanPaths by remember { mutableStateOf("") }
 
     Column(
         Modifier
@@ -120,6 +156,181 @@ fun LocalPlayerSettings(
             onCheckedChange = onAutoScanChange
         )
 
+        // file path selector
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.scan_paths_title)) },
+            onClick = {
+                showAddFolderDialog = true
+            },
+        )
+
+        if (showAddFolderDialog != null) {
+            if (tempScanPaths.isEmpty()) {
+                tempScanPaths = if (showAddFolderDialog == true) scanPaths else excludedScanPaths
+            }
+
+            BasicAlertDialog(
+                onDismissRequest = {
+                    showAddFolderDialog = null
+                    tempScanPaths = ""
+                },
+                content = {
+                    Column(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(DialogCornerRadius))
+                            .padding(16.dp)
+                    ) {
+                        val dirPickerLauncher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.OpenDocumentTree()
+                        ) { uri ->
+                            if (uri?.path != null && !tempScanPaths.contains(uri.path!!)) {
+                                if (tempScanPaths.isBlank()) {
+                                    tempScanPaths = "${uri.path}\n"
+                                } else {
+                                    tempScanPaths += "${uri.path}\n"
+                                }
+                            }
+                        }
+
+                        // main content
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = stringResource(
+                                        if (showAddFolderDialog as Boolean) R.string.scan_paths_incl
+                                        else R.string.scan_paths_excl
+                                    ),
+                                    style = MaterialTheme.typography.titleLarge,
+                                )
+
+                                // switch between include and exclude
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Switch(
+                                        checked = showAddFolderDialog!!,
+                                        onCheckedChange = {
+                                            showAddFolderDialog = !showAddFolderDialog!!
+                                            tempScanPaths =
+                                                if (showAddFolderDialog == true) scanPaths else excludedScanPaths
+                                        },
+                                    )
+                                }
+                            }
+
+                            // folders list
+                            Column(
+                                modifier = Modifier
+                                    .padding(vertical = 12.dp)
+                                    .border(
+                                        2.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                        RoundedCornerShape(ThumbnailCornerRadius)
+                                    )
+                            ) {
+                                tempScanPaths.split('\n').forEach {
+                                    if (it.isNotBlank())
+                                        Row(modifier = Modifier
+                                            .padding(horizontal = 8.dp)
+                                            .clickable { }) {
+                                            Text(
+                                                // I hate this but I'll do it properly... eventually
+                                                text = if (it.substringAfter("tree/")
+                                                        .substringBefore(':') == "primary"
+                                                ) {
+                                                    "Internal Storage/${it.substringAfter(':')}"
+                                                } else {
+                                                    "External (${
+                                                        it.substringAfter("tree/").substringBefore(':')
+                                                    })/${it.substringAfter(':')}"
+                                                },
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .align(Alignment.CenterVertically)
+                                            )
+                                            IconButton(
+                                                onClick = { tempScanPaths = tempScanPaths.replace("$it\n", "") },
+                                                onLongClick = {}
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close,
+                                                    contentDescription = null,
+                                                )
+                                            }
+                                        }
+                                }
+                            }
+
+                            // add folder button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Button(onClick = { dirPickerLauncher.launch(null) }) {
+                                    Text(stringResource(R.string.scan_paths_add_folder))
+                                }
+
+                                Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                                    Icon(
+                                        Icons.Outlined.Info,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.padding(4.dp)
+                                    )
+
+                                    Text(
+                                        stringResource(R.string.scan_paths_tooltip),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // bottom options
+                        Row() {
+                            Row(modifier = Modifier.weight(1f)) {
+                                TextButton(
+                                    onClick = {
+                                        // reset to whitespace so not empty
+                                        tempScanPaths = if (showAddFolderDialog as Boolean) DEFAULT_SCAN_PATH else " "
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.reset))
+                                }
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    if (showAddFolderDialog as Boolean) {
+                                        onScanPathsChange(tempScanPaths)
+                                    } else {
+                                        onExcludedScanPathsChange(tempScanPaths)
+                                    }
+
+                                    showAddFolderDialog = null
+                                    tempScanPaths = ""
+                                }
+                            ) {
+                                Text(stringResource(android.R.string.ok))
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    showAddFolderDialog = null
+                                    tempScanPaths = ""
+                                }
+                            ) {
+                                Text(stringResource(android.R.string.cancel))
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+
 
         PreferenceGroupTitle(
             title = stringResource(R.string.manual_scanner_title)
@@ -134,10 +345,10 @@ fun LocalPlayerSettings(
 
         ) {
             Button(
-                enabled = !isScannerActive,
                 onClick = {
+                    // cancel button
                     if (isScannerActive) {
-                        return@Button
+                        scannerRequestCancel = true
                     }
 
                     // check permission
@@ -164,55 +375,112 @@ fun LocalPlayerSettings(
                         mediaPermission = true
                     }
 
-                    isScanFinished = false
-                    isScannerActive = true
+                    scannerFinished.value = false
+                    scannerActive.value = true
+                    scannerFailure = false
 
-                    Toast.makeText(
-                        context,
-                        "Starting full library scan this may take a while...",
-                        Toast.LENGTH_SHORT
-                    ).show()
                     coroutineScope.launch(Dispatchers.IO) {
                         val scanner = getScanner()
                         // full rescan
                         if (fullRescan) {
-                            val directoryStructure = scanner.scanLocal(context, database, scannerType).value
-                            scanner.syncDB(database, directoryStructure.toList(), scannerSensitivity, strictExtensions, true)
-                            unloadAdvancedScanner()
+                            try {
+                                val directoryStructure =
+                                    scanner.scanLocal(
+                                        database,
+                                        scanPaths.split('\n'),
+                                        excludedScanPaths.split('\n')
+                                    ).value
+                                scanner.syncDB(
+                                    database,
+                                    directoryStructure.toList(),
+                                    scannerSensitivity,
+                                    strictExtensions,
+                                    true
+                                )
 
-                            // start artist linking job
-                            if (lookupYtmArtists) {
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    scanner.localToRemoteArtist(database)
+                                // start artist linking job
+                                if (lookupYtmArtists) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        try {
+                                            scanner.localToRemoteArtist(database)
+                                        } catch (e: ScannerAbortException) {
+                                            Looper.prepare()
+                                            Toast.makeText(
+                                                context,
+                                                "Scanner (background task) failed: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
                                 }
+                            } catch (e: ScannerAbortException) {
+                                scannerFailure = true
+
+                                Looper.prepare()
+                                Toast.makeText(
+                                    context,
+                                    "Scanner failed: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } finally {
+                                unloadAdvancedScanner()
                             }
                         } else {
                             // quick scan
-                            val directoryStructure =  scanner.scanLocal(context, database, ScannerImpl.MEDIASTORE).value
-                            scanner.quickSync(
-                                database, directoryStructure.toList(), scannerSensitivity,
-                                strictExtensions, scannerType
-                            )
-                            unloadAdvancedScanner()
+                            try {
+                                val directoryStructure = scanner.scanLocal(
+                                    database,
+                                    scanPaths.split('\n'),
+                                    excludedScanPaths.split('\n'),
+                                    pathsOnly = true
+                                ).value
+                                scanner.quickSync(
+                                    database, directoryStructure.toList(), scannerSensitivity,
+                                    strictExtensions
+                                )
 
-                            // start artist linking job
-                            if (lookupYtmArtists) {
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    scanner.localToRemoteArtist(database)
+                                // start artist linking job
+                                if (lookupYtmArtists) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        try {
+                                            scanner.localToRemoteArtist(database)
+                                        } catch (e: ScannerAbortException) {
+                                            Looper.prepare()
+                                            Toast.makeText(
+                                                context,
+                                                "Scanner (background task) failed: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
                                 }
+                            } catch (e: ScannerAbortException) {
+                                scannerFailure = true
+
+                                Looper.prepare()
+                                Toast.makeText(
+                                    context,
+                                    "Scanner failed: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } finally {
+                                unloadAdvancedScanner()
                             }
                         }
 
                         purgeCache()
+                        cacheDirectoryTree(null)
 
-                        isScannerActive = false
-                        isScanFinished = true
+                        scannerActive.value = false
+                        scannerFinished.value = true
                     }
                 }
             ) {
                 Text(
                     text = if (isScannerActive) {
-                        "Scanning..."
+                        "Cancel"
+                    } else if (scannerFailure) {
+                        "An Error Occurred"
                     } else if (isScanFinished) {
                         "Scan complete"
                     } else if (!mediaPermission) {
@@ -298,21 +566,6 @@ fun LocalPlayerSettings(
             title = stringResource(R.string.scanner_settings_title)
         )
 
-        // scanner type
-        EnumListPreference(
-            title = { Text(stringResource(R.string.scanner_type_title)) },
-            icon = { Icon(Icons.Rounded.Speed, null) },
-            selectedValue = scannerType,
-            onValueSelected = onScannerTypeChange,
-            valueText = {
-                when (it) {
-                    ScannerImpl.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
-                    ScannerImpl.MEDIASTORE_FFPROBE -> stringResource(R.string.scanner_type_mediastore_ffprobe)
-                    ScannerImpl.FFPROBE -> stringResource(R.string.scanner_type_ffprobe)
-                }
-            }
-        )
-
         // scanner sensitivity
         EnumListPreference(
             title = { Text(stringResource(R.string.scanner_sensitivity_title)) },
@@ -369,7 +622,8 @@ fun LocalPlayerSettings(
                         Toast.LENGTH_SHORT
                     ).show()
                     coroutineScope.launch(Dispatchers.IO) {
-                        Timber.tag("Settings").d("Nuke database (MANUAL TRIGGERED) status:  ${database.nukeLocalData()}")
+                        Timber.tag("Settings")
+                            .d("Nuke database (MANUAL TRIGGERED) status:  ${database.nukeLocalData()}")
                     }
                 }
             )

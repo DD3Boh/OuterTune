@@ -27,7 +27,9 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.EventWithSong
 import com.dd3boh.outertune.db.entities.FormatEntity
+import com.dd3boh.outertune.db.entities.GenreEntity
 import com.dd3boh.outertune.db.entities.LyricsEntity
+import com.dd3boh.outertune.db.entities.PlayCountEntity
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSong
@@ -38,6 +40,7 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongAlbumMap
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
+import com.dd3boh.outertune.db.entities.SongGenreMap
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
@@ -45,9 +48,14 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.resize
 import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.PlaylistItem
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Dao
 interface DatabaseDao {
@@ -236,6 +244,14 @@ interface DatabaseDao {
     """
     )
     fun mostPlayedAlbums(fromTimeStamp: Long, limit: Int = 6): Flow<List<Album>>
+
+    @Query("SELECT sum(count) from playCount WHERE song = :songId")
+    fun getLifetimePlayCount(songId: String): Flow<Int>
+    @Query("SELECT sum(count) from playCount WHERE song = :songId AND year = :year")
+    fun getPlayCountByYear(songId: String, year: Int): Flow<Int>
+    @Query("SELECT count from playCount WHERE song = :songId AND year = :year AND month = :month")
+    fun getPlayCountByMonth(songId: String, year: Int, month: Int): Flow<Int>
+
 
     @Transaction
     @Query("SELECT * FROM song WHERE id = :songId")
@@ -533,8 +549,34 @@ interface DatabaseDao {
     @Query("UPDATE song SET totalPlayTime = totalPlayTime + :playTime WHERE id = :songId")
     fun incrementTotalPlayTime(songId: String, playTime: Long)
 
+    @Query("UPDATE playCount SET count = count + 1 WHERE song = :songId AND year = :year AND month = :month")
+    fun incrementPlayCount(songId: String, year: Int, month: Int)
+
+    /**
+     * Increment by one the play count with today's year and month.
+     */
+    @Transaction
+    fun incrementPlayCount(songId: String) {
+        val time = LocalDateTime.now().atOffset(ZoneOffset.UTC)
+        var oldCount: Int = -1
+        CoroutineScope(Dispatchers.IO).launch {
+            oldCount = getPlayCountByMonth(songId, time.year, time.monthValue).first()
+        }
+
+        if (oldCount < 0) {
+            insert(PlayCountEntity(songId, time.year, time.monthValue, 1))
+        } else {
+            incrementPlayCount(songId, time.year, time.monthValue)
+        }
+    }
+
     @Query("UPDATE song SET inLibrary = :inLibrary WHERE id = :songId")
     fun inLibrary(songId: String, inLibrary: LocalDateTime?)
+
+    @Query("UPDATE song SET inLibrary = null WHERE localPath = null")
+    fun disableInvalidLocalSongs()
+    @Query("UPDATE song SET inLibrary = null, localPath = null WHERE id = :songId")
+    fun disableLocalSong(songId: String)
 
     @Query("SELECT COUNT(1) FROM related_song_map WHERE songId = :songId LIMIT 1")
     fun hasRelatedSongs(songId: String): Boolean
@@ -558,6 +600,13 @@ interface DatabaseDao {
     @Query("SELECT * FROM artist WHERE name = :name")
     fun artistByName(name: String): ArtistEntity?
 
+    @Query("SELECT * FROM genre WHERE title = :name")
+    fun genreByName(name: String): GenreEntity?
+
+    @Transaction
+    @Query("SELECT * FROM genre WHERE title LIKE '%' || :query || '%' LIMIT :previewSize")
+    fun genreByAproxName(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<GenreEntity>>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(song: SongEntity): Long
 
@@ -571,6 +620,9 @@ interface DatabaseDao {
     fun insert(playlist: PlaylistEntity)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(genre: GenreEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: SongArtistMap)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -578,6 +630,9 @@ interface DatabaseDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: AlbumArtistMap)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(map: SongGenreMap)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: PlaylistSongMap)
@@ -590,6 +645,9 @@ interface DatabaseDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: RelatedSongMap)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(playCountEntity: PlayCountEntity): Long
 
     @Transaction
     fun insert(mediaMetadata: MediaMetadata, block: (SongEntity) -> SongEntity = { it }) {
@@ -608,6 +666,23 @@ interface DatabaseDao {
                     songId = mediaMetadata.id,
                     artistId = artistId,
                     position = index
+                )
+            )
+        }
+        mediaMetadata.genre?.forEachIndexed { index, genre ->
+            val genreId = genreByName(genre.title)?.id ?: GenreEntity.generateGenreId()
+            insert(
+                GenreEntity(
+                    id = genreId,
+                    title = genre.title,
+                    isLocal = genre.isLocal
+                )
+            )
+            insert(
+                SongGenreMap(
+                    songId = mediaMetadata.id,
+                    genreId = genreId,
+                    index = index
                 )
             )
         }
@@ -809,22 +884,27 @@ interface DatabaseDao {
     fun unlinkSongArtists(songID: String)
 
     @Transaction
-    @Query("DELETE FROM song WHERE isLocal IS NOT NULL")
+    @Query("DELETE FROM song WHERE isLocal = 1")
     fun nukeLocalSongs()
 
     @Transaction
-    @Query("DELETE FROM artist WHERE isLocal IS NOT NULL")
+    @Query("DELETE FROM artist WHERE isLocal = 1")
     fun nukeLocalArtists()
 
-//    @Transaction
-//    @Query("DELETE FROM album WHERE isLocal IS NOT NULL")
-//    fun nukeLocalAlbums()
+    @Transaction
+    @Query("DELETE FROM album WHERE isLocal = 1")
+    fun nukeLocalAlbums()
+
+    @Transaction
+    @Query("DELETE FROM genre WHERE isLocal = 1")
+    fun nukeLocalGenre()
 
     @Transaction
     fun nukeLocalData() {
         nukeLocalSongs()
         nukeLocalArtists()
-//        nukeLocalAlbums()
+        nukeLocalAlbums()
+        nukeLocalGenre()
     }
 
     @Query("SELECT * FROM playlist_song_map WHERE songId = :songId")

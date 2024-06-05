@@ -52,6 +52,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import android.Manifest
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -103,8 +104,10 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchResult
 import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
+import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
+import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
@@ -115,6 +118,7 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
+import com.dd3boh.outertune.utils.scanners.ScannerAbortException
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -231,14 +235,12 @@ class MainActivity : ComponentActivity() {
             }
 
             // auto scanner
-            val (scannerType) = rememberEnumPreference(
-                key = ScannerTypeKey,
-                defaultValue = ScannerImpl.MEDIASTORE
-            )
             val (scannerSensitivity) = rememberEnumPreference(
                 key = ScannerSensitivityKey,
                 defaultValue = ScannerMatchCriteria.LEVEL_2
             )
+            val (scanPaths) = rememberPreference(ScanPathsKey, defaultValue = DEFAULT_SCAN_PATH)
+            val (excludedScanPaths) = rememberPreference(ExcludedScanPathsKey, defaultValue = "")
             val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
             val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
             val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
@@ -249,21 +251,45 @@ class MainActivity : ComponentActivity() {
                         val scanner = LocalMediaScanner.getScanner()
 
                         // equivalent to (quick scan)
-                        val directoryStructure =
-                            scanner.scanLocal(this@MainActivity, database, ScannerImpl.MEDIASTORE).value
-                        scanner.quickSync(
-                            database, directoryStructure.toList(), scannerSensitivity,
-                            strictExtensions, scannerType
-                        )
-                        unloadAdvancedScanner()
+                        try {
+                            val directoryStructure = scanner.scanLocal(
+                                    database,
+                                    scanPaths.split('\n'),
+                                    excludedScanPaths.split('\n'),
+                                    pathsOnly = true
+                            ).value
+                            scanner.quickSync(
+                                database, directoryStructure.toList(), scannerSensitivity,
+                                strictExtensions,
+                            )
 
-                        // start artist linking job
-                        if (lookupYtmArtists) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                scanner.localToRemoteArtist(database)
+                            // start artist linking job
+                            if (lookupYtmArtists) {
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        scanner.localToRemoteArtist(database)
+                                    } catch (e: ScannerAbortException) {
+                                        Looper.prepare()
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Scanner (background task) failed: ${e.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
                             }
+                        } catch (e: ScannerAbortException) {
+                            Looper.prepare()
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Scanner failed: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            unloadAdvancedScanner()
                         }
                         purgeCache() // juuuust to be sure
+                        cacheDirectoryTree(null)
                     } else if (checkSelfPermission(mediaPermissionLevel) == PackageManager.PERMISSION_DENIED) {
                         // Request the permission using the permission launcher
                         permissionLauncher.launch(mediaPermissionLevel)
