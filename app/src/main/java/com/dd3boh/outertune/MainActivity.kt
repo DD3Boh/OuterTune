@@ -104,6 +104,7 @@ import com.dd3boh.outertune.ui.screens.search.OnlineSearchScreen
 import com.dd3boh.outertune.ui.screens.settings.*
 import com.dd3boh.outertune.ui.theme.*
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
@@ -197,6 +198,11 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(DefaultThemeColor)
             }
 
+            val playerBackground by rememberEnumPreference(
+                key = PlayerBackgroundStyleKey,
+                defaultValue = PlayerBackgroundStyle.DEFAULT
+            )
+
             LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme) {
                 val playerConnection = playerConnection
                 if (!enableDynamicTheme || playerConnection == null) {
@@ -206,13 +212,19 @@ class MainActivity : ComponentActivity() {
                 playerConnection.service.currentMediaMetadata.collectLatest { song ->
                     themeColor = if (song != null) {
                         withContext(Dispatchers.IO) {
-                            val result = imageLoader.execute(
-                                ImageRequest.Builder(this@MainActivity)
-                                    .data(song.thumbnailUrl)
-                                    .allowHardware(false) // pixel access is not supported on Config#HARDWARE bitmaps
-                                    .build()
-                            )
-                            (result.drawable as? BitmapDrawable)?.bitmap?.extractThemeColor() ?: DefaultThemeColor
+                            if (!song.isLocal) {
+                                val result = imageLoader.execute(
+                                    ImageRequest.Builder(this@MainActivity)
+                                        .data(song.thumbnailUrl)
+                                        .allowHardware(false) // pixel access is not supported on Config#HARDWARE bitmaps
+                                        .build()
+                                )
+                                (result.drawable as? BitmapDrawable)?.bitmap?.extractThemeColor()
+                                    ?: DefaultThemeColor
+                            } else {
+                                getLocalThumbnail(song.localPath)?.extractThemeColor()
+                                    ?: DefaultThemeColor
+                            }
                         }
                     } else DefaultThemeColor
                 }
@@ -886,6 +898,11 @@ class MainActivity : ComponentActivity() {
                             state = playerBottomSheetState,
                             navController = navController
                         )
+
+                        LaunchedEffect(playerBottomSheetState.isExpanded) {
+                            setSystemBarAppearance((playerBottomSheetState.isExpanded
+                                    && playerBackground != PlayerBackgroundStyle.DEFAULT) || useDarkTheme)
+                        }
 
                         NavigationBar(
                             modifier = Modifier

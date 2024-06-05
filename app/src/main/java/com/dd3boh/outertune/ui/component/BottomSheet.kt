@@ -61,6 +61,7 @@ fun BottomSheet(
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     onDismiss: (() -> Unit)? = null,
     collapsedContent: @Composable BoxScope.() -> Unit,
+    collapsedBackgroundColor: Color = Color.Transparent,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
@@ -97,7 +98,6 @@ fun BottomSheet(
                     topEnd = if (!state.isExpanded) 16.dp else 0.dp
                 )
             )
-            .background(backgroundColor)
     ) {
         if (!state.isCollapsed && !state.isDismissed) {
             BackHandler(onBack = state::collapseSoft)
@@ -109,7 +109,8 @@ fun BottomSheet(
                     .fillMaxSize()
                     .graphicsLayer {
                         alpha = ((state.progress - 0.25f) * 4).coerceIn(0f, 1f)
-                    },
+                    }
+                    .background(backgroundColor),
                 content = content
             )
         }
@@ -126,7 +127,8 @@ fun BottomSheet(
                         onClick = state::expandSoft
                     )
                     .fillMaxWidth()
-                    .height(state.collapsedBound),
+                    .height(state.collapsedBound)
+                    .background(collapsedBackgroundColor),
                 content = collapsedContent
             )
         }
@@ -158,7 +160,7 @@ class BottomSheetState(
     }
 
     val isExpanded by derivedStateOf {
-        value == animatable.upperBound
+        progress > 0.98f
     }
 
     val progress by derivedStateOf {

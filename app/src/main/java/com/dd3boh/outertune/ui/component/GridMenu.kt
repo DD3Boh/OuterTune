@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.media3.exoplayer.offline.Download
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.utils.makeTimeString
 
 val GridMenuItemHeight = 96.dp
 
@@ -160,6 +162,48 @@ fun LazyGridScope.DownloadGridMenu(
                 icon = Icons.Rounded.Download,
                 title = R.string.download,
                 onClick = onDownload
+            )
+        }
+    }
+}
+
+fun LazyGridScope.SleepTimerGridMenu(
+    modifier: Modifier = Modifier,
+    sleepTimerTimeLeft: Long,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    item {
+        Column(
+            modifier = modifier
+                .clip(ShapeDefaults.Large)
+                .height(GridMenuItemHeight)
+                .clickable(
+                    onClick = onClick
+                )
+                .padding(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center,
+                content = {
+                    Icon(
+                        imageVector = Icons.Rounded.Bedtime,
+                        contentDescription = null,
+                        modifier = Modifier.alpha(if (enabled) 1f else 0.5f)
+                    )
+                }
+            )
+            Text(
+                text = if (enabled) makeTimeString(sleepTimerTimeLeft) else stringResource(
+                    id = R.string.sleep_timer
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

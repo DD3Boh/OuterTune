@@ -12,13 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.palette.graphics.Palette
 import com.google.material.color.scheme.Scheme
 import com.google.material.color.score.Score
 
-val DefaultThemeColor = Color(0xFF4285F4)
+val DefaultThemeColor = Color(0xFFED5564)
 
 @Composable
 fun OuterTuneTheme(
@@ -33,8 +34,8 @@ fun OuterTuneTheme(
             if (darkTheme) dynamicDarkColorScheme(context).pureBlack(pureBlack)
             else dynamicLightColorScheme(context)
         } else {
-            if (darkTheme) Scheme.dark(DefaultThemeColor.toArgb()).toColorScheme().pureBlack(pureBlack)
-            else Scheme.light(DefaultThemeColor.toArgb()).toColorScheme()
+            if (darkTheme) Scheme.dark(themeColor.toArgb()).toColorScheme().pureBlack(pureBlack)
+            else Scheme.light(themeColor.toArgb()).toColorScheme()
         }
     }
 
@@ -53,6 +54,23 @@ fun Bitmap.extractThemeColor(): Color {
         .associate { it.rgb to it.population }
     val rankedColors = Score.score(colorsToPopulation)
     return Color(rankedColors.first())
+}
+
+fun Bitmap.extractGradientColors(): List<Color> {
+    val extractedColors = Palette.from(this)
+        .maximumColorCount(16)
+        .generate()
+        .swatches
+        .associate { it.rgb to it.population }
+
+    val orderedColors = Score.order(extractedColors)
+        .take(2)
+        .sortedByDescending { Color(it).luminance() }
+
+    return if (orderedColors.size >= 2)
+        listOf(Color(orderedColors[0]), Color(orderedColors[1]))
+    else
+        listOf(Color(0xFF595959), Color(0xFF0D0D0D))
 }
 
 fun Scheme.toColorScheme() = ColorScheme(
