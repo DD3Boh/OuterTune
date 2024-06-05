@@ -53,7 +53,7 @@ import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
-import com.zionhuang.music.ui.utils.ItemWrapper
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -115,7 +115,10 @@ fun LibrarySongsScreen(
         ) {
             if (selection) {
                 val count = wrappedSongs.count { it.isSelected }
-                Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                Text(
+                    text = "${count}/${wrappedSongs.size} selected",
+                    modifier = Modifier.weight(1f)
+                )
                 IconButton(
                     onClick = {
                         if (count == wrappedSongs.size) {
@@ -173,16 +176,6 @@ fun LibrarySongsScreen(
                 )
 
                 Spacer(Modifier.weight(1f))
-
-                IconButton(
-                    onClick = { selection = !selection },
-                    modifier = Modifier.padding(horizontal = 6.dp)
-                ) {
-                    Icon(
-                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                        contentDescription = null
-                    )
-                }
 
                 Text(
                     text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
@@ -288,13 +281,8 @@ fun LibrarySongsScreen(
                                             }
                                         },
                                         onLongClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
+                                            selection = true
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
                                     )
                                     .animateItemPlacement()

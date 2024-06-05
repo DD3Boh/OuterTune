@@ -82,7 +82,6 @@ fun AlbumMenu(
     originalAlbum: Album,
     navController: NavController,
     onDismiss: () -> Unit,
-    selectAction: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -307,12 +306,5 @@ fun AlbumMenu(
             context.startActivity(Intent.createChooser(intent, null))
         }
 
-        GridMenuItem(
-            icon = Icons.Rounded.SelectAll,
-            title = R.string.select
-        ) {
-            onDismiss()
-            selectAction()
-        }
     }
 }

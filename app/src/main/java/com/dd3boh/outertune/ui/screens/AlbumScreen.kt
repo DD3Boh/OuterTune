@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.Download
@@ -99,7 +98,7 @@ import com.dd3boh.outertune.ui.menu.SelectionSongMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.AlbumViewModel
-import com.zionhuang.music.ui.utils.ItemWrapper
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -298,7 +297,6 @@ fun AlbumScreen(
                                                 originalAlbum = Album(albumWithSongsLocal.album, albumWithSongsLocal.artists),
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss,
-                                                selectAction = { selection = true }
                                             )
                                         }
                                     }
@@ -371,7 +369,10 @@ fun AlbumScreen(
                 ) {
                     if (selection) {
                         val count = wrappedSongs?.count { it.isSelected }
-                        Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                        Text(
+                            text = "${count}/${wrappedSongs?.size} selected",
+                            modifier = Modifier.weight(1f)
+                        )
                         IconButton(
                             onClick = {
                                 if (count == wrappedSongs?.size) {
@@ -455,27 +456,26 @@ fun AlbumScreen(
                                     .fillMaxWidth()
                                     .combinedClickable(
                                         onClick = {
-                                            if (songWrapper.item.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = albumWithSongsLocal.album.title,
-                                                        items = albumWithSongsLocal.songs.map { it.toMediaItem() },
-                                                        startIndex = index,
-                                                        playlistId = albumWithSongsLocal.album.playlistId
+                                            if (!selection) {
+                                                if (songWrapper.item.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
+                                                } else {
+                                                    playerConnection.playQueue(
+                                                        ListQueue(
+                                                            title = albumWithSongsLocal.album.title,
+                                                            items = albumWithSongsLocal.songs.map { it.toMediaItem() },
+                                                            startIndex = index,
+                                                            playlistId = albumWithSongsLocal.album.playlistId
+                                                        )
                                                     )
-                                                )
+                                                }
+                                            } else {
+                                                songWrapper.isSelected = !songWrapper.isSelected
                                             }
                                         },
                                         onLongClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
+                                            selection = true
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
                                     )
                             )

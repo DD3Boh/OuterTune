@@ -120,20 +120,33 @@ inline fun ListItem(
     noinline subtitle: (@Composable RowScope.() -> Unit)? = null,
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
+    isSelected: Boolean? = false,
     isActive: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = if (isActive)
-            modifier
+        modifier = if (isActive) {
+            modifier // playing highlight
                 .height(ListItemHeight)
                 .padding(horizontal = 8.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(color = MaterialTheme.colorScheme.secondaryContainer)
-            else
-                modifier
-            .height(ListItemHeight)
-            .padding(horizontal = 8.dp)
+                .background(
+                    color = // selected active
+                    if (isSelected == true) MaterialTheme.colorScheme.primary.copy( alpha = 0.4f)
+                    else MaterialTheme.colorScheme.secondaryContainer
+                )
+            } else if (isSelected == true) {
+                modifier // inactive selected
+                    .height(ListItemHeight)
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(color = MaterialTheme.colorScheme.inversePrimary.copy( alpha = 0.4f))
+            }
+            else {
+                modifier // default
+                    .height(ListItemHeight)
+                    .padding(horizontal = 8.dp)
+        }
     ) {
         Box(
             modifier = Modifier.padding(6.dp),
@@ -173,6 +186,7 @@ fun ListItem(
     badges: @Composable RowScope.() -> Unit = {},
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
+    isSelected: Boolean? = false,
     isActive: Boolean = false,
     isLocalSong: Boolean? = null,
 ) = ListItem(
@@ -204,6 +218,7 @@ fun ListItem(
     thumbnailContent = thumbnailContent,
     trailingContent = trailingContent,
     modifier = modifier,
+    isSelected = isSelected,
     isActive = isActive
 )
 
@@ -420,6 +435,7 @@ fun SongListItem(
     },
     trailingContent = trailingContent,
     modifier = modifier,
+    isSelected = isSelected,
     isActive = isActive
 )
 @Composable
@@ -1055,6 +1071,7 @@ fun MediaMetadataListItem(
     mediaMetadata: MediaMetadata,
     modifier: Modifier,
     isActive: Boolean = false,
+    isSelected: Boolean? = false,
     isPlaying: Boolean = false,
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) = ListItem(
@@ -1098,6 +1115,7 @@ fun MediaMetadataListItem(
     },
     trailingContent = trailingContent,
     modifier = modifier,
+    isSelected = isSelected,
     isActive = isActive,
     isLocalSong = mediaMetadata.isLocal
 )

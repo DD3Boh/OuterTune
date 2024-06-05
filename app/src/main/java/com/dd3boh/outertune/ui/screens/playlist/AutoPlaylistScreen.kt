@@ -103,7 +103,7 @@ import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
-import com.zionhuang.music.ui.utils.ItemWrapper
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -433,12 +433,15 @@ fun AutoPlaylistScreen(
                     ) {
                         if (selection) {
                             val count = wrappedSongs?.count { it.isSelected }
-                            Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                            Text(
+                                text = "${count}/${wrappedSongs.size} selected",
+                                modifier = Modifier.weight(1f)
+                            )
                             IconButton(
                                 onClick = {
                                     if (count == wrappedSongs?.size) {
                                         wrappedSongs?.forEach { it.isSelected = false }
-                                    }else {
+                                    } else {
                                         wrappedSongs?.forEach { it.isSelected = true }
                                     }
                                 },
@@ -489,16 +492,6 @@ fun AutoPlaylistScreen(
                                     }
                                 }
                             )
-
-                            IconButton(
-                                onClick = { selection = !selection },
-                                modifier = Modifier.padding(horizontal = 6.dp)
-                            ) {
-                                Icon(
-                                    if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                    contentDescription = null
-                                )
-                            }
                         }
                         Spacer(Modifier.weight(1f))
 
@@ -576,14 +569,8 @@ fun AutoPlaylistScreen(
                                         }
                                     },
                                     onLongClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = songWrapper.item,
-                                                playlistBrowseId = playlist.browseId,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
+                                        selection = true
+                                        songWrapper.isSelected = !songWrapper.isSelected
                                     }
                                 )
                         )

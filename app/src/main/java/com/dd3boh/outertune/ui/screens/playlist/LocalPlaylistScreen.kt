@@ -119,7 +119,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
 import com.dd3boh.outertune.ui.menu.SelectionSongMenu
-import com.zionhuang.music.ui.utils.ItemWrapper
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -653,7 +653,10 @@ fun LocalPlaylistScreen(
 
                             if (selection) {
                                 val count = wrappedSongs.count { it.isSelected }
-                                Text(text = "$count elements selected", modifier = Modifier.weight(1f))
+                                Text(
+                                    text = "${count}/${wrappedSongs.size} selected",
+                                    modifier = Modifier.weight(1f)
+                                )
                                 IconButton(
                                     onClick = {
                                         if (count == wrappedSongs.size) {
@@ -718,17 +721,6 @@ fun LocalPlaylistScreen(
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
-
-                                IconButton(
-                                    onClick = { selection = !selection },
-                                    modifier = Modifier.padding(horizontal = 6.dp)
-                                ) {
-                                    Icon(
-                                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                        contentDescription = null
-                                    )
-                                }
-
 
                                 if (editable) {
                                     IconButton(
@@ -829,15 +821,8 @@ fun LocalPlaylistScreen(
                                             }
                                         },
                                         onLongClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item.song,
-                                                    playlistSong = songWrapper.item,
-                                                    playlistBrowseId = playlist?.playlist?.browseId,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
+                                            selection = true
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
                                     )
                             )
