@@ -24,13 +24,17 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
@@ -51,9 +55,10 @@ import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
+import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.ui.component.AutoPlaylistGridItem
 import com.dd3boh.outertune.ui.component.AutoPlaylistListItem
-import com.dd3boh.outertune.ui.component.ChipsRow
+import com.dd3boh.outertune.ui.component.ChipsLazyRow
 import com.dd3boh.outertune.ui.component.LibraryAlbumGridItem
 import com.dd3boh.outertune.ui.component.LibraryAlbumListItem
 import com.dd3boh.outertune.ui.component.LibraryArtistGridItem
@@ -65,6 +70,7 @@ import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -102,23 +108,66 @@ fun LibraryScreen(
         LibraryFilter.ALL -> ""
     }
 
+    val defaultFilter = listOf(
+        LibraryFilter.ALBUMS to stringResource(R.string.albums),
+        LibraryFilter.ARTISTS to stringResource(R.string.artists),
+        LibraryFilter.PLAYLISTS to stringResource(R.string.playlists),
+        LibraryFilter.SONGS to stringResource(R.string.songs),
+    )
+
+    val chips = remember { SnapshotStateList<Pair<LibraryFilter, String>>() }
+
+    LaunchedEffect(Unit) {
+        if (filter == LibraryFilter.ALL)
+            chips.addAll(defaultFilter)
+        else
+            chips.add(filter to filterString)
+    }
+
+    // Update the filters list in a proper way so that the animations of the LazyRow can work.
+    LaunchedEffect(filter) {
+        val filterIndex = defaultFilter.indexOf(defaultFilter.find { it.first == filter })
+        val currentPairIndex = if (chips.size > 0) defaultFilter.indexOf(chips[0]) else -1
+        val currentPair = if (chips.size > 0) chips[0] else null
+
+        if (filter == LibraryFilter.ALL) {
+            defaultFilter.reversed().fastForEachIndexed { index, it ->
+                val curFilterIndex = defaultFilter.indexOf(it)
+                if (!chips.contains(it)) {
+                    chips.add(0, it)
+                    if (currentPairIndex > curFilterIndex) delay(100)
+                    else {
+                        currentPair?.let {
+                            delay(2)
+                            chips.move(chips.indexOf(it), 0)
+                        }
+                        delay(80 + (index * 30).toLong())
+                    }
+                }
+            }
+        } else {
+            chips.filter { it.first != filter }
+                .onEachIndexed { index, it ->
+                    if (chips.contains(it)) {
+                        chips.remove(it)
+                        if (index > filterIndex) delay(150 + 30 * index.toLong())
+                        else delay(80)
+                    }
+                }
+        }
+    }
+
     val filterContent = @Composable {
         Row {
-            ChipsRow(
-                chips =
-                    if (filter == LibraryFilter.ALL)
-                        listOf(
-                            LibraryFilter.ALBUMS to stringResource(R.string.albums),
-                            LibraryFilter.ARTISTS to stringResource(R.string.artists),
-                            LibraryFilter.PLAYLISTS to stringResource(R.string.playlists),
-                            LibraryFilter.SONGS to stringResource(R.string.songs),
-                        )
-                    else
-                        listOf(
-                            filter to filterString
-                        ),
+            ChipsLazyRow(
+                chips = chips,
                 currentValue = filter,
-                onValueUpdate = { filter = if (filter == it) LibraryFilter.ALL else it },
+                onValueUpdate = {
+                    filter = if (filter == LibraryFilter.ALL)
+                        it
+                    else
+                        LibraryFilter.ALL
+                },
                 modifier = Modifier.weight(1f)
             )
 
