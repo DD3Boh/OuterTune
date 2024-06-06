@@ -395,7 +395,7 @@ fun LocalPlayerSettings(
                                     directoryStructure.toList(),
                                     scannerSensitivity,
                                     strictExtensions,
-                                    true
+                                    refreshExisting = true,
                                 )
 
                                 // start artist linking job

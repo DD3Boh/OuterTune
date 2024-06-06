@@ -73,29 +73,6 @@ data class SongEntity(
             }
     }
 
-    /**
-     * Creates a copy of this song with the same ID, but properties of the new one
-     *
-     * @param s New song
-     */
-    fun getNewSong(s: SongEntity) = SongEntity(
-            id,
-            s.title,
-            s.duration,
-            s.thumbnailUrl,
-            s.albumId,
-            s.albumName,
-            s.year,
-            s.date,
-            s.dateModified,
-            s.liked,
-            s.likedDate,
-            s.totalPlayTime,
-            s.inLibrary,
-            s.isLocal,
-            s.localPath,
-        )
-
     companion object {
         fun generateSongId() = "LA" + RandomStringUtils.random(8, true, false)
     }
