@@ -49,6 +49,7 @@ class LocalMediaScanner {
             val testPlayer = MediaPlayer()
             testPlayer.setDataSource(path)
             testPlayer.prepare()
+            testPlayer.release()
 
             // decide which scanner to use
             val scanner = getAdvancedScanner()
@@ -422,7 +423,7 @@ class LocalMediaScanner {
             }
 
             // we handle disabling songs here instead
-            disableSongs(finalSongs, database)
+            disableSongs(newSongs, database)
         }
         Timber.tag(TAG).d("------------ SYNC: Finished Quick (additive delta) Library Sync ------------")
     }
