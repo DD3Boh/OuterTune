@@ -109,8 +109,9 @@ import com.dd3boh.outertune.constants.QueuePeekHeight
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.extensions.toggleRepeatMode
-import com.dd3boh.outertune.extensions.toggleShuffleMode
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.isShuffleEnabled
+import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.ui.component.AsyncLocalImage
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
@@ -477,7 +478,7 @@ fun BottomSheetPlayer(
                     .fillMaxWidth()
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
-                val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
+                val shuffleModeEnabled by isShuffleEnabled.collectAsState()
 
                 Box(modifier = Modifier.weight(1f)) {
                     ResizableIconButton(
@@ -488,7 +489,7 @@ fun BottomSheetPlayer(
                             .align(Alignment.Center)
                             .alpha(if (shuffleModeEnabled) 1f else 0.5f),
                         color = onBackgroundColor,
-                        onClick = playerConnection.player::toggleShuffleMode
+                        onClick = { playerConnection.triggerShuffle() }
                     )
                 }
 

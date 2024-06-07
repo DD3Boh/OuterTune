@@ -171,7 +171,7 @@ fun ArtistSongsScreen(
                                                 CoroutineScope(Dispatchers.Main).launch {
                                                     playerConnection.playQueue(
                                                         ListQueue(
-                                                            title = context.getString(R.string.queue_all_songs),
+                                                            title = artist?.artist?.name,
                                                             items = songs.map { it.toMediaItem() },
                                                             startIndex = index,
                                                             playlistId = playlistId

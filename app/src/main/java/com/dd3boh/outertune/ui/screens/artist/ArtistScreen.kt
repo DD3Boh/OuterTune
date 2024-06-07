@@ -185,7 +185,10 @@ fun ArtistScreen(
                             artistPage.artist.shuffleEndpoint?.let { shuffleEndpoint ->
                                 Button(
                                     onClick = {
-                                        playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(shuffleEndpoint),
+                                            title = artistPage.artist.title
+                                        )
                                     },
                                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                     modifier = Modifier.weight(1f)
@@ -205,7 +208,10 @@ fun ArtistScreen(
                             artistPage.artist.radioEndpoint?.let { radioEndpoint ->
                                 OutlinedButton(
                                     onClick = {
-                                        playerConnection.playQueue(YouTubeQueue(radioEndpoint))
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(radioEndpoint),
+                                            title = "Radio: ${artistPage.artist.title}"
+                                        )
                                     },
                                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                     modifier = Modifier.weight(1f)
@@ -384,7 +390,8 @@ fun ArtistScreen(
                                                             YouTubeQueue(
                                                                 WatchEndpoint(videoId = item.id),
                                                                 item.toMediaMetadata()
-                                                            )
+                                                            ),
+                                                            title = artistPage.artist.title
                                                         )
 
                                                         is AlbumItem -> navController.navigate("album/${item.id}")

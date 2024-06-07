@@ -3,6 +3,7 @@ package com.dd3boh.outertune.ui.player
 import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,13 +23,11 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.CheckBox
 import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -36,14 +35,14 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -64,21 +63,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Timeline
-import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
-import com.dd3boh.outertune.extensions.toggleShuffleMode
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.isShuffleEnabled
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.LocalMenuState
@@ -86,6 +83,7 @@ import com.dd3boh.outertune.ui.component.MediaMetadataListItem
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
@@ -152,15 +150,16 @@ fun Queue(
                 mutableQueueWindows.move(from.index, to.index)
             },
             onDragEnd = { fromIndex, toIndex ->
-                if (!playerConnection.player.shuffleModeEnabled) {
-                    playerConnection.player.moveMediaItem(fromIndex, toIndex)
-                } else {
-                    playerConnection.player.setShuffleOrder(
-                        DefaultShuffleOrder(
-                            queueWindows.map { it.firstPeriodIndex }.toMutableList().move(fromIndex, toIndex).toIntArray(),
-                            System.currentTimeMillis()
-                        )
-                    )
+                val pos = playerConnection.player.currentPosition
+                val newQueuePos = queueBoard.move(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
+                queueBoard.setCurrQueue(playerConnection, autoSeek = false)
+                queueBoard.getCurrentQueue()?.let {
+                    if (newQueuePos != null) {
+                        try {
+                            playerConnection.player.seekTo(newQueuePos, pos)
+                        } catch (e: Exception) {
+                        }
+                    }
                 }
             }
         )
@@ -402,14 +401,70 @@ fun Queue(
                         )
                     }
                 } else {
-                    // queue title
-                    Text(
-                        text = queueTitle.orEmpty(),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
+                    // queue title and multiqueue
+                    var expand by remember { mutableStateOf(false) }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp))
+                            .padding(2.dp)
+                            .weight(1f)
+                            .clickable { expand = !expand }
+                    ) {
+                        Text(
+                            text = queueTitle.orEmpty(),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                        )
+    
+                        IconButton(
+                            onClick = {
+                                expand = !expand
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (expand) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                contentDescription =  null,
+                            )
+                        }
+    
+                        DropdownMenu(
+                            expanded = expand,
+                            onDismissRequest = { expand = false },
+                            modifier = Modifier.weight(1f) // how tf do i make this take up whole length? or should I?
+                        ) {
+                            var queueNum = 0 // used for cosmetic purposes only
+                            // list of queues you can switch to
+                            queueBoard.getAllQueues().forEach {
+                                queueNum ++
+                                DropdownMenuItem(
+                                    text = { Text("$queueNum . ${it.title}") },
+                                    onClick = {
+                                      // switch to this queue
+                                        queueBoard.setCurrQueue(it, playerConnection.player)
+                                        expand = false
+                                    },
+                                    leadingIcon = {
+                                        IconButton(
+                                            onClick = {
+                                                queueBoard.deleteQueue(it)
+                                                queueBoard.setCurrQueue(playerConnection)
+                                                expand = false
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription =  null,
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
 
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -429,7 +484,7 @@ fun Queue(
             }
         }
 
-        val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
+        val shuffleModeEnabled by isShuffleEnabled.collectAsState()
 
         Box(
             modifier = Modifier
@@ -456,10 +511,10 @@ fun Queue(
                 onClick = {
                     coroutineScope.launch {
                         reorderableState.listState.animateScrollToItem(
-                            if (playerConnection.player.shuffleModeEnabled) playerConnection.player.currentMediaItemIndex else 0
+                            if (shuffleModeEnabled) playerConnection.player.currentMediaItemIndex else 0
                         )
                     }.invokeOnCompletion {
-                        playerConnection.player.toggleShuffleMode()
+                        playerConnection.triggerShuffle()
                     }
                 }
             ) {

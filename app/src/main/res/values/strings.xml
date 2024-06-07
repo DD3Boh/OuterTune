@@ -197,7 +197,7 @@
 
     <!-- Queue Title -->
     <string name="queue_all_songs">All songs</string>
-    <string name="queue_searched_songs">Searched songs</string>
+    <string name="queue_searched_songs">Search: </string>
 
     <!-- Notification name -->
     <string name="music_player">Music Player</string>

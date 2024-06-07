@@ -293,7 +293,7 @@ fun LibrarySongsFolderScreen(
                                             } else {
                                                 playerConnection.playQueue(
                                                     ListQueue(
-                                                        title = context.getString(R.string.queue_all_songs),
+                                                        title = currDir.currentDir,
                                                         // I surely hope this applies to all in this folder...
                                                         items = currDir
                                                             .toList()
@@ -326,7 +326,7 @@ fun LibrarySongsFolderScreen(
             onClick = {
                 playerConnection.playQueue(
                     ListQueue(
-                        title = context.getString(R.string.queue_all_songs),
+                        title = currDir.currentDir,
                         items = currDir.toList().shuffled().map { it.toMediaItem() }
                     )
                 )
