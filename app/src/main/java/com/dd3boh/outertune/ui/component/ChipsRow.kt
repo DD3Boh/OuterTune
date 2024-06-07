@@ -57,6 +57,7 @@ fun <E> ChipsLazyRow(
     currentValue: E,
     onValueUpdate: (E) -> Unit,
     modifier: Modifier = Modifier,
+    selected: ((E) -> Boolean)? = null,
 ) {
     val tween: FiniteAnimationSpec<IntOffset> = tween(
         durationMillis = 200,
@@ -79,7 +80,7 @@ fun <E> ChipsLazyRow(
         ) {(value, label) ->
             FilterChip(
                 label = { Text(label) },
-                selected = currentValue == value,
+                selected = selected?.let { it(value) } ?: (currentValue == value),
                 colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.background),
                 onClick = { onValueUpdate(value) },
                 modifier = Modifier.animateItemPlacement(tween)

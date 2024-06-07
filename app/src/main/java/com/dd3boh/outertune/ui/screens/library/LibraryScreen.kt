@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -117,6 +118,10 @@ fun LibraryScreen(
 
     val chips = remember { SnapshotStateList<Pair<LibraryFilter, String>>() }
 
+    var filterSelected by remember {
+        mutableStateOf(filter)
+    }
+
     LaunchedEffect(Unit) {
         if (filter == LibraryFilter.ALL)
             chips.addAll(defaultFilter)
@@ -145,7 +150,10 @@ fun LibraryScreen(
                     }
                 }
             }
+            delay(100)
+            filterSelected = LibraryFilter.ALL
         } else {
+            filterSelected = filter
             chips.filter { it.first != filter }
                 .onEachIndexed { index, it ->
                     if (chips.contains(it)) {
@@ -168,7 +176,8 @@ fun LibraryScreen(
                     else
                         LibraryFilter.ALL
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                selected = { it == filterSelected }
             )
 
             if (filter != LibraryFilter.SONGS) {
