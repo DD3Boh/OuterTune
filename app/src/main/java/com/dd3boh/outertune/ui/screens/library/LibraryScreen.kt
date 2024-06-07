@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens.library
 
+import android.provider.Settings
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
@@ -80,6 +82,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val menuState = LocalMenuState.current
+    val context = LocalContext.current
 
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
@@ -129,6 +132,13 @@ fun LibraryScreen(
             chips.add(filter to filterString)
     }
 
+    val animatorDurationScale = Settings.Global.getFloat(context.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE, 1.0f).toLong()
+
+    suspend fun animationBasedDelay(value: Long) {
+        delay(value * animatorDurationScale)
+    }
+
     // Update the filters list in a proper way so that the animations of the LazyRow can work.
     LaunchedEffect(filter) {
         val filterIndex = defaultFilter.indexOf(defaultFilter.find { it.first == filter })
@@ -140,17 +150,17 @@ fun LibraryScreen(
                 val curFilterIndex = defaultFilter.indexOf(it)
                 if (!chips.contains(it)) {
                     chips.add(0, it)
-                    if (currentPairIndex > curFilterIndex) delay(100)
+                    if (currentPairIndex > curFilterIndex) animationBasedDelay(100)
                     else {
                         currentPair?.let {
-                            delay(2)
+                            animationBasedDelay(2)
                             chips.move(chips.indexOf(it), 0)
                         }
-                        delay(80 + (index * 30).toLong())
+                        animationBasedDelay(80 + (index * 30).toLong())
                     }
                 }
             }
-            delay(100)
+            animationBasedDelay(100)
             filterSelected = LibraryFilter.ALL
         } else {
             filterSelected = filter
@@ -158,8 +168,8 @@ fun LibraryScreen(
                 .onEachIndexed { index, it ->
                     if (chips.contains(it)) {
                         chips.remove(it)
-                        if (index > filterIndex) delay(150 + 30 * index.toLong())
-                        else delay(80)
+                        if (index > filterIndex) animationBasedDelay(150 + 30 * index.toLong())
+                        else animationBasedDelay(80)
                     }
                 }
         }
