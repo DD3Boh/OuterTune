@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Bottom navigation -->
     <string name="home">Główna</string>
@@ -5,7 +6,6 @@
     <string name="artists">Wykonawcy</string>
     <string name="albums">Albumy</string>
     <string name="playlists">Playlisty</string>
-
     <!-- Top bar -->
     <plurals name="n_selected">
         <item quantity="one">%d zaznaczony</item>
@@ -13,7 +13,6 @@
         <item quantity="many">%d zaznaczonych</item>
         <item quantity="other">%d zaznaczonych</item>
     </plurals>
-
     <!-- Home -->
     <string name="history">Historia</string>
     <string name="stats">Statystyki</string>
@@ -22,18 +21,15 @@
     <string name="quick_picks">Szybki wybór</string>
     <string name="quick_picks_empty">Słuchaj utworów, aby wygenerować szybkie wybory</string>
     <string name="new_release_albums">Nowo wydane albumy</string>
-
     <!-- History -->
     <string name="today">Dzisiaj</string>
     <string name="yesterday">Wczoraj</string>
     <string name="this_week">Ten tydzień</string>
     <string name="last_week">Ostatni tydzień</string>
-
     <!-- Stats -->
     <string name="most_played_songs">Najczęściej słuchane utwory</string>
     <string name="most_played_artists">Najczęściej słuchani wykonawcy</string>
     <string name="most_played_albums">Najczęściej słuchane albumy</string>
-
     <!-- Search -->
     <string name="search">Szukaj</string>
     <string name="search_yt_music">Szukaj w YouTube Music…</string>
@@ -51,21 +47,17 @@
     <string name="filter_featured_playlists">Polecane playlisty</string>
     <string name="filter_bookmarked">Ulubione</string>
     <string name="no_results_found">Brak wyników</string>
-
     <!-- Artist screen -->
     <string name="from_your_library">Z twojej biblioteki</string>
-
     <!-- Playlist -->
     <string name="liked_songs">Polubione utwory</string>
     <string name="downloaded_songs">Pobrane utwory</string>
     <string name="playlist_is_empty">Playlista jest pusta</string>
-
     <!-- Button -->
     <string name="retry">Spróbuj ponownie</string>
     <string name="radio">Radio</string>
     <string name="shuffle">Losowo</string>
     <string name="reset">Reset</string>
-
     <!-- Menu -->
     <string name="details">Szczegóły</string>
     <string name="edit">Edytuj</string>
@@ -88,8 +80,7 @@
     <string name="remove_from_history">Usuń z historii</string>
     <string name="search_online">Szukaj online</string>
     <string name="sync">Synchronizuj</string>
-    <string name="advanced">Advanced</string>
-
+    <string name="advanced">Zaawansowany</string>
     <!-- Sort menu -->
     <string name="sort_by_create_date">Data dodania</string>
     <string name="sort_by_name">Nazwa</string>
@@ -99,7 +90,6 @@
     <string name="sort_by_length">Długość</string>
     <string name="sort_by_play_time">Długość utworu</string>
     <string name="sort_by_custom">Niestandardowa kolejność</string>
-
     <!-- Dialog -->
     <string name="media_id">ID media</string>
     <string name="mime_type">Typ MIME</string>
@@ -111,27 +101,22 @@
     <string name="file_size">Rozmiar pliku</string>
     <string name="unknown">Nieznane</string>
     <string name="copied">Skopiowano do schowka</string>
-
     <string name="edit_lyrics">Edytuj tekst</string>
     <string name="search_lyrics">Szukaj tekstu</string>
-
     <string name="edit_song">Edytuj utwór</string>
     <string name="song_title">Tytuł utworu</string>
     <string name="song_artists">Wykonawcy utworu</string>
     <string name="error_song_title_empty">Tytuł utworu nie może być pusty.</string>
     <string name="error_song_artist_empty">Wykonawca utworu nie może być pusty.</string>
     <string name="save">Zapisz</string>
-
     <string name="choose_playlist">Wybierz playlistę</string>
     <string name="edit_playlist">Edytuj playlistę</string>
     <string name="create_playlist">Utwórz playlistę</string>
     <string name="playlist_name">Nazwa playlisty</string>
     <string name="error_playlist_name_empty">Nazwa playlisty nie może być pusta.</string>
-
     <string name="edit_artist">Edytuj wykonawcę</string>
     <string name="artist_name">Nazwa wykonawcy</string>
     <string name="error_artist_name_empty">Nazwa wykonawcy nie może być pusta.</string>
-
     <!-- Noun -->
     <plurals name="n_song">
         <item quantity="one">%d utwór</item>
@@ -175,13 +160,11 @@
         <item quantity="many">%d lat</item>
         <item quantity="other">%d lat</item>
     </plurals>
-
     <!-- Snackbar -->
     <string name="playlist_imported">Playlista zaimportowana</string>
     <string name="removed_song_from_playlist">Usunięto \"%s\" z playlisty</string>
     <string name="playlist_synced">Playlista zsynchronizowana</string>
     <string name="undo">Cofnij</string>
-
     <!-- Player -->
     <string name="lyrics_not_found">Nie znaleziono tekstu</string>
     <string name="sleep_timer">Wyłącznik czasowy</string>
@@ -196,23 +179,19 @@
     <string name="error_no_internet">Brak połączenia z internetem</string>
     <string name="error_timeout">Upłynął limit czasu</string>
     <string name="error_unknown">Nieznany błąd</string>
-
     <!-- Player action -->
     <string name="action_like">Polub</string>
     <string name="action_remove_like">Usuń polubienie</string>
-    <string name="action_shuffle_on">Shuffle on</string>
-    <string name="action_shuffle_off">Shuffle off</string>
-    <string name="repeat_mode_off">Repeat mode off</string>
-    <string name="repeat_mode_one">Repeat current song</string>
-    <string name="repeat_mode_all">Repeat queue</string>
-
+    <string name="action_shuffle_on">Tasowanie włączone</string>
+    <string name="action_shuffle_off">Tasowanie wyłączone</string>
+    <string name="repeat_mode_off">Tryb powtarzania wyłączony</string>
+    <string name="repeat_mode_one">Powtórz bieżący utwór</string>
+    <string name="repeat_mode_all">Powtórz kolejkę</string>
     <!-- Queue Title -->
     <string name="queue_all_songs">Wszystkie utwory</string>
     <string name="queue_searched_songs">Wyszukane utwory</string>
-
     <!-- Notification name -->
     <string name="music_player">Odtwarzacz</string>
-
     <!-- Settings -->
     <string name="settings">Ustawienia</string>
     <string name="appearance">Wygląd</string>
@@ -228,7 +207,6 @@
     <string name="left">Z lewej</string>
     <string name="center">Na środku</string>
     <string name="right">Z prawej</string>
-
     <string name="content">Zawartość</string>
     <string name="login">Zaloguj się</string>
     <string name="content_language">Domyślny język zawartości</string>
@@ -238,7 +216,6 @@
     <string name="proxy_type">Typ proxy</string>
     <string name="proxy_url">URL proxy</string>
     <string name="restart_to_take_effect">Uruchom ponownie, aby zastosować zmiany</string>
-
     <string name="player_and_audio">Odtwarzacz i audio</string>
     <string name="audio_quality">Jakość audio</string>
     <string name="audio_quality_auto">Automatyczna</string>
@@ -248,7 +225,6 @@
     <string name="skip_silence">Pomiń ciszę</string>
     <string name="audio_normalization">Normalizacja audio</string>
     <string name="equalizer">Korektor graficzny</string>
-
     <string name="storage">Pamięć</string>
     <string name="cache">Cache</string>
     <string name="image_cache">Cache obrazów</string>
@@ -261,7 +237,6 @@
     <string name="max_song_cache_size">Maksymalny rozmiar cache utworów</string>
     <string name="clear_song_cache">Wyczyść cache utworów</string>
     <string name="size_used">%s w użyciu</string>
-
     <string name="privacy">Prywatność</string>
     <string name="pause_listen_history">Wstrzymaj historię odtwarzania</string>
     <string name="clear_listen_history">Wyczyść historię odtwarzania</string>
@@ -270,7 +245,6 @@
     <string name="clear_search_history">Wyczyść historię wyszukiwania</string>
     <string name="clear_search_history_confirm">Czy na pewno chcesz wyczyścić całą historię wyszukiwania?</string>
     <string name="enable_kugou">Pobieraj teksty utworów z KuGou</string>
-
     <string name="backup_restore">Kopia zapasowa i przywracanie</string>
     <string name="backup">Utwórz kopię zapasową</string>
     <string name="restore">Przywróć</string>
@@ -278,11 +252,9 @@
     <string name="backup_create_success">Kopia zapasowa utworzona pomyślnie</string>
     <string name="backup_create_failed">Nie udało się stworzyć kopii zapasowej</string>
     <string name="restore_failed">Nie udało się przywrócić kopii zapasowej</string>
-
     <string name="about">O aplikacji</string>
     <string name="app_version">Wersja aplikacji</string>
-
     <string name="new_version_available">Dostępna nowa wersja</string>
-    <string name="translation_models">Translation Models</string>
-    <string name="clear_translation_models">Clear translation models</string>
+    <string name="translation_models">Modele Tłumaczenia</string>
+    <string name="clear_translation_models">Wyczyść modele tłumaczenia</string>
 </resources>
