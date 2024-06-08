@@ -23,7 +23,8 @@ A Material 3 YouTube Music client for Android
     - Cache and download songs for offline playback
     - Personalized quick picks
 - Local media playback
-    - Multi artist support (non MediaStore tag extractor)
+    - Play local and Youtube Music songs at the same time
+    - We don't use MediaStore's broken metadata extractor!
 - Synchronized lyrics (LRC format, also includes multi-line support)
 - Audio normalization, tempo/pitch adjustment, and various other audio effects
 - Dynamic Material theme & localization
@@ -74,7 +75,7 @@ However, should you choose to opt for self built libraries and/or work on the ex
    
    - a) Build libraries. Clone [ffmpeg-android-maker](https://github.com/Javernaut/ffmpeg-android-maker) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`, run the build script. Note: It may be helpful to modify the FFmpeg build script disable uneeded FFmpeg fetaures to reduce app size, see [here](https://github.com/mikooomich/ffmpeg-android-maker/blob/master/scripts/ffmpeg/build.sh) for an example.
   
-   - b) Use prebuilt FFmpeg libraries. Clone [prebuilt ffmpeg-android-maker](https://github.com/mikooomich/ffmpeg-android-maker) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`.
+   - b) Use prebuilt FFmpeg libraries. Clone [prebuilt ffmpeg-android-maker](https://github.com/mikooomich/ffmpeg-android-maker-prebuilt) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`.
 
 3. Modify `app/build.gradle.kts` and `settings.gradle.kts` to switch to the self built version, with the instructions being in both of the files
 
