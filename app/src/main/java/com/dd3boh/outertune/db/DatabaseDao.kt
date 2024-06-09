@@ -524,6 +524,9 @@ interface DatabaseDao {
     @Transaction
     @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE name LIKE '%' || :query || '%' AND songCount > 0 LIMIT :previewSize")
     fun searchArtists(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Artist>>
+    @Transaction
+    @Query("SELECT * FROM artist WHERE name LIKE '%' || :query || '%' LIMIT :previewSize")
+    fun fuzzySearchArtists(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<ArtistEntity>>
 
     @Transaction
     @Query("SELECT * FROM album WHERE title LIKE '%' || :query || '%' AND EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL) LIMIT :previewSize")

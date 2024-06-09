@@ -442,9 +442,9 @@ class LocalMediaScanner {
                 // check if this artist exists in DB already
                 val databaseArtistMatch =
                     runBlocking(Dispatchers.IO) {
-                        database.searchArtists(artistVal).first().filter { artist ->
+                        database.fuzzySearchArtists(artistVal).first().filter { artist ->
                             // only look for remote artists here
-                            return@filter artist.artist.name == artistVal && !artist.artist.isLocalArtist
+                            return@filter artist.name == artistVal && !artist.isLocalArtist
                         }
                     }
 
@@ -474,7 +474,7 @@ class LocalMediaScanner {
                             }
                         } else {
                             // swap with database artist
-                            swapArtists(element, databaseArtistMatch.first().artist, database)
+                            swapArtists(element, databaseArtistMatch.first(), database)
                         }
                     }
                 )
