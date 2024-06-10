@@ -66,7 +66,7 @@ before you create a pull request.
 ./app/src/main/java/com/dd3boh/outertune/utils/scanners/jni/ffmpeg-android-maker
 ## Building with FFmpeg (non-kit)
 
-By default, we shit a prebuilt library (`/app/prebuilt/ffMetadataEx.arr`), and you *do not* need to care about this.
+By default, we ship a prebuilt library (`/app/prebuilt/ffMetadataEx.arr`), and you *do not* need to care about this.
 However, should you choose to opt for self built libraries and/or work on the extractor itself, keep reading:
 
 1. First you will need to setup the [Android NDK](https://developer.android.com/studio/projects/install-ndk)
