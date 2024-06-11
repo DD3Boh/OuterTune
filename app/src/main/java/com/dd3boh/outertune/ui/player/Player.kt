@@ -327,7 +327,10 @@ fun BottomSheetPlayer(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .basicMarquee()
+                                .basicMarquee(
+                                    iterations = 1,
+                                    delayMillis = 3000
+                                )
                                 .clickable(enabled = mediaMetadata.album != null) {
                                     navController.navigate("album/${mediaMetadata.album!!.id}")
                                     state.collapseSoft()
