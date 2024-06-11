@@ -149,6 +149,7 @@ fun BottomSheetPlayer(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
+    val currentPlayCount by playerConnection.currentPlayCount.collectAsState(initial = null)
 
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
@@ -255,6 +256,7 @@ fun BottomSheetPlayer(
                         stringResource(R.string.song_title) to mediaMetadata?.title,
                         stringResource(R.string.song_artists) to mediaMetadata?.artists?.joinToString { it.name },
                         stringResource(R.string.media_id) to mediaMetadata?.id,
+                        stringResource(R.string.play_count) to currentPlayCount.toString(),
                         "Itag" to currentFormat?.itag?.toString(),
                         stringResource(R.string.mime_type) to currentFormat?.mimeType,
                         stringResource(R.string.codecs) to currentFormat?.codecs,

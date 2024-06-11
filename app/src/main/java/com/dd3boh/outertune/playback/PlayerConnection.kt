@@ -50,6 +50,9 @@ class PlayerConnection(
     val currentFormat = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.format(mediaMetadata?.id)
     }
+    val currentPlayCount = mediaMetadata.flatMapLatest { mediaMetadata ->
+        database.getLifetimePlayCount(mediaMetadata?.id)
+    }
 
     private val currentMediaItemIndex = MutableStateFlow(-1)
 

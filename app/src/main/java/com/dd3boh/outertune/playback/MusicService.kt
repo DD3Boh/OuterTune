@@ -781,7 +781,7 @@ class MusicService : MediaLibraryService(),
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
 
         // increment play count
-        if (playbackStats.totalPlayTimeMs / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD) {
+        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD) {
             CoroutineScope(Dispatchers.IO).launch {
                 database.incrementPlayCount(mediaItem.mediaId)
             }

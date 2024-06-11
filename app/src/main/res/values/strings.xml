@@ -104,6 +104,7 @@
     <string name="sort_by_custom">Custom order</string>
 
     <!-- Dialog -->
+    <string name="play_count">Play count</string>
     <string name="media_id">Media id</string>
     <string name="mime_type">MIME type</string>
     <string name="codecs">Codecs</string>

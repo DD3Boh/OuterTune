@@ -246,11 +246,11 @@ interface DatabaseDao {
     fun mostPlayedAlbums(fromTimeStamp: Long, limit: Int = 6): Flow<List<Album>>
 
     @Query("SELECT sum(count) from playCount WHERE song = :songId")
-    fun getLifetimePlayCount(songId: String): Flow<Int>
+    fun getLifetimePlayCount(songId: String?): Flow<Int>
     @Query("SELECT sum(count) from playCount WHERE song = :songId AND year = :year")
-    fun getPlayCountByYear(songId: String, year: Int): Flow<Int>
+    fun getPlayCountByYear(songId: String?, year: Int): Flow<Int>
     @Query("SELECT count from playCount WHERE song = :songId AND year = :year AND month = :month")
-    fun getPlayCountByMonth(songId: String, year: Int, month: Int): Flow<Int>
+    fun getPlayCountByMonth(songId: String?, year: Int, month: Int): Flow<Int>
 
 
     @Transaction
