@@ -79,7 +79,7 @@ fun getLocalThumbnail(path: String?, resize: Boolean): Bitmap? {
     } ?: return null
 
     if (resize) {
-        image = Bitmap.createScaledBitmap(image, 300, 300, false)
+        image = Bitmap.createScaledBitmap(image, 100, 100, false)
     }
 
     cache(path, image, resize)
