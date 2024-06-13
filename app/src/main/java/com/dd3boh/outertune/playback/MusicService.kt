@@ -261,7 +261,7 @@ class MusicService : MediaLibraryService(),
                     // start playback again on seek
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         super.onMediaItemTransition(mediaItem, reason)
-                        if (reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
+                        if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
                             player.prepare()
                             player.play()
                         }
