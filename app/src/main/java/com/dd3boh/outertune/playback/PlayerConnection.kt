@@ -137,7 +137,7 @@ class PlayerConnection(
     fun triggerShuffle() {
         isShuffleEnabled.value = !isShuffleEnabled.value
 
-        val pos = player.currentPosition
+
         queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex)
 
         // actual shuffling
@@ -146,7 +146,7 @@ class PlayerConnection(
         } else {
             queueBoard.unShuffleCurrent()
         }
-
+        val pos = player.currentPosition
         // load into player
         queueBoard.setCurrQueue(this, false)
         queueBoard.getCurrentQueue()?.let {

@@ -443,8 +443,10 @@ fun Queue(
                                 DropdownMenuItem(
                                     text = { Text("$queueNum . ${it.title}") },
                                     onClick = {
-                                      // switch to this queue
-                                        queueBoard.setCurrQueue(it, playerConnection.player)
+                                      // switch to this queue, don't skip if skipping to same queue
+                                        if (queueBoard.getCurrentQueue()?.title != it.title) {
+                                            queueBoard.setCurrQueue(it, playerConnection.player)
+                                        }
                                         expand = false
                                     },
                                     leadingIcon = {
