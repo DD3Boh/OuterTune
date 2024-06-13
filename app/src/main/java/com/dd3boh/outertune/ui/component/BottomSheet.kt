@@ -160,7 +160,7 @@ class BottomSheetState(
     }
 
     val isExpanded by derivedStateOf {
-        progress > 0.98f
+        progress >= 1.0f
     }
 
     val progress by derivedStateOf {

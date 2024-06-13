@@ -4,9 +4,12 @@ import android.content.res.Configuration
 import android.graphics.drawable.BitmapDrawable
 import android.text.format.Formatter
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -288,7 +291,8 @@ fun BottomSheetPlayer(
     BottomSheet(
         state = state,
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation),
+        backgroundColor = if (useDarkTheme) MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation)
+                          else MaterialTheme.colorScheme.onSurfaceVariant,
         collapsedBackgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation),
         onDismiss = {
             playerConnection.player.stop()
@@ -327,7 +331,10 @@ fun BottomSheetPlayer(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .basicMarquee()
+                                .basicMarquee(
+                                    iterations = 1,
+                                    delayMillis = 3000
+                                )
                                 .clickable(enabled = mediaMetadata.album != null) {
                                     navController.navigate("album/${mediaMetadata.album!!.id}")
                                     state.collapseSoft()
@@ -553,11 +560,26 @@ fun BottomSheetPlayer(
             }
         }
 
-        if (playerBackground == PlayerBackgroundStyle.BLUR) {
-            if (mediaMetadata?.isLocal == true) {
-                mediaMetadata?.let {
-                    AsyncLocalImage(
-                        image = { getLocalThumbnail(it.localPath) },
+        AnimatedVisibility(
+            visible = state.isExpanded,
+            enter = fadeIn(tween(1000)),
+            exit = fadeOut()
+        ) {
+            if (playerBackground == PlayerBackgroundStyle.BLUR) {
+                if (mediaMetadata?.isLocal == true) {
+                    mediaMetadata?.let {
+                        AsyncLocalImage(
+                            image = { getLocalThumbnail(it.localPath) },
+                            contentDescription = null,
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .blur(200.dp)
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = mediaMetadata?.thumbnailUrl,
                         contentDescription = null,
                         contentScale = ContentScale.FillBounds,
                         modifier = Modifier
@@ -565,36 +587,27 @@ fun BottomSheetPlayer(
                             .blur(200.dp)
                     )
                 }
-            } else {
-                AsyncImage(
-                    model = mediaMetadata?.thumbnailUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
+
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .blur(200.dp)
+                        .background(Color.Black.copy(alpha = 0.3f))
+                )
+            } else if (playerBackground == PlayerBackgroundStyle.GRADIENT && gradientColors.size >= 2) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.verticalGradient(gradientColors))
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f))
-            )
-        } else if (playerBackground == PlayerBackgroundStyle.GRADIENT && gradientColors.size >= 2) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Brush.verticalGradient(gradientColors))
-            )
-        }
-
-        if (playerBackground != PlayerBackgroundStyle.DEFAULT && showLyrics) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f))
-            )
+            if (playerBackground != PlayerBackgroundStyle.DEFAULT && showLyrics) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f))
+                )
+            }
         }
 
         when (LocalConfiguration.current.orientation) {

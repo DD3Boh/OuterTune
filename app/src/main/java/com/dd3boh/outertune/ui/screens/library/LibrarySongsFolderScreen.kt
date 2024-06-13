@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -56,6 +57,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
 import com.dd3boh.outertune.ui.utils.ItemWrapper
+import java.time.ZoneOffset
 import java.util.Stack
 
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -107,8 +109,36 @@ fun LibrarySongsFolderScreen(
     }
 
     val wrappedSongs = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
+
+    // sort songs
+    wrappedSongs.sortBy {
+        when (sortType) {
+            SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
+            SongSortType.NAME -> it.item.song.title
+            SongSortType.ARTIST -> it.item.artists.firstOrNull()?.name
+            SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
+        }
+    }
+    if (sortDescending) {
+        wrappedSongs.reverse()
+    }
+
+    // sort folders
+    currDir.subdirs.sortBy { it.currentDir } // only sort by name
+
+    if (sortDescending) {
+        currDir.subdirs.reverse()
+    }
+
     var selection by remember {
         mutableStateOf(false)
+    }
+
+    BackHandler {
+        if (folderStack.size > 1) {
+            folderStack.pop()
+            currDir = folderStack.peek()
+        } else inLocal = false
     }
 
     Box(

@@ -2,7 +2,7 @@ package com.dd3boh.outertune.utils
 
 import android.graphics.Bitmap
 
-const val MAX_IMAGE_CACHE = 150 // max cached images to hold
+const val MAX_IMAGE_CACHE = 300 // max cached images to hold
 
 /**
  * Cached image
