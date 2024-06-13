@@ -230,7 +230,7 @@ class LocalMediaScanner {
                 throw ScannerAbortException("Scanner canceled during Local Library Sync")
             }
 
-            val querySong = database.searchSongsInclNotInLibrary(song.song.title)
+            val querySong = database.searchSongsAllLocal(song.song.title)
 
 
             runBlocking(Dispatchers.IO) {
