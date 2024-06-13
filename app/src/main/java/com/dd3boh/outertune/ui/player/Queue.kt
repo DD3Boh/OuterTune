@@ -83,7 +83,6 @@ import com.dd3boh.outertune.ui.component.MediaMetadataListItem
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
@@ -96,6 +95,7 @@ import org.burnoutcrew.reorderable.reorderable
 @Composable
 fun Queue(
     state: BottomSheetState,
+    onTerminate: () -> Unit,
     onBackgroundColor: Color = Color.Unspecified,
     modifier: Modifier = Modifier,
 ) {
@@ -450,9 +450,12 @@ fun Queue(
                                     leadingIcon = {
                                         IconButton(
                                             onClick = {
-                                                queueBoard.deleteQueue(it)
+                                                val remainingQueues = queueBoard.deleteQueue(it)
                                                 queueBoard.setCurrQueue(playerConnection)
                                                 expand = false
+                                                if (remainingQueues < 1) {
+                                                    onTerminate.invoke()
+                                                }
                                             }
                                         ) {
                                             Icon(

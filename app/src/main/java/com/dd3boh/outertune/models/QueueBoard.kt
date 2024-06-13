@@ -203,7 +203,7 @@ class QueueBoard : Serializable {
      *
      * @param item
      */
-    fun deleteQueue(item: MultiQueueObject) {
+    fun deleteQueue(item: MultiQueueObject): Int {
         if (QUEUE_DEBUG)
             Timber.tag(TAG).d("DELETING QUEUE ${item.title}")
 
@@ -218,6 +218,8 @@ class QueueBoard : Serializable {
         } else if (QUEUE_DEBUG) {
             Timber.tag(TAG).w("Cannot find queue ${item.title}")
         }
+
+        return masterQueues.size
     }
 
 

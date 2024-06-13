@@ -680,6 +680,7 @@ fun BottomSheetPlayer(
 
         Queue(
             state = queueSheetState,
+            onTerminate = { state.dismiss() },
             onBackgroundColor = onBackgroundColor
         )
     }
