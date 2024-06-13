@@ -191,6 +191,7 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
+    var saveQueueCD = false
 
     override fun onCreate() {
         super.onCreate()
@@ -267,6 +268,13 @@ class MusicService : MediaLibraryService(),
                         }
                         queueBoard.setCurrQueuePosIndex(mediaItem)
                         queueTitle = queueBoard.getCurrentQueue()?.title
+                        if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
+                            saveQueueToDisk() // save queue, but rate limited
+                            scope.launch {
+                                delay(30.seconds)
+                                saveQueueCD = false
+                            }
+                        }
                     }
                 })
                 sleepTimer = SleepTimer(scope, this)
@@ -367,18 +375,20 @@ class MusicService : MediaLibraryService(),
             }.onSuccess { qb ->
                 queueBoard = qb
                 isShuffleEnabled.value = qb.shuffEn
-                val queue = queueBoard.getCurrentQueue()
-                if (queue != null) {
-                    playQueue(
-                        queue = ListQueue(
-                            title = queue.title,
-                            items = qb.getCurrentQueueShuffled()?.map { it.toMediaItem() }?: ArrayList(),
-                            startIndex = queue.queuePos,
-                            position = 0,
-                            playlistId = null
-                        ),
-                        playWhenReady = false
-                    )
+                if (qb.getAllQueues().isNotEmpty()) {
+                    val queue = queueBoard.getCurrentQueue()
+                    if (queue != null) {
+                        playQueue(
+                            queue = ListQueue(
+                                title = queue.title,
+                                items = qb.getCurrentQueueShuffled()?.map { it.toMediaItem() } ?: ArrayList(),
+                                startIndex = queue.queuePos,
+                                position = 0,
+                                playlistId = null
+                            ),
+                            playWhenReady = false
+                        )
+                    }
                 }
             }
         }
