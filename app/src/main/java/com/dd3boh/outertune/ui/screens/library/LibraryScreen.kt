@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -224,6 +225,12 @@ fun LibraryScreen(
             },
             modifier = Modifier.padding(start = 16.dp)
         )
+    }
+
+    if (filter != LibraryFilter.ALL) {
+        BackHandler {
+            filter = LibraryFilter.ALL
+        }
     }
 
     Box(

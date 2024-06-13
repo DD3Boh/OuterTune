@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -109,6 +110,13 @@ fun LibrarySongsFolderScreen(
     val wrappedSongs = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
     var selection by remember {
         mutableStateOf(false)
+    }
+
+    BackHandler {
+        if (folderStack.size > 1) {
+            folderStack.pop()
+            currDir = folderStack.peek()
+        } else inLocal = false
     }
 
     Box(
