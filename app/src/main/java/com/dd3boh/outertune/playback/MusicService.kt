@@ -829,10 +829,6 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun saveQueueToDisk() {
-        if (player.playbackState == STATE_IDLE) {
-            filesDir.resolve(PERSISTENT_QUEUE_FILE).delete()
-            return
-        }
         runCatching {
             queueBoard.shuffEn = isShuffleEnabled.value
             filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
