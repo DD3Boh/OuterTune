@@ -250,7 +250,8 @@ class QueueBoard : Serializable {
     /**
      * Shuffles current queue
      */
-    fun shuffleCurrent() = shuffle(masterIndex)
+    fun shuffleCurrent(preserveCurrent: Boolean = true) = shuffle(masterIndex, preserveCurrent)
+
 
     /**
      * Un-shuffles a queue
@@ -259,20 +260,24 @@ class QueueBoard : Serializable {
      * un-shuffled queue
      *
      * @param index
+     * @param preserveCurrent True will push the currently playing song to the top of the queue. False will
+     *      fully shuffle everything.
      * @return New current position tracker
      */
-    fun shuffle(index: Int): Int {
+    fun shuffle(index: Int, preserveCurrent: Boolean = true): Int {
         val item = masterQueues[index]
         if (QUEUE_DEBUG)
             Timber.tag(TAG).d("Shuffling queue ${item.title}")
 
         val currentSong = if (!isShuffleEnabled.value) item.queue[item.queuePos] else item.unShuffled[item.queuePos]
-        item.queue.remove(currentSong)
 
-        // shuffle & push the current song to top
+        // shuffle & push the current song to top if requested to
         item.queue.shuffle()
-        item.queue.add(0, currentSong)
-        item.queuePos = 0 // song is bought to the front, re-track it
+        if (preserveCurrent) {
+            item.queue.remove(currentSong)
+            item.queue.add(0, currentSong)
+        }
+        item.queuePos = 0
 
         bubbleUp(item)
         return item.queuePos

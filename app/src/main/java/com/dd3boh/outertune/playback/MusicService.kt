@@ -20,10 +20,12 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
+import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
 import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
+import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Player.STATE_IDLE
 import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
@@ -161,6 +163,7 @@ class MusicService : MediaLibraryService(),
     private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
     var queuePlaylistId: String? = null
+    private var lastMediaItemIndex = -1
 
     val currentMediaMetadata = MutableStateFlow<com.dd3boh.outertune.models.MediaMetadata?>(null)
 
@@ -618,6 +621,16 @@ class MusicService : MediaLibraryService(),
                 }
             }
         }
+
+        // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
+        // no, when repeat mode is on, player does not "STATE_ENDED"
+        if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
+            (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
+            isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
+            queueBoard.shuffleCurrent(false) // reshuffle queue
+            queueBoard.setCurrQueue(player)
+        }
+        lastMediaItemIndex = player.currentMediaItemIndex
     }
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {
