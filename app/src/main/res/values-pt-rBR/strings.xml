@@ -188,7 +188,7 @@
     <string name="appearance">Aparência</string>
     <string name="enable_dynamic_theme">Ativar tema dinâmico</string>
     <string name="dark_theme">Tema escuro</string>
-    <string name="dark_theme_on">On</string>
+    <string name="dark_theme_on">Ativado</string>
     <string name="dark_theme_off">Desativado</string>
     <string name="dark_theme_follow_system">Seguir o sistema</string>
     <string name="pure_black">Preto puro</string>
