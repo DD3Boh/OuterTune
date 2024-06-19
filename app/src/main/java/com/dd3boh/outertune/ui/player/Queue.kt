@@ -209,15 +209,18 @@ fun Queue(
             }
         }
 
-        LaunchedEffect(mutableQueueWindows) { // scroll to
+        LaunchedEffect(mutableQueueWindows) { // scroll to song
             if (currentWindowIndex != -1)
                 reorderableState.listState.scrollToItem(currentWindowIndex)
         }
 
-        LaunchedEffect(multiqueueExpand) {
-            updateQueues()
-            if (playingQueue != -1)
+        LaunchedEffect(mutableQueues) { // scroll to queue
+            if (currentWindowIndex != -1)
                 reorderableStateEx.listState.scrollToItem(playingQueue)
+        }
+
+        LaunchedEffect(Unit) {
+            updateQueues() // initiate queues
         }
 
         Column(
@@ -286,7 +289,7 @@ fun Queue(
                                             queueBoard.setCurrQueue(mq, playerConnection.player)
                                         }
 
-                                        multiqueueExpand = false
+                                        updateQueues()
                                     }
                             ) {
                                 Row ( // row contents (wrapper is needed for margin)
@@ -302,7 +305,7 @@ fun Queue(
                                             onClick = {
                                                 val remainingQueues = queueBoard.deleteQueue(mq)
                                                 queueBoard.setCurrQueue(playerConnection)
-                                                multiqueueExpand = false
+                                                updateQueues()
                                                 if (remainingQueues < 1) {
                                                     onTerminate.invoke()
                                                 }
