@@ -284,6 +284,20 @@ class QueueBoard : Serializable {
     }
 
     /**
+     * Move a queue in masterQueues
+     *
+     * @param fromIndex Song to move
+     * @param toIndex Destination
+     *
+     * @return New current position tracker
+     */
+    fun move(fromIndex: Int, toIndex: Int) {
+        masterQueues.move(fromIndex, toIndex)
+        masterIndex = toIndex
+    }
+
+
+    /**
      * Move a song in the current queue
      *
      * @param fromIndex Song to move
@@ -292,8 +306,8 @@ class QueueBoard : Serializable {
      *
      * @return New current position tracker
      */
-    fun move(fromIndex: Int, toIndex: Int, currentMediaItemIndex: Int) =
-        getCurrentQueue()?.let { move(it, fromIndex, toIndex, currentMediaItemIndex) }
+    fun moveSong(fromIndex: Int, toIndex: Int, currentMediaItemIndex: Int) =
+        getCurrentQueue()?.let { moveSong(it, fromIndex, toIndex, currentMediaItemIndex) }
 
     /**
      * Move a song, given a queue.
@@ -305,7 +319,7 @@ class QueueBoard : Serializable {
      *
      * @return New current position tracker
      */
-    fun move(queue: MultiQueueObject, fromIndex: Int, toIndex: Int, currentMediaItemIndex: Int): Int {
+    private fun moveSong(queue: MultiQueueObject, fromIndex: Int, toIndex: Int, currentMediaItemIndex: Int): Int {
         // update current position only if the move will affect it
         if (currentMediaItemIndex >= min(fromIndex, toIndex) && currentMediaItemIndex <= max(fromIndex, toIndex)) {
             if (fromIndex == currentMediaItemIndex) {
@@ -340,6 +354,12 @@ class QueueBoard : Serializable {
      * Get all copy of all queues
      */
     fun getAllQueues() = masterQueues.toImmutableList()
+
+
+    /**
+     * Get the index of the current queue
+     */
+    fun getMasterIndex() = masterIndex
 
     /**
      * Retrieve the current queue

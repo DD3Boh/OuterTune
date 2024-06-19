@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
@@ -35,8 +37,6 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,8 +65,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
@@ -74,12 +77,14 @@ import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.MultiQueueObject
 import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.MediaMetadataListItem
+import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import kotlinx.coroutines.Dispatchers
@@ -137,6 +142,9 @@ fun Queue(
             }
         }
     ) {
+        val coroutineScope = rememberCoroutineScope()
+
+        // current queue vars
         val queueTitle by playerConnection.queueTitle.collectAsState()
         val queueWindows by playerConnection.queueWindows.collectAsState()
         val mutableQueueWindows = remember { mutableStateListOf<Timeline.Window>() }
@@ -144,14 +152,19 @@ fun Queue(
             queueWindows.sumOf { it.mediaItem.metadata!!.duration }
         }
 
-        val coroutineScope = rememberCoroutineScope()
+        // multi queue vars
+        var multiqueueExpand by remember { mutableStateOf(false) }
+        val mutableQueues = remember { mutableStateListOf<MultiQueueObject>() }
+        var playingQueue by remember { mutableIntStateOf(queueBoard.getMasterIndex()) }
+
+        // for main songs list
         val reorderableState = rememberReorderableLazyListState(
             onMove = { from, to ->
                 mutableQueueWindows.move(from.index, to.index)
             },
             onDragEnd = { fromIndex, toIndex ->
                 val pos = playerConnection.player.currentPosition
-                val newQueuePos = queueBoard.move(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
+                val newQueuePos = queueBoard.moveSong(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
                 queueBoard.setCurrQueue(playerConnection, autoSeek = false)
                 queueBoard.getCurrentQueue()?.let {
                     if (newQueuePos != null) {
@@ -164,136 +177,218 @@ fun Queue(
             }
         )
 
-        LaunchedEffect(queueWindows) {
+        /**
+         * This reloads the queue in the UI. This exists because for some stupid reason reassigning a remember-ed var
+         * does not trigger LaunchedEffect, even though that is the point of remember.
+         */
+        fun updateQueues() {
+            mutableQueues.apply {
+                clear()
+                addAll(queueBoard.getAllQueues())
+            }
+            playingQueue = queueBoard.getMasterIndex()
+        }
+
+        // for multiqueue
+        val reorderableStateEx = rememberReorderableLazyListState(
+            onMove = { from, to ->
+                mutableQueues.move(from.index, to.index)
+            },
+            onDragEnd = { fromIndex, toIndex ->
+                queueBoard.move(fromIndex, toIndex)
+                coroutineScope.launch {
+                    updateQueues()
+                }
+            }
+        )
+
+        LaunchedEffect(queueWindows) { // add to queue windows
             mutableQueueWindows.apply {
                 clear()
                 addAll(queueWindows)
             }
         }
 
-        LaunchedEffect(mutableQueueWindows) {
+        LaunchedEffect(mutableQueueWindows) { // scroll to
             if (currentWindowIndex != -1)
                 reorderableState.listState.scrollToItem(currentWindowIndex)
         }
 
-        LazyColumn(
-            state = reorderableState.listState,
-            contentPadding = WindowInsets.systemBars
-                .add(
-                    WindowInsets(
-                        top = ListItemHeight,
-                        bottom = ListItemHeight
-                    )
-                )
-                .asPaddingValues(),
+        LaunchedEffect(multiqueueExpand) {
+            updateQueues()
+            if (playingQueue != -1)
+                reorderableStateEx.listState.scrollToItem(playingQueue)
+        }
+
+        Column(
             modifier = Modifier
-                .reorderable(reorderableState)
                 .nestedScroll(state.preUpPostDownNestedScrollConnection)
-        ) {
-            itemsIndexed(
-                items = mutableQueueWindows,
-                key = { _, item -> item.uid.hashCode() }
-            ) { index, window ->
-                ReorderableItem(
-                    reorderableState = reorderableState,
-                    key = window.uid.hashCode()
-                ) {
-                    val currentItem by rememberUpdatedState(window)
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        positionalThreshold = { totalDistance ->
-                            totalDistance
-                        },
-                        confirmValueChange = { dismissValue ->
-                            when (dismissValue) {
-                                SwipeToDismissBoxValue.StartToEnd -> {
-                                    playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
-                                    return@rememberSwipeToDismissBoxState true
-                                }
-
-                                SwipeToDismissBoxValue.EndToStart -> {
-                                    playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
-                                    return@rememberSwipeToDismissBoxState true
-                                }
-
-                                SwipeToDismissBoxValue.Settled -> {
-                                    return@rememberSwipeToDismissBoxState false
-                                }
-                            }
-                        }
+                .padding(WindowInsets.systemBars
+                    .add(
+                        WindowInsets(
+                            top = ListItemHeight,
+                            bottom = ListItemHeight
+                        )
                     )
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {},
-                        content = {
-                            Row(
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                // selection checkbox. Standard multiselect doesn't work in queue...
-                                if (selection) {
-                                    IconButton(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterVertically),
-                                        onClick = {
-                                            println(window.mediaItem.metadata!!.title)
-                                            if (window.mediaItem.metadata!! in selectedSongs) {
-                                                selectedSongs.remove(window.mediaItem.metadata!!)
-                                                selectedItems.remove(currentItem)
-                                            } else {
-                                                selectedSongs.add(window.mediaItem.metadata!!)
-                                                selectedItems.add(currentItem)
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
-                                            contentDescription = null,
-                                            tint = LocalContentColor.current,
-                                        )
-                                    }
-                                }
+                    .asPaddingValues())
+        ) {
+            // multiqueue list
+            if (multiqueueExpand) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Queues",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    ResizableIconButton(
+                        icon = Icons.Rounded.Close,
+                        onClick = {
+                          multiqueueExpand = false
+                        },
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
 
-                                MediaMetadataListItem(
-                                    mediaMetadata = window.mediaItem.metadata!!,
-                                    isActive = index == currentWindowIndex,
-                                    isPlaying = isPlaying,
-                                    trailingContent = {
-                                        IconButton(
-                                            onClick = { },
-                                            modifier = Modifier
-                                                .detectReorder(reorderableState)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.DragHandle,
-                                                contentDescription = null
-                                            )
+                if (mutableQueues.isEmpty()) {
+                    Text(text = "No queues")
+                }
+
+                LazyColumn(
+                    state = reorderableStateEx.listState,
+                    modifier = Modifier
+                        .reorderable(reorderableStateEx)
+                        .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                        .heightIn(max = 250.dp) // TODO: set to 50% ish height
+                ) {
+                    itemsIndexed(
+                        items = mutableQueues,
+                        key = { _, item -> item.hashCode() }
+                    ) { index, mq ->
+                        ReorderableItem(
+                            reorderableState = reorderableStateEx,
+                            key = mq.hashCode()
+                        ) {
+                            Row( // wrapper
+                                modifier = Modifier
+                                    .background(if (playingQueue == index) MaterialTheme.colorScheme.tertiary.copy(0.3f)
+                                    else Color.Transparent)
+                                    .clickable {
+                                        // switch to this queue, don't skip if skipping to same queue
+                                        if (queueBoard.getCurrentQueue()?.title != mq.title) {
+                                            queueBoard.setCurrQueue(mq, playerConnection.player)
                                         }
-                                    },
-                                    isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
+
+                                        multiqueueExpand = false
+                                    }
+                            ) {
+                                Row ( // row contents (wrapper is needed for margin)
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
+                                        .padding(horizontal = 40.dp, vertical = 8.dp)
                                         .fillMaxWidth()
-                                        .combinedClickable(
+                                ) {
+                                    Row {
+                                        ResizableIconButton(
+                                            icon = Icons.Rounded.Close,
                                             onClick = {
-                                                if (selectedSongs.isEmpty()) {
-                                                    coroutineScope.launch(Dispatchers.Main) {
-                                                        if (index == currentWindowIndex) {
-                                                            playerConnection.player.togglePlayPause()
-                                                        } else {
-                                                            playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
-                                                            playerConnection.player.playWhenReady = true
-                                                        }
-                                                    }
-                                                } else {
-                                                    if (window.mediaItem.metadata!! in selectedSongs) {
-                                                        selectedSongs.remove(window.mediaItem.metadata!!)
-                                                        selectedItems.remove(currentItem)
-                                                    } else {
-                                                        selectedSongs.add(window.mediaItem.metadata!!)
-                                                        selectedItems.add(currentItem)
-                                                    }
+                                                val remainingQueues = queueBoard.deleteQueue(mq)
+                                                queueBoard.setCurrQueue(playerConnection)
+                                                multiqueueExpand = false
+                                                if (remainingQueues < 1) {
+                                                    onTerminate.invoke()
                                                 }
                                             },
-                                            onLongClick = {
-                                                selection = true
+                                        )
+                                        Text(
+                                            text = "${index + 1}. ${mq.title}",
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp)
+                                        )
+                                    }
+
+                                    ResizableIconButton(
+                                        icon = Icons.Rounded.DragHandle,
+                                        onClick = { },
+                                        modifier = Modifier
+                                            .detectReorder(reorderableStateEx)
+                                    )
+                                }
+                            }
+                        } // ReorderableItem
+                    }
+                }
+
+                Text(
+                    text = "Songs",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+
+            // songs list
+            LazyColumn(
+                state = reorderableState.listState,
+                modifier = Modifier
+                    .reorderable(reorderableState)
+                    .nestedScroll(state.preUpPostDownNestedScrollConnection)
+            ) {
+                itemsIndexed(
+                    items = mutableQueueWindows,
+                    key = { _, item -> item.uid.hashCode() }
+                ) { index, window ->
+                    ReorderableItem(
+                        reorderableState = reorderableState,
+                        key = window.uid.hashCode()
+                    ) {
+                        val currentItem by rememberUpdatedState(window)
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            positionalThreshold = { totalDistance ->
+                                totalDistance
+                            },
+                            confirmValueChange = { dismissValue ->
+                                when (dismissValue) {
+                                    SwipeToDismissBoxValue.StartToEnd -> {
+                                        playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                        return@rememberSwipeToDismissBoxState true
+                                    }
+
+                                    SwipeToDismissBoxValue.EndToStart -> {
+                                        playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                        return@rememberSwipeToDismissBoxState true
+                                    }
+
+                                    SwipeToDismissBoxValue.Settled -> {
+                                        return@rememberSwipeToDismissBoxState false
+                                    }
+                                }
+                            }
+                        )
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            backgroundContent = {},
+                            content = {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    // selection checkbox. Standard multiselect doesn't work in queue...
+                                    if (selection) {
+                                        IconButton(
+                                            modifier = Modifier
+                                                .align(Alignment.CenterVertically),
+                                            onClick = {
                                                 if (window.mediaItem.metadata!! in selectedSongs) {
                                                     selectedSongs.remove(window.mediaItem.metadata!!)
                                                     selectedItems.remove(currentItem)
@@ -302,12 +397,73 @@ fun Queue(
                                                     selectedItems.add(currentItem)
                                                 }
                                             }
-                                        )
-                                        .detectReorderAfterLongPress(reorderableState)
-                                )
+                                        ) {
+                                            Icon(
+                                                if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox
+                                                else Icons.Rounded.CheckBoxOutlineBlank,
+                                                contentDescription = null,
+                                                tint = LocalContentColor.current,
+                                            )
+                                        }
+                                    }
+
+                                    MediaMetadataListItem(
+                                        mediaMetadata = window.mediaItem.metadata!!,
+                                        isActive = index == currentWindowIndex,
+                                        isPlaying = isPlaying,
+                                        trailingContent = {
+                                            IconButton(
+                                                onClick = { },
+                                                modifier = Modifier
+                                                    .detectReorder(reorderableState)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.DragHandle,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        },
+                                        isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .combinedClickable(
+                                                onClick = {
+                                                    if (selectedSongs.isEmpty()) {
+                                                        coroutineScope.launch(Dispatchers.Main) {
+                                                            if (index == currentWindowIndex) {
+                                                                playerConnection.player.togglePlayPause()
+                                                            } else {
+                                                                playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                                playerConnection.player.playWhenReady = true
+                                                            }
+                                                        }
+                                                    } else {
+                                                        if (window.mediaItem.metadata!! in selectedSongs) {
+                                                            selectedSongs.remove(window.mediaItem.metadata!!)
+                                                            selectedItems.remove(currentItem)
+                                                        } else {
+                                                            selectedSongs.add(window.mediaItem.metadata!!)
+                                                            selectedItems.add(currentItem)
+                                                        }
+                                                    }
+                                                },
+                                                onLongClick = {
+                                                    selection = true
+                                                    if (window.mediaItem.metadata!! in selectedSongs) {
+                                                        selectedSongs.remove(window.mediaItem.metadata!!)
+                                                        selectedItems.remove(currentItem)
+                                                    } else {
+                                                        selectedSongs.add(window.mediaItem.metadata!!)
+                                                        selectedItems.add(currentItem)
+                                                    }
+                                                }
+                                            )
+                                            .detectReorderAfterLongPress(reorderableState)
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -401,74 +557,31 @@ fun Queue(
                         )
                     }
                 } else {
-                    // queue title and multiqueue
-                    var expand by remember { mutableStateOf(false) }
-
+                    // queue title and show multiqueue button
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp))
                             .padding(2.dp)
                             .weight(1f)
-                            .clickable { expand = !expand }
+                            .clickable { multiqueueExpand = !multiqueueExpand }
                     ) {
                         Text(
                             text = queueTitle.orEmpty(),
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 4.dp)
                         )
-    
-                        IconButton(
+                        ResizableIconButton(
+                            icon = if (multiqueueExpand) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                             onClick = {
-                                expand = !expand
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (expand) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                                contentDescription =  null,
-                            )
-                        }
-    
-                        DropdownMenu(
-                            expanded = expand,
-                            onDismissRequest = { expand = false },
-                            modifier = Modifier.weight(1f) // how tf do i make this take up whole length? or should I?
-                        ) {
-                            var queueNum = 0 // used for cosmetic purposes only
-                            // list of queues you can switch to
-                            queueBoard.getAllQueues().forEach {
-                                queueNum ++
-                                DropdownMenuItem(
-                                    text = { Text("$queueNum . ${it.title}") },
-                                    onClick = {
-                                      // switch to this queue, don't skip if skipping to same queue
-                                        if (queueBoard.getCurrentQueue()?.title != it.title) {
-                                            queueBoard.setCurrQueue(it, playerConnection.player)
-                                        }
-                                        expand = false
-                                    },
-                                    leadingIcon = {
-                                        IconButton(
-                                            onClick = {
-                                                val remainingQueues = queueBoard.deleteQueue(it)
-                                                queueBoard.setCurrQueue(playerConnection)
-                                                expand = false
-                                                if (remainingQueues < 1) {
-                                                    onTerminate.invoke()
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription =  null,
-                                            )
-                                        }
-                                    },
-                                )
-                            }
-                        }
+                                multiqueueExpand = !multiqueueExpand
+                            },
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
                     }
 
                     Column(
@@ -497,9 +610,9 @@ fun Queue(
                 .fillMaxWidth()
                 .height(
                     ListItemHeight +
-                            WindowInsets.systemBars
-                                .asPaddingValues()
-                                .calculateBottomPadding()
+                        WindowInsets.systemBars
+                            .asPaddingValues()
+                            .calculateBottomPadding()
                 )
                 .align(Alignment.BottomCenter)
                 .clickable {
