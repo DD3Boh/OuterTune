@@ -16,6 +16,10 @@ import kotlin.math.max
 
 const val QUEUE_DEBUG = false
 const val MAX_QUEUES = 20
+
+/**
+ * This is for UI display purposes only. Do not modify externally.
+ */
 var isShuffleEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
 /**
@@ -32,6 +36,7 @@ data class MultiQueueObject(
      * The order of songs stays in the order songs are added in. This should not be accessed form outside QueueBoard.
      */
     val unShuffled: MutableList<MediaMetadata>,
+    var shuffled: Boolean = false,
     var queuePos: Int = -1
 ) : Serializable
 
@@ -42,11 +47,6 @@ data class MultiQueueObject(
 class QueueBoard : Serializable {
     private val masterQueues: ArrayList<MultiQueueObject> = ArrayList()
     private var masterIndex = -1 // current queue index
-
-    /**
-     * This variable is only for Serialization. Use global isShuffleEnabled instead.
-     */
-    var shuffEn: Boolean = false
 
 
     /**
@@ -175,7 +175,7 @@ class QueueBoard : Serializable {
                 shufQueue.addAll((mediaList.filterNotNull()))
                 unShufQueue.addAll((mediaList.filterNotNull()))
                 masterQueues.add(
-                    MultiQueueObject("$title +", shufQueue, unShufQueue, match.queuePos)
+                    MultiQueueObject("$title +", shufQueue, unShufQueue, false, match.queuePos)
                 )
 
                 // don't change index, don't move match queue to end
@@ -191,6 +191,7 @@ class QueueBoard : Serializable {
                     title,
                     ArrayList(mediaList.filterNotNull()),
                     ArrayList(mediaList.filterNotNull()),
+                    false,
                     startIndex,
                 )
             )
@@ -237,11 +238,13 @@ class QueueBoard : Serializable {
      */
     fun unShuffle(index: Int): Int {
         val item = masterQueues[index]
-        if (!isShuffleEnabled.value) {
+        if (item.shuffled) {
             if (QUEUE_DEBUG)
                 Timber.tag(TAG).d("Un-shuffling queue ${item.title}")
             // re-track current position
             item.queuePos = item.unShuffled.indexOf(item.queue[item.queuePos])
+            item.shuffled = false
+            isShuffleEnabled.value = false
         }
         bubbleUp(item)
         return item.queuePos
@@ -269,7 +272,7 @@ class QueueBoard : Serializable {
         if (QUEUE_DEBUG)
             Timber.tag(TAG).d("Shuffling queue ${item.title}")
 
-        val currentSong = if (!isShuffleEnabled.value) item.queue[item.queuePos] else item.unShuffled[item.queuePos]
+        val currentSong = if (item.shuffled) item.queue[item.queuePos] else item.unShuffled[item.queuePos]
 
         // shuffle & push the current song to top if requested to
         item.queue.shuffle()
@@ -278,6 +281,8 @@ class QueueBoard : Serializable {
             item.queue.add(0, currentSong)
         }
         item.queuePos = 0
+        item.shuffled = true
+        isShuffleEnabled.value = true
 
         bubbleUp(item)
         return item.queuePos
@@ -354,7 +359,7 @@ class QueueBoard : Serializable {
         }
 
         // I like to move it move it
-        if (isShuffleEnabled.value) {
+        if (queue.shuffled) {
             queue.queue.move(fromIndex, toIndex)
         } else {
             queue.unShuffled.move(fromIndex, toIndex)
@@ -406,7 +411,7 @@ class QueueBoard : Serializable {
         val item = getCurrentQueue()
         return if (item == null) {
             null
-        } else if (isShuffleEnabled.value) {
+        } else if (item.shuffled) {
             item.queue
         } else {
             item.unShuffled
@@ -444,7 +449,7 @@ class QueueBoard : Serializable {
         if (QUEUE_DEBUG)
             Timber.tag(TAG).d(
                 "Loading queue ${item?.title ?: "null"} into player. " +
-                        "autoSeek = $autoSeek shuffle state = ${isShuffleEnabled.value}"
+                        "autoSeek = $autoSeek shuffle state = ${item?.shuffled}"
             )
 
         if (item == null) {
@@ -456,11 +461,12 @@ class QueueBoard : Serializable {
         masterIndex = masterQueues.indexOf(item)
 
         // if requested to get shuffled queue
-        if (isShuffleEnabled.value) {
+        if (item.shuffled) {
             player.setMediaItems(item.queue.map { it.toMediaItem() })
         } else {
             player.setMediaItems(item.unShuffled.map { it.toMediaItem() })
         }
+        isShuffleEnabled.value = item.shuffled
 
         if (autoSeek) {
             player.seekTo(queuePos, C.TIME_UNSET)
@@ -489,7 +495,7 @@ class QueueBoard : Serializable {
             return
         }
 
-        if (isShuffleEnabled.value) {
+        if (currentQueue.shuffled) {
             currentQueue.queuePos = currentQueue.queue.indexOf(mediaItem.metadata)
         } else {
             currentQueue.queuePos = currentQueue.unShuffled.indexOf(mediaItem.metadata)

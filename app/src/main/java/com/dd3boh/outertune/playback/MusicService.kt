@@ -377,7 +377,7 @@ class MusicService : MediaLibraryService(),
                 }
             }.onSuccess { qb ->
                 queueBoard = qb
-                isShuffleEnabled.value = qb.shuffEn
+                isShuffleEnabled.value = qb.getCurrentQueue()?.shuffled ?: false
                 if (qb.getAllQueues().isNotEmpty()) {
                     val queue = queueBoard.getCurrentQueue()
                     if (queue != null) {
@@ -843,7 +843,6 @@ class MusicService : MediaLibraryService(),
 
     private fun saveQueueToDisk() {
         runCatching {
-            queueBoard.shuffEn = isShuffleEnabled.value
             filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
                 ObjectOutputStream(fos).use { oos ->
                     oos.writeObject(queueBoard)
