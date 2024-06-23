@@ -780,16 +780,11 @@ class MusicService : MediaLibraryService(),
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
 
-        // increment play count
-        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD) {
-            CoroutineScope(Dispatchers.IO).launch {
-                database.incrementPlayCount(mediaItem.mediaId)
-            }
-        }
-
-        // total play time
-        if (playbackStats.totalPlayTimeMs >= 30000 && !dataStore.get(PauseListenHistoryKey, false)) {
+//        println("Playback ratio: ${playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1)} Min threshold: $MIN_PLAYBACK_THRESHOLD")
+        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD &&
+            !dataStore.get(PauseListenHistoryKey, false)) {
             database.query {
+                incrementPlayCount(mediaItem.mediaId)
                 incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)
                 try {
                     insert(

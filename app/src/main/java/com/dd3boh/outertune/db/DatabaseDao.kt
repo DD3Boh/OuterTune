@@ -54,6 +54,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -558,19 +559,18 @@ interface DatabaseDao {
     /**
      * Increment by one the play count with today's year and month.
      */
-    @Transaction
     fun incrementPlayCount(songId: String) {
         val time = LocalDateTime.now().atOffset(ZoneOffset.UTC)
-        var oldCount: Int = -1
-        CoroutineScope(Dispatchers.IO).launch {
+        var oldCount: Int
+        runBlocking {
             oldCount = getPlayCountByMonth(songId, time.year, time.monthValue).first()
         }
 
-        if (oldCount < 0) {
-            insert(PlayCountEntity(songId, time.year, time.monthValue, 1))
-        } else {
-            incrementPlayCount(songId, time.year, time.monthValue)
+        // add new
+        if (oldCount <= 0) {
+            insert(PlayCountEntity(songId, time.year, time.monthValue, 0))
         }
+        incrementPlayCount(songId, time.year, time.monthValue)
     }
 
     @Query("UPDATE song SET inLibrary = :inLibrary WHERE id = :songId")
