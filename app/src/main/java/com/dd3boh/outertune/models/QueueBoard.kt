@@ -292,8 +292,24 @@ class QueueBoard : Serializable {
      * @return New current position tracker
      */
     fun move(fromIndex: Int, toIndex: Int) {
+        // update current position only if the move will affect it
+        if (masterIndex >= min(fromIndex, toIndex) && masterIndex <= max(fromIndex, toIndex)) {
+            if (fromIndex == masterIndex) {
+                masterIndex = toIndex
+            } else if (masterIndex == toIndex) {
+                if (masterIndex < fromIndex) {
+                    masterIndex++
+                } else {
+                    masterIndex--
+                }
+            } else if (toIndex > masterIndex) {
+                masterIndex--
+            } else {
+                masterIndex++
+            }
+        }
+
         masterQueues.move(fromIndex, toIndex)
-        masterIndex = toIndex
     }
 
 
@@ -324,6 +340,12 @@ class QueueBoard : Serializable {
         if (currentMediaItemIndex >= min(fromIndex, toIndex) && currentMediaItemIndex <= max(fromIndex, toIndex)) {
             if (fromIndex == currentMediaItemIndex) {
                 queue.queuePos = toIndex
+            } else if (currentMediaItemIndex == toIndex) {
+                if (currentMediaItemIndex < fromIndex) {
+                    queue.queuePos++
+                } else {
+                    queue.queuePos--
+                }
             } else if (toIndex > currentMediaItemIndex) {
                 queue.queuePos--
             } else {
