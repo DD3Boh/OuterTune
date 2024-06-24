@@ -381,7 +381,7 @@ class MusicService : MediaLibraryService(),
                         playQueue(
                             queue = ListQueue(
                                 title = queue.title,
-                                items = qb.getCurrentQueueShuffled()?.map { it.toMediaItem() } ?: ArrayList(),
+                                items = qb.getCurrentQueueShuffled() ?: ArrayList(),
                                 startIndex = queue.queuePos,
                                 position = 0,
                                 playlistId = null
@@ -503,15 +503,14 @@ class MusicService : MediaLibraryService(),
             if (queue.preloadItem != null) {
                 queueBoard.add(
                     queueTitle?: "Queue",
-                    initialStatus.items.subList(0, initialStatus.mediaItemIndex).map { it.metadata },
+                    initialStatus.items.subList(0, initialStatus.mediaItemIndex),
                     queue = queue,
                     startIndex = 0
                 )
 
                 queueBoard.add(
                     queueTitle?: "Queue",
-                    initialStatus.items.subList(initialStatus.mediaItemIndex + 1, initialStatus.items.size)
-                        .map { it.metadata },
+                    initialStatus.items.subList(initialStatus.mediaItemIndex + 1, initialStatus.items.size),
                     queue = queue,
                     forceInsert = true,
                     startIndex = initialStatus.mediaItemIndex
@@ -520,7 +519,7 @@ class MusicService : MediaLibraryService(),
             } else {
                 queueBoard.add(
                     queueTitle?: "Queue",
-                    initialStatus.items.map { it.metadata },
+                    initialStatus.items,
                     queue = queue,
                     startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0
                 )
@@ -542,7 +541,7 @@ class MusicService : MediaLibraryService(),
             if (initialStatus.title != null) {
                 queueTitle = initialStatus.title
             }
-            player.addMediaItems(initialStatus.items.drop(1))
+            player.addMediaItems(initialStatus.items.drop(1).map { it.toMediaItem() })
         }
     }
 
@@ -615,7 +614,7 @@ class MusicService : MediaLibraryService(),
             scope.launch(SilentHandler) {
                 val mediaItems = queueBoard.getCurrentQueue()?.ytmQueue?.nextPage()
                 if (mediaItems != null && player.playbackState != STATE_IDLE) {
-                    player.addMediaItems(mediaItems)
+                    player.addMediaItems(mediaItems.map { it.toMediaItem() })
                 }
             }
         }

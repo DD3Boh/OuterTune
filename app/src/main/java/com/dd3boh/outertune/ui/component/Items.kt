@@ -105,6 +105,7 @@ import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.menu.FolderMenu
 import com.dd3boh.outertune.ui.theme.extractThemeColor
 import com.dd3boh.outertune.models.DirectoryTree
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
@@ -860,7 +861,7 @@ fun AlbumGridItem(
                                 .albumWithSongs(album.id)
                                 .first()
                                 ?.songs
-                                ?.map { it.toMediaItem() }
+                                ?.map { it.toMediaMetadata() }
                                 ?.let {
                                     playerConnection.playQueue(
                                         ListQueue(
@@ -1432,7 +1433,7 @@ fun YouTubeGridItem(
                             coroutineScope?.launch(Dispatchers.IO) {
                                 var songs = database
                                     .albumWithSongs(item.id)
-                                    .first()?.songs?.map { it.toMediaItem() }
+                                    .first()?.songs?.map { it.toMediaMetadata() }
                                 if (songs == null) {
                                     YouTube
                                         .album(item.id)
@@ -1440,7 +1441,7 @@ fun YouTubeGridItem(
                                             database.transaction {
                                                 insert(albumPage)
                                             }
-                                            songs = albumPage.songs.map { it.toMediaItem() }
+                                            songs = albumPage.songs.map { it.toMediaMetadata() }
                                         }
                                         .onFailure {
                                             reportException(it)

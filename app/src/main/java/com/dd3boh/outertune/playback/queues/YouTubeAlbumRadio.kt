@@ -1,10 +1,9 @@
 package com.dd3boh.outertune.playback.queues
 
-import androidx.media3.common.MediaItem
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.WatchEndpoint
-import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.toMediaMetadata
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 
@@ -24,18 +23,18 @@ class YouTubeAlbumRadio(
         continuation = nextResult.continuation
         Queue.Status(
             title = nextResult.title,
-            items = (albumSongs + nextResult.items.subList(albumSongs.size, nextResult.items.size)).map { it.toMediaItem() },
+            items = (albumSongs + nextResult.items.subList(albumSongs.size, nextResult.items.size)).map { it.toMediaMetadata()},
             mediaItemIndex = nextResult.currentIndex ?: 0
         )
     }
 
     override fun hasNextPage(): Boolean = continuation != null
 
-    override suspend fun nextPage(): List<MediaItem> {
+    override suspend fun nextPage(): List<MediaMetadata> {
         val nextResult = withContext(IO) {
             YouTube.next(endpoint, continuation).getOrThrow()
         }
         continuation = nextResult.continuation
-        return nextResult.items.map { it.toMediaItem() }
+        return nextResult.items.map { it.toMediaMetadata() }
     }
 }

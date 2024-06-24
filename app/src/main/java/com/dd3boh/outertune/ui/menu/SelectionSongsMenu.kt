@@ -36,6 +36,7 @@ import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
@@ -157,7 +158,7 @@ fun SelectionSongMenu(
             playerConnection.playQueue(
                 ListQueue(
                     title = "Selection",
-                    items = songSelection.map { it.toMediaItem() }
+                    items = songSelection.map { it.toMediaMetadata() }
                 )
             )
             clearAction()
@@ -171,7 +172,7 @@ fun SelectionSongMenu(
             playerConnection.playQueue(
                 ListQueue(
                     title = "Selection",
-                    items = songSelection.shuffled().map { it.toMediaItem() }
+                    items = songSelection.shuffled().map { it.toMediaMetadata() }
                 )
             )
             clearAction()
@@ -378,7 +379,7 @@ fun SelectionMediaMetadataMenu(
             playerConnection.playQueue(
                 ListQueue(
                     title = "Selection",
-                    items = songSelection.map { it.toMediaItem() }
+                    items = songSelection
                 )
             )
             clearAction()
@@ -392,7 +393,7 @@ fun SelectionMediaMetadataMenu(
             playerConnection.playQueue(
                 ListQueue(
                     title = "Selection",
-                    items = songSelection.shuffled().map { it.toMediaItem() }
+                    items = songSelection.shuffled()
                 )
             )
             clearAction()

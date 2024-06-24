@@ -273,6 +273,13 @@ fun ArtistScreen(
                                         .combinedClickable {
                                             if (song.id == mediaMetadata?.id) {
                                                 playerConnection.player.togglePlayPause()
+                                            } else if (song.song.isLocal) {
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = "Library: ${artistPage.artist.title}",
+                                                        items = librarySongs.filter { it.song.isLocal } .toList().shuffled().map { it.toMediaMetadata() }
+                                                    )
+                                                )
                                             } else {
                                                 playerConnection.playQueue(
                                                     YouTubeQueue(

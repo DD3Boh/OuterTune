@@ -162,6 +162,13 @@ fun OnlineSearchResult(
                                 is SongItem -> {
                                     if (item.id == mediaMetadata?.id) {
                                         playerConnection.player.togglePlayPause()
+                                    } else if (item.id.startsWith("LA")) {
+                                        playerConnection.playQueue(
+                                            ListQueue(
+                                                title = "Search",
+                                                items = listOf(item.toMediaMetadata())
+                                            )
+                                        )
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue(

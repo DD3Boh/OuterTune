@@ -100,6 +100,7 @@ import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
@@ -603,7 +604,7 @@ fun LocalPlaylistScreen(
                                         playerConnection.playQueue(
                                             ListQueue(
                                                 title = playlist.playlist.name,
-                                                items = songs.map { it.song.toMediaItem() },
+                                                items = songs.map { it.song.toMediaMetadata() },
                                                 playlistId = playlist.playlist.browseId
                                             )
                                         )
@@ -626,7 +627,7 @@ fun LocalPlaylistScreen(
                                             ListQueue(
                                                 title = playlist.playlist.name,
                                                 items = songs.shuffled()
-                                                    .map { it.song.toMediaItem() },
+                                                    .map { it.song.toMediaMetadata() },
                                                 playlistId = playlist.playlist.browseId
                                             )
                                         )
@@ -769,7 +770,7 @@ fun LocalPlaylistScreen(
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = playlist!!.playlist.name,
-                                                        items = songs.map { it.song.toMediaItem() },
+                                                        items = songs.map { it.song.toMediaMetadata() },
                                                         startIndex = index,
                                                         playlistId = playlist?.playlist?.browseId
                                                     )

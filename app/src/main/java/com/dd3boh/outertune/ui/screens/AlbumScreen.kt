@@ -82,6 +82,7 @@ import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
@@ -320,7 +321,7 @@ fun AlbumScreen(
                                 playerConnection.playQueue(
                                     ListQueue(
                                         title = albumWithSongsLocal.album.title,
-                                        items = albumWithSongsLocal.songs.map(Song::toMediaItem),
+                                        items = albumWithSongsLocal.songs.map(Song::toMediaMetadata),
                                         playlistId = albumWithSongsLocal.album.playlistId
                                     )
                                 )
@@ -344,7 +345,7 @@ fun AlbumScreen(
                                 playerConnection.playQueue(
                                     ListQueue(
                                         title = albumWithSongsLocal.album.title,
-                                        items = albumWithSongsLocal.songs.shuffled().map(Song::toMediaItem),
+                                        items = albumWithSongsLocal.songs.shuffled().map(Song::toMediaMetadata),
                                         playlistId = albumWithSongsLocal.album.playlistId
                                     )
                                 )
@@ -427,7 +428,7 @@ fun AlbumScreen(
                                                     playerConnection.playQueue(
                                                         ListQueue(
                                                             title = albumWithSongsLocal.album.title,
-                                                            items = albumWithSongsLocal.songs.map { it.toMediaItem() },
+                                                            items = albumWithSongsLocal.songs.map { it.toMediaMetadata() },
                                                             startIndex = index,
                                                             playlistId = albumWithSongsLocal.album.playlistId
                                                         )

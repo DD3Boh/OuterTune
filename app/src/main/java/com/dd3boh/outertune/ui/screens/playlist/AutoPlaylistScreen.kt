@@ -87,6 +87,7 @@ import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
@@ -379,7 +380,7 @@ fun AutoPlaylistScreen(
                                     playerConnection.playQueue(
                                         ListQueue(
                                             title = playlist.name,
-                                            items = songs.map { it.toMediaItem() },
+                                            items = songs.map { it.toMediaMetadata() },
                                             playlistId = playlist.browseId
                                         )
                                     )
@@ -402,7 +403,7 @@ fun AutoPlaylistScreen(
                                         ListQueue(
                                             title = playlist.name,
                                             items = songs.shuffled()
-                                                .map { it.toMediaItem() },
+                                                .map { it.toMediaMetadata() },
                                             playlistId = playlist.browseId
                                         )
                                     )
@@ -519,7 +520,7 @@ fun AutoPlaylistScreen(
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = playlist.name,
-                                                        items = songs.map { it.toMediaItem() },
+                                                        items = songs.map { it.toMediaMetadata()},
                                                         startIndex = index,
                                                         playlistId = playlist.browseId
                                                     )

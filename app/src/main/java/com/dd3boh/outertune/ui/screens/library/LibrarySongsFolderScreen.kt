@@ -44,6 +44,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.*
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
@@ -297,7 +298,7 @@ fun LibrarySongsFolderScreen(
                                                         // I surely hope this applies to all in this folder...
                                                         items = currDir
                                                             .toList()
-                                                            .map { it.toMediaItem() },
+                                                            .map { it.toMediaMetadata() },
                                                         startIndex = index
                                                     )
                                                 )
@@ -327,7 +328,7 @@ fun LibrarySongsFolderScreen(
                 playerConnection.playQueue(
                     ListQueue(
                         title = currDir.currentDir,
-                        items = currDir.toList().shuffled().map { it.toMediaItem() }
+                        items = currDir.toList().shuffled().map { it.toMediaMetadata() }
                     )
                 )
             }

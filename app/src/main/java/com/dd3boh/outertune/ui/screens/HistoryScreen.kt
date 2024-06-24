@@ -117,6 +117,13 @@ fun HistoryScreen(
                                 onClick = {
                                     if (song.id == mediaMetadata?.id) {
                                         playerConnection.player.togglePlayPause()
+                                    } else if (song.id.startsWith("LA")) {
+                                        playerConnection.playQueue(
+                                            ListQueue(
+                                                title = "History",
+                                                items =  section.songs.map { it.toMediaMetadata() }
+                                            )
+                                        )
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue(
