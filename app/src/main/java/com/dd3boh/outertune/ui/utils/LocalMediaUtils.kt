@@ -68,9 +68,9 @@ fun getLocalThumbnail(path: String?, resize: Boolean): Bitmap? {
     }
 
     val mData = MediaMetadataRetriever()
-    mData.setDataSource(path)
 
     var image: Bitmap = try {
+        mData.setDataSource(path)
         val art = mData.embeddedPicture
         BitmapFactory.decodeByteArray(art, 0, art!!.size)
     } catch (e: Exception) {
