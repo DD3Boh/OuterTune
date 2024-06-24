@@ -383,7 +383,7 @@ class MusicService : MediaLibraryService(),
                 if (dataStore.get(PersistentQueueKey, true)) {
                     saveQueueToDisk()
                 }
-            }
+            }.onFailure { reportException(it) }
         }
     }
 
