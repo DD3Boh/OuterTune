@@ -40,7 +40,7 @@ data class MultiQueueObject(
     val unShuffled: MutableList<MediaMetadata>,
     var shuffled: Boolean = false,
     var queuePos: Int = -1,
-    val ytmQueue: Queue?
+//    val ytmQueue: Queue?
 ) : Serializable
 
 /**
@@ -180,7 +180,7 @@ class QueueBoard : Serializable {
                 shufQueue.addAll((mediaList.filterNotNull()))
                 unShufQueue.addAll((mediaList.filterNotNull()))
                 masterQueues.add(
-                    MultiQueueObject("$title +", shufQueue, unShufQueue, false, match.queuePos, ytmQueue = queue)
+                    MultiQueueObject("$title +", shufQueue, unShufQueue, false, match.queuePos)
                 )
 
                 // don't change index, don't move match queue to end
@@ -198,7 +198,7 @@ class QueueBoard : Serializable {
                     ArrayList(mediaList.filterNotNull()),
                     false,
                     startIndex,
-                    ytmQueue = queue
+//                    ytmQueue = queue
                 )
             )
             masterIndex = masterQueues.size - 1 // track the newly modified queue

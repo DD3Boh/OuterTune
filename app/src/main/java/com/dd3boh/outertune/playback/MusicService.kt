@@ -605,20 +605,6 @@ class MusicService : MediaLibraryService(),
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        // Auto load more songs
-        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-            player.playbackState != STATE_IDLE &&
-            player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
-            queueBoard.getCurrentQueue()?.ytmQueue?.hasNextPage() == true
-        ) {
-            scope.launch(SilentHandler) {
-                val mediaItems = queueBoard.getCurrentQueue()?.ytmQueue?.nextPage()
-                if (mediaItems != null && player.playbackState != STATE_IDLE) {
-                    player.addMediaItems(mediaItems.map { it.toMediaItem() })
-                }
-            }
-        }
-
         // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
         // no, when repeat mode is on, player does not "STATE_ENDED"
         if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
