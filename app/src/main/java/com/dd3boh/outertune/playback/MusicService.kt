@@ -25,7 +25,6 @@ import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
-import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Player.STATE_IDLE
 import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
@@ -118,7 +117,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
@@ -160,7 +158,6 @@ class MusicService : MediaLibraryService(),
 
     private val audioQuality by enumPreference(this, AudioQualityKey, AudioQuality.AUTO)
 
-    private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
     var queuePlaylistId: String? = null
     private var lastMediaItemIndex = -1
@@ -493,7 +490,6 @@ class MusicService : MediaLibraryService(),
      * If both are unspecified, the title will default to "Queue".
      */
     fun playQueue(queue: Queue, playWhenReady: Boolean = true, title: String? = null) {
-        currentQueue = queue
         queueTitle = title
         queuePlaylistId = queue.playlistId
 
@@ -508,6 +504,7 @@ class MusicService : MediaLibraryService(),
                 queueBoard.add(
                     queueTitle?: "Queue",
                     initialStatus.items.subList(0, initialStatus.mediaItemIndex).map { it.metadata },
+                    queue = queue,
                     startIndex = 0
                 )
 
@@ -515,6 +512,7 @@ class MusicService : MediaLibraryService(),
                     queueTitle?: "Queue",
                     initialStatus.items.subList(initialStatus.mediaItemIndex + 1, initialStatus.items.size)
                         .map { it.metadata },
+                    queue = queue,
                     forceInsert = true,
                     startIndex = initialStatus.mediaItemIndex
                 )
@@ -523,6 +521,7 @@ class MusicService : MediaLibraryService(),
                 queueBoard.add(
                     queueTitle?: "Queue",
                     initialStatus.items.map { it.metadata },
+                    queue = queue,
                     startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0
                 )
                 queueBoard.setCurrQueue(player)
@@ -544,7 +543,6 @@ class MusicService : MediaLibraryService(),
                 queueTitle = initialStatus.title
             }
             player.addMediaItems(initialStatus.items.drop(1))
-            currentQueue = radioQueue
         }
     }
 
@@ -612,11 +610,11 @@ class MusicService : MediaLibraryService(),
         if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
             player.playbackState != STATE_IDLE &&
             player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
-            currentQueue.hasNextPage()
+            queueBoard.getCurrentQueue()?.ytmQueue?.hasNextPage() == true
         ) {
             scope.launch(SilentHandler) {
-                val mediaItems = currentQueue.nextPage()
-                if (player.playbackState != STATE_IDLE) {
+                val mediaItems = queueBoard.getCurrentQueue()?.ytmQueue?.nextPage()
+                if (mediaItems != null && player.playbackState != STATE_IDLE) {
                     player.addMediaItems(mediaItems)
                 }
             }
@@ -635,7 +633,6 @@ class MusicService : MediaLibraryService(),
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {
         if (playbackState == STATE_IDLE) {
-            currentQueue = EmptyQueue
             queuePlaylistId = null
             queueTitle = null
         }

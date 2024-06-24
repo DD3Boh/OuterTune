@@ -7,6 +7,8 @@ import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.playback.PlayerConnection
+import com.dd3boh.outertune.playback.queues.EmptyQueue
+import com.dd3boh.outertune.playback.queues.Queue
 import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.internal.toImmutableList
 import timber.log.Timber
@@ -37,7 +39,8 @@ data class MultiQueueObject(
      */
     val unShuffled: MutableList<MediaMetadata>,
     var shuffled: Boolean = false,
-    var queuePos: Int = -1
+    var queuePos: Int = -1,
+    val ytmQueue: Queue?
 ) : Serializable
 
 /**
@@ -98,6 +101,7 @@ class QueueBoard : Serializable {
      *
      * @param title Title (id) of the queue
      * @param mediaList List of items to add
+     * @param queue Queue object for song continuation et al
      * @param forceInsert When mediaList contains one item, force an insert instead of jumping to an
      *      item if it exists
      * @param delta Takes not effect if forceInsert is false. Setting this to true will add only new
@@ -108,6 +112,7 @@ class QueueBoard : Serializable {
     fun add(
         title: String,
         mediaList: List<MediaMetadata?>,
+        queue: Queue? = EmptyQueue,
         forceInsert: Boolean = false,
         delta: Boolean = true,
         startIndex: Int = 0
@@ -175,7 +180,7 @@ class QueueBoard : Serializable {
                 shufQueue.addAll((mediaList.filterNotNull()))
                 unShufQueue.addAll((mediaList.filterNotNull()))
                 masterQueues.add(
-                    MultiQueueObject("$title +", shufQueue, unShufQueue, false, match.queuePos)
+                    MultiQueueObject("$title +", shufQueue, unShufQueue, false, match.queuePos, ytmQueue = queue)
                 )
 
                 // don't change index, don't move match queue to end
@@ -193,6 +198,7 @@ class QueueBoard : Serializable {
                     ArrayList(mediaList.filterNotNull()),
                     false,
                     startIndex,
+                    ytmQueue = queue
                 )
             )
             masterIndex = masterQueues.size - 1 // track the newly modified queue
