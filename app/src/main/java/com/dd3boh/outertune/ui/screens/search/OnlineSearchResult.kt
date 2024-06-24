@@ -168,14 +168,18 @@ fun OnlineSearchResult(
                                             ListQueue(
                                                 title = "Search",
                                                 items = listOf(item.toMediaMetadata())
-                                            )
+                                            ),
+                                            replace = true,
+                                            title = "Search",
                                         )
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue(
                                                 WatchEndpoint(videoId = item.id),
                                                 item.toMediaMetadata()
-                                            )
+                                            ),
+                                            replace = true,
+                                            title = "Search",
                                         )
                                     }
                                 }

@@ -180,14 +180,18 @@ fun OnlineSearchScreen(
                                             ListQueue(
                                                 title = "Search: $query",
                                                 items = viewState.items.map { it as SongItem}.map { it.toMediaMetadata() }
-                                            )
+                                            ),
+                                            replace = true,
+                                            title = "Search: $query",
                                         )
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue(
                                                 WatchEndpoint(videoId = item.id),
-                                                item.toMediaMetadata()
-                                            )
+                                                item.toMediaMetadata(),
+                                            ),
+                                            replace = true,
+                                            title = "Search: $query",
                                         )
                                         onDismiss()
                                     }

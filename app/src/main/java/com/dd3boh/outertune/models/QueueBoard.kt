@@ -104,6 +104,7 @@ class QueueBoard : Serializable {
      * @param queue Queue object for song continuation et al
      * @param forceInsert When mediaList contains one item, force an insert instead of jumping to an
      *      item if it exists
+     * @param replace Replace all items in the queue. This overrides forceInsert, delta
      * @param delta Takes not effect if forceInsert is false. Setting this to true will add only new
      *      songs, false will add all songs
      * @param startIndex Index/position to instantiate the new queue with. This value takes no effect
@@ -114,13 +115,14 @@ class QueueBoard : Serializable {
         mediaList: List<MediaMetadata?>,
         queue: Queue? = EmptyQueue,
         forceInsert: Boolean = false,
+        replace: Boolean = false,
         delta: Boolean = true,
         startIndex: Int = 0
     ) {
         if (QUEUE_DEBUG)
             Timber.tag(TAG).d(
                 "Adding to queue \"$title\". medialist size = ${mediaList.size}. " +
-                        "forceInsert/delta/startIndex = $forceInsert/$delta/$startIndex"
+                        "forceInsert/replace/delta/startIndex = $forceInsert/$replace/$delta/$startIndex"
             )
 
         if (mediaList.isEmpty()) {
@@ -129,6 +131,18 @@ class QueueBoard : Serializable {
 
         val match = masterQueues.firstOrNull { it.title == title } // look for matching queue. Title is uid
         if (match != null) { // found an existing queue
+            if (replace) { // force replace
+                if (QUEUE_DEBUG)
+                    Timber.tag(TAG).d("Adding to queue: Replacing all queue items")
+                match.queue.clear()
+                match.queue.addAll(mediaList.filterNotNull())
+                match.unShuffled.clear()
+                match.unShuffled.addAll(mediaList.filterNotNull())
+                match.queuePos = startIndex
+                bubbleUp(match)  // move queue to end of list so it shows as most recent
+                return
+            }
+
             // don't add songs to the queue if it's just one EXISTING song AND the new medialist is a subset of what we have
             // UNLESS forced to
             val containsAll = mediaList.all { s -> match.queue.any { s?.id == it.id } } // if is subset

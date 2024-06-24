@@ -84,8 +84,8 @@ class PlayerConnection(
         repeatMode.value = player.repeatMode
     }
 
-    fun playQueue(queue: Queue, title: String? = null) {
-        service.playQueue(queue, title = title)
+    fun playQueue(queue: Queue, replace: Boolean = true, title: String? = null) {
+        service.playQueue(queue, replace = replace, title = title)
     }
 
     fun playNext(item: MediaItem) = playNext(listOf(item))

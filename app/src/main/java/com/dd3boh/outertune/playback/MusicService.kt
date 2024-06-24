@@ -90,7 +90,6 @@ import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
-import com.dd3boh.outertune.playback.queues.EmptyQueue
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
@@ -486,10 +485,11 @@ class MusicService : MediaLibraryService(),
      *
      * @param queue Queue to play.
      * @param playWhenReady
+     * @param replace Replace media items instead of the underlying logic
      * @param title Title override for the queue. If this value us unspecified, this method takes the value from queue.
      * If both are unspecified, the title will default to "Queue".
      */
-    fun playQueue(queue: Queue, playWhenReady: Boolean = true, title: String? = null) {
+    fun playQueue(queue: Queue, playWhenReady: Boolean = true, replace: Boolean = false, title: String? = null) {
         queueTitle = title
         queuePlaylistId = queue.playlistId
 
@@ -499,35 +499,22 @@ class MusicService : MediaLibraryService(),
             if (queueTitle == null && initialStatus.title != null) { // do not find a title if an override is provided
                 queueTitle = initialStatus.title
             }
+
+            // print out queue
+//            println("-----------------------------")
+//            initialStatus.items.map { println(it.title) }
             if (initialStatus.items.isEmpty()) return@launch
-            if (queue.preloadItem != null) {
-                queueBoard.add(
-                    queueTitle?: "Queue",
-                    initialStatus.items.subList(0, initialStatus.mediaItemIndex),
-                    queue = queue,
-                    startIndex = 0
-                )
+            queueBoard.add(
+                queueTitle?: "Queue",
+                initialStatus.items,
+                queue = queue,
+                startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0,
+                replace = replace
+            )
+            queueBoard.setCurrQueue(player)
 
-                queueBoard.add(
-                    queueTitle?: "Queue",
-                    initialStatus.items.subList(initialStatus.mediaItemIndex + 1, initialStatus.items.size),
-                    queue = queue,
-                    forceInsert = true,
-                    startIndex = initialStatus.mediaItemIndex
-                )
-                queueBoard.setCurrQueue(player)
-            } else {
-                queueBoard.add(
-                    queueTitle?: "Queue",
-                    initialStatus.items,
-                    queue = queue,
-                    startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0
-                )
-                queueBoard.setCurrQueue(player)
-
-                player.prepare()
-                player.playWhenReady = playWhenReady
-            }
+            player.prepare()
+            player.playWhenReady = playWhenReady
         }
     }
 
