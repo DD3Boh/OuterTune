@@ -375,16 +375,6 @@ class MusicService : MediaLibraryService(),
                 )
             }
         }
-
-        // Save queue periodically to prevent queue loss from crash or force kill
-        scope.launch {
-            while (isActive) {
-                delay(30.seconds)
-                if (dataStore.get(PersistentQueueKey, true)) {
-                    saveQueueToDisk()
-                }
-            }.onFailure { reportException(it) }
-        }
     }
 
     private fun updateNotification() {
