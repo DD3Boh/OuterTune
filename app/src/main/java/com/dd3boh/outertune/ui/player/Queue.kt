@@ -73,6 +73,7 @@ import androidx.media3.common.Timeline
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
+import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
@@ -87,6 +88,7 @@ import com.dd3boh.outertune.ui.component.MediaMetadataListItem
 import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
+import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -105,6 +107,8 @@ fun Queue(
     onBackgroundColor: Color = Color.Unspecified,
     modifier: Modifier = Modifier,
 ) {
+    val (swipeToDismiss) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
+
     val menuState = LocalMenuState.current
 
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -379,6 +383,9 @@ fun Queue(
                                 totalDistance
                             },
                             confirmValueChange = { dismissValue ->
+                                if (!swipeToDismiss) {
+                                    return@rememberSwipeToDismissBoxState false
+                                }
                                 when (dismissValue) {
                                     SwipeToDismissBoxValue.StartToEnd -> {
                                         playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
