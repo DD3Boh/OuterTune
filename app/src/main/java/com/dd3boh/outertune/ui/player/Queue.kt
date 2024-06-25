@@ -88,6 +88,7 @@ import com.dd3boh.outertune.ui.component.ResizableIconButton
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
@@ -187,6 +188,12 @@ fun Queue(
                 addAll(queueBoard.getAllQueues())
             }
             playingQueue = queueBoard.getMasterIndex()
+            coroutineScope.launch {
+                delay(300) // needed for scrolling to queue when switching to new queue
+                reorderableState.listState.animateScrollToItem(
+                   playerConnection.player.currentMediaItemIndex
+                )
+            }
         }
 
         // for multiqueue
@@ -308,6 +315,12 @@ fun Queue(
                                                 updateQueues()
                                                 if (remainingQueues < 1) {
                                                     onTerminate.invoke()
+                                                } else {
+                                                    coroutineScope.launch {
+                                                        reorderableState.listState.animateScrollToItem(
+                                                            playerConnection.player.currentMediaItemIndex
+                                                        )
+                                                    }
                                                 }
                                             },
                                         )

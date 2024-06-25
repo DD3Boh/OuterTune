@@ -266,7 +266,7 @@ class MusicService : MediaLibraryService(),
                             player.prepare()
                             player.play()
                         }
-                        queueBoard.setCurrQueuePosIndex(mediaItem)
+                        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex)
                         queueTitle = queueBoard.getCurrentQueue()?.title
                         if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
                             saveQueueToDisk() // save queue, but rate limited

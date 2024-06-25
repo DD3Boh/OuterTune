@@ -491,7 +491,7 @@ class QueueBoard : Serializable {
     }
 
     /**
-     * Update the current position index of the current queue to the index of the media item
+     * Update the current position index of the current queue to the index of the FIRST media item match
      *
      * @param mediaItem
      */
