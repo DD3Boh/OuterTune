@@ -288,8 +288,10 @@ fun Queue(
                         ) {
                             Row( // wrapper
                                 modifier = Modifier
-                                    .background(if (playingQueue == index) MaterialTheme.colorScheme.tertiary.copy(0.3f)
-                                    else Color.Transparent)
+                                    .background(
+                                        if (playingQueue == index) MaterialTheme.colorScheme.tertiary.copy(0.3f)
+                                        else Color.Transparent
+                                    )
                                     .clickable {
                                         // switch to this queue, don't skip if skipping to same queue
                                         if (queueBoard.getCurrentQueue()?.title != mq.title) {
@@ -344,13 +346,15 @@ fun Queue(
                     }
                 }
 
+                Row(modifier = Modifier.padding(vertical = 4.dp)) { }
+
                 Text(
                     text = "Songs",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
                 )
             }
 
@@ -589,7 +593,7 @@ fun Queue(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(horizontal = 4.dp)
+                                .padding(horizontal = 8.dp)
                         )
                         ResizableIconButton(
                             icon = if (multiqueueExpand) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
@@ -602,7 +606,8 @@ fun Queue(
 
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
-                        horizontalAlignment = Alignment.End
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Text(
                             text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size),
@@ -626,9 +631,9 @@ fun Queue(
                 .fillMaxWidth()
                 .height(
                     ListItemHeight +
-                        WindowInsets.systemBars
-                            .asPaddingValues()
-                            .calculateBottomPadding()
+                            WindowInsets.systemBars
+                                .asPaddingValues()
+                                .calculateBottomPadding()
                 )
                 .align(Alignment.BottomCenter)
                 .clickable {
