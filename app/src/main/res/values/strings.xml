@@ -271,10 +271,12 @@
     <string name="backup_restore">Backup and restore</string>
     <string name="backup">Backup</string>
     <string name="restore">Restore</string>
+    <string name="import_m3u">Import a playlist (m3u)</string>
     <string name="imported_playlist">Imported playlist</string>
     <string name="backup_create_success">Backup created successfully</string>
     <string name="backup_create_failed">Couldn\'t create backup</string>
     <string name="restore_failed">Failed to restore backup</string>
+    <string name="m3u_import_failed">Failed to import playlist</string>
 
     <string name="about">About</string>
     <string name="app_version">App version</string>

@@ -710,7 +710,12 @@ class LocalMediaScanner {
          * @param matchStrength How lax should the scanner be
          * @param strictFileNames Whether to consider file names
          */
-        fun compareSong(a: Song, b: Song, matchStrength: ScannerMatchCriteria, strictFileNames: Boolean): Boolean {
+        fun compareSong(
+            a: Song,
+            b: Song,
+            matchStrength: ScannerMatchCriteria = ScannerMatchCriteria.LEVEL_2,
+            strictFileNames: Boolean = false
+        ): Boolean {
             // if match file names
             if (strictFileNames &&
                 (a.song.localPath?.substringAfterLast('/') !=
