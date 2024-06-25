@@ -38,6 +38,7 @@ import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
@@ -366,6 +367,7 @@ fun SelectionMediaMetadataMenu(
                 var i = 0
                 currentItems.forEach { cur ->
                     playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i)
+                    queueBoard.removeCurrentQueueSong(cur.firstPeriodIndex - i)
                     i++
                 }
             }

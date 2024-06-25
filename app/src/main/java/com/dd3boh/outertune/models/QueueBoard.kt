@@ -206,6 +206,29 @@ class QueueBoard : Serializable {
     }
 
     /**
+     * Removes song from the current queue
+     *
+     * @param index Index of item
+     */
+    fun removeCurrentQueueSong(index: Int) = getCurrentQueue()?.let { removeSong(it, index) }
+
+    /**
+     * Removes song from the queue
+     *
+     * @param item Queue
+     * @param index Index of item
+     */
+    fun removeSong(item: MultiQueueObject, index: Int) {
+        if (item.shuffled) {
+            val removed = item.queue.removeAt(index)
+            item.unShuffled.remove(removed)
+        } else {
+            val removed = item.unShuffled.removeAt(index)
+            item.queue.remove(removed)
+        }
+    }
+
+    /**
      * Deletes a queue
      *
      * @param item
