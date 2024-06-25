@@ -308,7 +308,7 @@ fun LibrarySongsFolderScreen(
                                                         items = currDir
                                                             .toList()
                                                             .map { it.toMediaMetadata() },
-                                                        startIndex = index
+                                                            startIndex = currDir.toList().indexOf(songWrapper.item)
                                                     )
                                                 )
                                             }
