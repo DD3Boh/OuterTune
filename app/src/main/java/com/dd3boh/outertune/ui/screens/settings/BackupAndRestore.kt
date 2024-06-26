@@ -2,7 +2,6 @@ package com.dd3boh.outertune.ui.screens.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -30,12 +29,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,7 +50,6 @@ import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.BackupRestoreViewModel
-import org.burnoutcrew.reorderable.reorderable
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -135,6 +130,7 @@ fun BackupAndRestore(
             )
             AddToPlaylistDialog(
                 isVisible = showChoosePlaylistDialog,
+                noSyncing = true,
                 onAdd = { playlist ->
                     viewModel.importPlaylist(importedSongs, playlist)
                 },

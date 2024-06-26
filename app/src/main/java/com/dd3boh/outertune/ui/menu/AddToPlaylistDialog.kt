@@ -2,6 +2,10 @@ package com.dd3boh.outertune.ui.menu
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
@@ -9,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,12 +25,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
@@ -43,6 +46,7 @@ import java.time.LocalDateTime
 @Composable
 fun AddToPlaylistDialog(
     isVisible: Boolean,
+    noSyncing: Boolean = false,
     onAdd: (Playlist) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -52,6 +56,10 @@ fun AddToPlaylistDialog(
         mutableStateOf(emptyList<Playlist>())
     }
     var showCreatePlaylistDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    var syncedPlaylist: Boolean by remember {
         mutableStateOf(false)
     }
 
@@ -115,13 +123,49 @@ fun AddToPlaylistDialog(
                         insert(
                             PlaylistEntity(
                                 name = playlistName,
-                                browseId = browseId,
-                                bookmarkedAt = LocalDateTime.now()
+                                browseId = if (syncedPlaylist) browseId else null,
+                                bookmarkedAt = LocalDateTime.now(),
+                                isEditable = !syncedPlaylist,
+                                isLocal = !syncedPlaylist // && check that all songs are non-local
                             )
                         )
                     }
                 }
+            },
+            extraContent = {
+                // synced/unsynced toggle
+                Row(
+                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 40.dp)
+                ) {
+                    Column() {
+                        Text(
+                            text = "Sync Playlist",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+
+                        Text(
+                            text = "Note: This allows for syncing with YouTube Music. This is NOT changeable later. You cannot add local songs to synced playlists.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Switch(
+                            enabled = !noSyncing,
+                            checked = syncedPlaylist,
+                            onCheckedChange = {
+                                syncedPlaylist = !syncedPlaylist
+                            },
+                        )
+                    }
+                }
+
             }
         )
+
+
     }
 }
