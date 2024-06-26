@@ -47,6 +47,7 @@ import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
@@ -166,51 +167,11 @@ fun LibrarySongsFolderScreen(
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
                         if (selection) {
-                            val count = wrappedSongs.count { it.isSelected }
-                            Text(
-                                text = "${count}/${wrappedSongs.size} selected",
-                                modifier = Modifier.weight(1f)
+                            SelectHeader(
+                                wrappedSongs = wrappedSongs,
+                                menuState = menuState,
+                                onDismiss = { selection = false }
                             )
-                            IconButton(
-                                onClick = {
-                                    if (count == wrappedSongs.size) {
-                                        wrappedSongs.forEach { it.isSelected = false }
-                                    } else {
-                                        wrappedSongs.forEach { it.isSelected = true }
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    if (count == wrappedSongs.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                    contentDescription = null
-                                )
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    menuState.show {
-                                        SelectionSongMenu(
-                                            songSelection = wrappedSongs.filter { it.isSelected }.map { it.item },
-                                            onDismiss = menuState::dismiss,
-                                            clearAction = { selection = false }
-                                        )
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    Icons.Rounded.MoreVert,
-                                    contentDescription = null
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { selection = false },
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription = null
-                                )
-                            }
                         } else {
                             SortHeader(
                                 sortType = sortType,

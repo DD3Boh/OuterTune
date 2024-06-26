@@ -9,10 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,11 +42,11 @@ import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
-import com.dd3boh.outertune.ui.menu.SelectionSongMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -120,51 +117,11 @@ fun LibrarySongsScreen(
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
             if (selection) {
-                val count = wrappedSongs.count { it.isSelected }
-                Text(
-                    text = "${count}/${wrappedSongs.size} selected",
-                    modifier = Modifier.weight(1f)
+                SelectHeader(
+                    wrappedSongs = wrappedSongs,
+                    menuState = menuState,
+                    onDismiss = { selection = false }
                 )
-                IconButton(
-                    onClick = {
-                        if (count == wrappedSongs.size) {
-                            wrappedSongs.forEach { it.isSelected = false }
-                        } else {
-                            wrappedSongs.forEach { it.isSelected = true }
-                        }
-                    },
-                ) {
-                    Icon(
-                        if (count == wrappedSongs.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                        contentDescription = null
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        menuState.show {
-                            SelectionSongMenu(
-                                songSelection = wrappedSongs.filter { it.isSelected }.map { it.item },
-                                onDismiss = menuState::dismiss,
-                                clearAction = {selection = false}
-                            )
-                        }
-                    },
-                ) {
-                    Icon(
-                        Icons.Rounded.MoreVert,
-                        contentDescription = null
-                    )
-                }
-
-                IconButton(
-                    onClick = { selection = false },
-                ) {
-                    Icon(
-                        Icons.Rounded.Close,
-                        contentDescription = null
-                    )
-                }
             } else {
                 SortHeader(
                     sortType = sortType,
