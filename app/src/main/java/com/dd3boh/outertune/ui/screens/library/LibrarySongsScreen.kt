@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -206,18 +207,17 @@ fun LibrarySongsScreen(
                 state = lazyListState,
                 contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
             ) {
-                item(
-                    key = "filter",
-                    contentType = CONTENT_TYPE_HEADER
-                ) {
-                    libraryFilterContent?.let { it() } ?: filterContent()
-                }
-
-                item(
+                stickyHeader(
                     key = "header",
                     contentType = CONTENT_TYPE_HEADER
                 ) {
-                    if (!inLocal) headerContent()
+                    Column(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    ) {
+                        Row(modifier = Modifier.padding(vertical = 8.dp)) { }
+                        libraryFilterContent?.let { it() } ?: filterContent()
+                        if (!inLocal) headerContent()
+                    }
                 }
 
                 // Only show under library filter, subject to change

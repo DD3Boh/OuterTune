@@ -3,6 +3,7 @@ package com.dd3boh.outertune.ui.screens.library
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -148,94 +149,94 @@ fun LibrarySongsFolderScreen(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
-            filterContent?.let {
-                item(
-                    key = "filter",
-                    contentType = CONTENT_TYPE_HEADER
-                ) {
-                    it()
-                }
-            }
-
-            item(
+            stickyHeader(
                 key = "header",
                 contentType = CONTENT_TYPE_HEADER
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                Column(
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
                 ) {
-                    if (selection) {
-                        val count = wrappedSongs.count { it.isSelected }
-                        Text(
-                            text = "${count}/${wrappedSongs.size} selected",
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(
-                            onClick = {
-                                if (count == wrappedSongs.size) {
-                                    wrappedSongs.forEach { it.isSelected = false }
-                                } else {
-                                    wrappedSongs.forEach { it.isSelected = true }
-                                }
-                            },
-                        ) {
-                            Icon(
-                                if (count == wrappedSongs.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                contentDescription = null
-                            )
-                        }
+                    Row(modifier = Modifier.padding(vertical = 8.dp)) { }
+                    filterContent?.let {
+                        it()
+                    }
 
-                        IconButton(
-                            onClick = {
-                                menuState.show {
-                                    SelectionSongMenu(
-                                        songSelection = wrappedSongs.filter { it.isSelected }.map { it.item },
-                                        onDismiss = menuState::dismiss,
-                                        clearAction = { selection = false }
-                                    )
-                                }
-                            },
-                        ) {
-                            Icon(
-                                Icons.Rounded.MoreVert,
-                                contentDescription = null
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        if (selection) {
+                            val count = wrappedSongs.count { it.isSelected }
+                            Text(
+                                text = "${count}/${wrappedSongs.size} selected",
+                                modifier = Modifier.weight(1f)
                             )
-                        }
-
-                        IconButton(
-                            onClick = { selection = false },
-                        ) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = null
-                            )
-                        }
-                    } else {
-                        SortHeader(
-                            sortType = sortType,
-                            sortDescending = sortDescending,
-                            onSortTypeChange = onSortTypeChange,
-                            onSortDescendingChange = onSortDescendingChange,
-                            sortTypeText = { sortType ->
-                                when (sortType) {
-                                    SongSortType.CREATE_DATE -> R.string.sort_by_create_date
-                                    SongSortType.NAME -> R.string.sort_by_name
-                                    SongSortType.ARTIST -> R.string.sort_by_artist
-                                    SongSortType.PLAY_TIME -> R.string.sort_by_play_time
-                                }
+                            IconButton(
+                                onClick = {
+                                    if (count == wrappedSongs.size) {
+                                        wrappedSongs.forEach { it.isSelected = false }
+                                    } else {
+                                        wrappedSongs.forEach { it.isSelected = true }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    if (count == wrappedSongs.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                    contentDescription = null
+                                )
                             }
-                        )
 
-                        Spacer(Modifier.weight(1f))
+                            IconButton(
+                                onClick = {
+                                    menuState.show {
+                                        SelectionSongMenu(
+                                            songSelection = wrappedSongs.filter { it.isSelected }.map { it.item },
+                                            onDismiss = menuState::dismiss,
+                                            clearAction = { selection = false }
+                                        )
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.MoreVert,
+                                    contentDescription = null
+                                )
+                            }
 
-                        Text(
-                            text = pluralStringResource(
-                                R.plurals.n_song, currDir.toList().size, currDir.toList().size
-                            ),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+                            IconButton(
+                                onClick = { selection = false },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = null
+                                )
+                            }
+                        } else {
+                            SortHeader(
+                                sortType = sortType,
+                                sortDescending = sortDescending,
+                                onSortTypeChange = onSortTypeChange,
+                                onSortDescendingChange = onSortDescendingChange,
+                                sortTypeText = { sortType ->
+                                    when (sortType) {
+                                        SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                        SongSortType.NAME -> R.string.sort_by_name
+                                        SongSortType.ARTIST -> R.string.sort_by_artist
+                                        SongSortType.PLAY_TIME -> R.string.sort_by_play_time
+                                    }
+                                }
+                            )
+
+                            Spacer(Modifier.weight(1f))
+
+                            Text(
+                                text = pluralStringResource(
+                                    R.plurals.n_song, currDir.toList().size, currDir.toList().size
+                                ),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
                     }
                 }
             }
