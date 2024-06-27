@@ -1146,6 +1146,7 @@ fun YouTubeListItem(
     item: YTItem,
     modifier: Modifier = Modifier,
     albumIndex: Int? = null,
+    isSelected: Boolean = false,
     badges: @Composable RowScope.() -> Unit = {
         val database = LocalDatabase.current
         val song by database.song(item.id).collectAsState(initial = null)
@@ -1227,12 +1228,35 @@ fun YouTubeListItem(
                     enter = fadeIn() + expandIn(expandFrom = Alignment.Center),
                     exit = shrinkOut(shrinkTowards = Alignment.Center) + fadeOut()
                 ) {
-                    Text(
-                        text = albumIndex.toString(),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Rounded.Done,
+                            modifier = Modifier.align(Alignment.Center),
+                            contentDescription = null
+                        )
+                    } else {
+                        Text(
+                            text = albumIndex.toString(),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             } else {
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .zIndex(1000f)
+                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Done,
+                            modifier = Modifier.align(Alignment.Center),
+                            contentDescription = null
+                        )
+                    }
+                }
                 AsyncImage(
                     model = item.thumbnail,
                     contentDescription = null,

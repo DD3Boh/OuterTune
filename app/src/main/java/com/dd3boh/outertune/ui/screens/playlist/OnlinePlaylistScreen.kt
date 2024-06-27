@@ -82,6 +82,7 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSong
@@ -96,6 +97,7 @@ import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.FontSizeRange
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.component.YouTubeListItem
 import com.dd3boh.outertune.ui.component.shimmer.ButtonPlaceholder
@@ -104,6 +106,7 @@ import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.menu.YouTubeSongMenu
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.OnlinePlaylistViewModel
 import kotlinx.coroutines.Dispatchers
@@ -126,6 +129,10 @@ fun OnlinePlaylistScreen(
     val playlist by viewModel.playlist.collectAsState()
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<SongItem>() }
+    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
+    var selection by remember {
+        mutableStateOf(false)
+    }
     val dbPlaylist by viewModel.dbPlaylist.collectAsState()
 
     val lazyListState = rememberLazyListState()
@@ -473,22 +480,36 @@ fun OnlinePlaylistScreen(
                         }
                     }
 
+                    stickyHeader(
+                        key = "header",
+                        contentType = CONTENT_TYPE_HEADER
+                    ) {
+                        if (selection) {
+                            SelectHeader(
+                                wrappedSongs = wrappedSongs,
+                                menuState = menuState,
+                                onDismiss = { selection = false },
+                                jvmHax = 69
+                            )
+                        }
+                    }
+
                     items(
-                        items = songs
+                        items = wrappedSongs
                     ) { song ->
                         SwipeToQueueBox(
-                            item = song.toMediaItem(),
+                            item = song.item.toMediaItem(),
                             content = {
                                 YouTubeListItem(
-                                    item = song,
-                                    isActive = mediaMetadata?.id == song.id,
+                                    item = song.item,
+                                    isActive = mediaMetadata?.id == song.item.id,
                                     isPlaying = isPlaying,
                                     trailingContent = {
                                         IconButton(
                                             onClick = {
                                                 menuState.show {
                                                     YouTubeSongMenu(
-                                                        song = song,
+                                                        song = song.item,
                                                         navController = navController,
                                                         onDismiss = menuState::dismiss
                                                     )
@@ -504,21 +525,25 @@ fun OnlinePlaylistScreen(
                                     modifier = Modifier
                                         .combinedClickable(
                                             onClick = {
-                                                if (song.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
-                                                } else {
-                                                    playerConnection.playQueue(
-                                                        YouTubeQueue(
-                                                            song.endpoint ?: WatchEndpoint(videoId = song.id),
-                                                            song.toMediaMetadata()
+                                                if (!selection) {
+                                                    if (song.item.id == mediaMetadata?.id) {
+                                                        playerConnection.player.togglePlayPause()
+                                                    } else {
+                                                        playerConnection.playQueue(
+                                                            YouTubeQueue(
+                                                                song.item.endpoint ?: WatchEndpoint(videoId = song.item.id),
+                                                                song.item.toMediaMetadata()
+                                                            )
                                                         )
-                                                    )
+                                                    }
+                                                } else {
+                                                    song.isSelected = !song.isSelected
                                                 }
                                             },
                                             onLongClick = {
                                                 menuState.show {
                                                     YouTubeSongMenu(
-                                                        song = song,
+                                                        song = song.item,
                                                         navController = navController,
                                                         onDismiss = menuState::dismiss
                                                     )

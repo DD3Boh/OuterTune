@@ -90,6 +90,7 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.PlaylistEditLockKey
 import com.dd3boh.outertune.constants.PlaylistSongSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSongSortType
@@ -107,6 +108,7 @@ import com.dd3boh.outertune.ui.component.EmptyPlaceholder
 import com.dd3boh.outertune.ui.component.FontSizeRange
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
@@ -646,67 +648,22 @@ fun LocalPlaylistScreen(
                 }
 
                 if (playlist.songCount != 0) {
-                    item {
+                    stickyHeader(
+                        key = "header",
+                        contentType = CONTENT_TYPE_HEADER
+                    ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(start = 16.dp)
                         ) {
-
-
                             if (selection) {
-                                val count = wrappedSongs.count { it.isSelected }
-                                Text(
-                                    text = "${count}/${wrappedSongs.size} selected",
-                                    modifier = Modifier.weight(1f)
+                                SelectHeader(
+                                    wrappedSongs = wrappedSongs,
+                                    menuState = menuState,
+                                    onDismiss = { selection = false },
+                                    jvmHax = true
                                 )
-                                IconButton(
-                                    onClick = {
-                                        if (count == wrappedSongs.size) {
-                                            wrappedSongs.forEach { it.isSelected = false }
-                                        } else {
-                                            wrappedSongs.forEach { it.isSelected = true }
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        if (selection) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                        contentDescription = null
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            SelectionSongMenu(
-                                                songSelection = wrappedSongs.filter { it.isSelected }
-                                                    .map { it.item.song },
-                                                songPosition = wrappedSongs.filter { it.isSelected }.map { it.item.map },
-                                                onDismiss = menuState::dismiss,
-                                                clearAction = {
-                                                    selection = false
-                                                    wrappedSongs.clear()
-                                                }
-                                            )
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { selection = false },
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Close,
-                                        contentDescription = null
-                                    )
-                                }
                             } else {
-
-
                                 SortHeader(
                                     sortType = sortType,
                                     sortDescending = sortDescending,
