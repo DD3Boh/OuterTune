@@ -3,12 +3,17 @@ package com.dd3boh.outertune.ui.screens.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,17 +22,33 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.DevSettingsKey
+import com.dd3boh.outertune.constants.ScannerMatchCriteria
+import com.dd3boh.outertune.constants.ScannerSensitivityKey
+import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
+import com.dd3boh.outertune.ui.menu.AddToPlaylistDialog
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.rememberEnumPreference
+import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.BackupRestoreViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -39,6 +60,12 @@ fun BackupAndRestore(
     scrollBehavior: TopAppBarScrollBehavior,
     viewModel: BackupRestoreViewModel = hiltViewModel(),
 ) {
+    val (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
+    val (scannerSensitivity) = rememberEnumPreference(
+        key = ScannerSensitivityKey,
+        defaultValue = ScannerMatchCriteria.LEVEL_2
+    )
+
     val context = LocalContext.current
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) {
@@ -48,6 +75,28 @@ fun BackupAndRestore(
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             viewModel.restore(context, uri)
+        }
+    }
+
+    // import m3u
+    var showChoosePlaylistDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var importedTitle by remember { mutableStateOf("") }
+    val importedSongs = remember { mutableStateListOf<Song>() }
+    val rejectedSongs = remember { mutableStateListOf<String>() }
+    val importM3uLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val result = viewModel.loadM3u(context, uri, matchStrength = scannerSensitivity)
+            importedSongs.clear()
+            importedSongs.addAll(result.first)
+            rejectedSongs.clear()
+            rejectedSongs.addAll(result.second)
+            importedTitle = result.third
+
+            if (importedSongs.isNotEmpty()) {
+                showChoosePlaylistDialog = true
+            }
         }
     }
 
@@ -71,6 +120,57 @@ fun BackupAndRestore(
                 restoreLauncher.launch(arrayOf("application/octet-stream"))
             }
         )
+
+        if (devSettings) {
+            // import m3u playlist
+            PreferenceEntry(
+                title = { Text(stringResource(R.string.import_m3u)) },
+                icon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
+                onClick = {
+                    importM3uLauncher.launch(arrayOf("audio/*"))
+                }
+            )
+            AddToPlaylistDialog(
+                isVisible = showChoosePlaylistDialog,
+                noSyncing = true,
+                initialTextFieldValue = importedTitle,
+                onAdd = { playlist ->
+                    viewModel.importPlaylist(importedSongs, playlist)
+                },
+                onDismiss = { showChoosePlaylistDialog = false }
+            )
+
+            if (rejectedSongs.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .heightIn(max = 250.dp)
+                        .padding(20.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Could not import:",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+
+                    itemsIndexed(
+                        items = rejectedSongs,
+                        key = { _, song -> song.hashCode() }
+                    ) { index, item ->
+                        Text(
+                            text = item,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 
     TopAppBar(
