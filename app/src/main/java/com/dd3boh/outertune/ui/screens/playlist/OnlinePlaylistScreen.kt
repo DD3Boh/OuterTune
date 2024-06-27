@@ -82,6 +82,7 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSong
@@ -96,6 +97,7 @@ import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.FontSizeRange
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
+import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.component.YouTubeListItem
 import com.dd3boh.outertune.ui.component.shimmer.ButtonPlaceholder
@@ -475,6 +477,19 @@ fun OnlinePlaylistScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    stickyHeader(
+                        key = "header",
+                        contentType = CONTENT_TYPE_HEADER
+                    ) {
+                        if (selection) {
+                            SelectHeader(
+                                wrappedSongs = wrappedSongs,
+                                menuState = menuState,
+                                onDismiss = { selection = false }
+                            )
                         }
                     }
 

@@ -16,8 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.ui.menu.SelectionSongMenu
 import com.dd3boh.outertune.ui.utils.ItemWrapper
+import com.zionhuang.innertube.models.SongItem
 
 
 @Composable
@@ -83,6 +86,72 @@ fun SelectHeader(
         }
     }
 }
+
+@Composable
+fun SelectHeader(
+    wrappedSongs: MutableList<ItemWrapper<SongItem>>,
+    menuState: MenuState,
+    onDismiss: (() -> Unit)? = null
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 16.dp)
+    ) {
+        val count = wrappedSongs.count { it.isSelected }
+        Text(
+            text = "${count}/${wrappedSongs.size} selected",
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(
+            onClick = {
+                if (count == wrappedSongs.size) {
+                    wrappedSongs.forEach { it.isSelected = false }
+                } else {
+                    wrappedSongs.forEach { it.isSelected = true }
+                }
+            },
+        ) {
+            Icon(
+                if (count == wrappedSongs.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                contentDescription = null
+            )
+        }
+
+        IconButton(
+            onClick = {
+                menuState.show {
+                    SelectionMediaMetadataMenu(
+                        songSelection = wrappedSongs.filter { it.isSelected }.map { it.item.toMediaMetadata() },
+                        onDismiss = menuState::dismiss,
+                        currentItems = emptyList(),
+                        clearAction = {
+                            wrappedSongs.forEach { it.isSelected = false }
+                            onDismiss?.invoke()
+                        }
+                    )
+                }
+            },
+        ) {
+            Icon(
+                Icons.Rounded.MoreVert,
+                contentDescription = null
+            )
+        }
+
+        IconButton(
+            onClick = {
+                wrappedSongs.forEach { it.isSelected = false }
+                onDismiss?.invoke()
+            },
+        ) {
+            Icon(
+                Icons.Rounded.Close,
+                contentDescription = null
+            )
+        }
+    }
+}
+
 
 @Composable
 fun SelectHeader(
