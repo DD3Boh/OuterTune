@@ -49,13 +49,14 @@ fun FolderMenu(
         isVisible = showChoosePlaylistDialog,
         onAdd = { playlist ->
             // shove all folder songs into the playlist
+            var position = playlist.songCount
             database.query {
                 allFolderSongs.forEach {
                     insert(
                         PlaylistSongMap(
                             songId = it.song.id,
                             playlistId = playlist.id,
-                            position = playlist.songCount
+                            position = position++
                         )
                     )
                 }

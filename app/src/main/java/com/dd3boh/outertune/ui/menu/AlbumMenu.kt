@@ -141,13 +141,14 @@ fun AlbumMenu(
                 }
             }
             database.transaction {
+                var position = playlist.songCount
                 songs.map { it.id }
                     .forEach {
                         insert(
                             PlaylistSongMap(
                                 songId = it,
                                 playlistId = playlist.id,
-                                position = playlist.songCount
+                                position = position++
                             )
                         )
                     }
