@@ -146,14 +146,13 @@ fun LocalPlaylistScreen(
     val liked = playlist?.playlist?.bookmarkedAt != null
 
     val songs by viewModel.playlistSongs.collectAsState()
-    val mutableSongs = remember { mutableStateListOf<PlaylistSong>() }
     val playlistLength = remember(songs) {
         songs.fastSumBy { it.song.song.duration }
     }
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSongSortTypeKey, PlaylistSongSortType.CUSTOM)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSongSortDescendingKey, true)
     var locked by rememberPreference(PlaylistEditLockKey, defaultValue = false)
-    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
+    val wrappedSongs = remember { mutableStateListOf<ItemWrapper<PlaylistSong>>() }
     var selection by remember {
         mutableStateOf(false)
     }
@@ -169,9 +168,9 @@ fun LocalPlaylistScreen(
     val editable: Boolean = playlist?.playlist?.isEditable == true
 
     LaunchedEffect(songs) {
-        mutableSongs.apply {
+        wrappedSongs.apply {
             clear()
-            addAll(songs)
+            addAll(songs.map { item -> ItemWrapper(item) }.toMutableList())
         }
         if (songs.isEmpty()) return@LaunchedEffect
         downloadUtil.downloads.collect { downloads ->
@@ -306,7 +305,7 @@ fun LocalPlaylistScreen(
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to ->
             if (to.index >= headerItems && from.index >= headerItems) {
-                mutableSongs.move(from.index - headerItems, to.index - headerItems)
+                wrappedSongs.move(from.index - headerItems, to.index - headerItems)
             }
         },
         onDragEnd = { initialFromIndex, initialToIndex ->
