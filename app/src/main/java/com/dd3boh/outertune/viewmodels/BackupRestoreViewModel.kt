@@ -106,7 +106,7 @@ class BackupRestoreViewModel @Inject constructor(
         context: Context,
         uri: Uri,
         matchStrength: ScannerMatchCriteria = ScannerMatchCriteria.LEVEL_2
-    ): Pair<ArrayList<Song>, ArrayList<String>> {
+    ): Triple<ArrayList<Song>, ArrayList<String>, String> {
         val songs = ArrayList<Song>()
         val rejectedSongs = ArrayList<String>()
 
@@ -161,7 +161,7 @@ class BackupRestoreViewModel @Inject constructor(
                 Toast.LENGTH_SHORT
             ).show()
         }
-        return Pair(songs, rejectedSongs)
+        return Triple(songs, rejectedSongs, uri.path?.substringAfterLast('/')?.substringBeforeLast('.') ?: "")
     }
 
     /**

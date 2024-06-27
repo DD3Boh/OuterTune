@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ import java.time.LocalDateTime
 fun AddToPlaylistDialog(
     isVisible: Boolean,
     noSyncing: Boolean = false,
+    initialTextFieldValue: String? = null,
     onAdd: (Playlist) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -114,6 +116,7 @@ fun AddToPlaylistDialog(
         TextFieldDialog(
             icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = null) },
             title = { Text(text = stringResource(R.string.create_playlist)) },
+            initialTextFieldValue = TextFieldValue(initialTextFieldValue?: ""),
             onDismiss = { showCreatePlaylistDialog = false },
             onDone = { playlistName ->
                 coroutineScope.launch(Dispatchers.IO) {

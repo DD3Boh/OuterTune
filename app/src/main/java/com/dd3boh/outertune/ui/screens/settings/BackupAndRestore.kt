@@ -82,6 +82,7 @@ fun BackupAndRestore(
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
+    var importedTitle by remember { mutableStateOf("") }
     val importedSongs = remember { mutableStateListOf<Song>() }
     val rejectedSongs = remember { mutableStateListOf<String>() }
     val importM3uLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -91,6 +92,7 @@ fun BackupAndRestore(
             importedSongs.addAll(result.first)
             rejectedSongs.clear()
             rejectedSongs.addAll(result.second)
+            importedTitle = result.third
 
             if (importedSongs.isNotEmpty()) {
                 showChoosePlaylistDialog = true
@@ -131,6 +133,7 @@ fun BackupAndRestore(
             AddToPlaylistDialog(
                 isVisible = showChoosePlaylistDialog,
                 noSyncing = true,
+                initialTextFieldValue = importedTitle,
                 onAdd = { playlist ->
                     viewModel.importPlaylist(importedSongs, playlist)
                 },
