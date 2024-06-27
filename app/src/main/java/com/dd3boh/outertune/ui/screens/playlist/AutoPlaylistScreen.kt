@@ -424,7 +424,7 @@ fun AutoPlaylistScreen(
             }
 
             if (songs.isNotEmpty()) {
-                item(
+                stickyHeader(
                     key = "header",
                     contentType = CONTENT_TYPE_HEADER
                 ) {
