@@ -488,7 +488,8 @@ fun OnlinePlaylistScreen(
                             SelectHeader(
                                 wrappedSongs = wrappedSongs,
                                 menuState = menuState,
-                                onDismiss = { selection = false }
+                                onDismiss = { selection = false },
+                                jvmHax = 69
                             )
                         }
                     }

@@ -27,7 +27,8 @@ import com.zionhuang.innertube.models.SongItem
 fun SelectHeader(
     wrappedSongs: MutableList<ItemWrapper<PlaylistSong>>,
     menuState: MenuState,
-    onDismiss: (() -> Unit)? = null
+    onDismiss: (() -> Unit)? = null,
+    jvmHax: Boolean
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -91,7 +92,8 @@ fun SelectHeader(
 fun SelectHeader(
     wrappedSongs: MutableList<ItemWrapper<SongItem>>,
     menuState: MenuState,
-    onDismiss: (() -> Unit)? = null
+    onDismiss: (() -> Unit)? = null,
+    jvmHax: Int
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
