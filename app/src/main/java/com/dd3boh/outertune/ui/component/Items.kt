@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditOff
 import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Folder
@@ -959,6 +961,25 @@ fun PlaylistListItem(
             pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
         else
             pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
+    badges = {
+         Icon(
+             imageVector = if (playlist.playlist.isEditable) Icons.Rounded.Edit else Icons.Rounded.EditOff,
+             contentDescription = null,
+             modifier = Modifier
+                 .size(18.dp)
+                 .padding(end = 2.dp)
+         )
+
+        if (playlist.playlist.isLocal) {
+            Icon(
+                imageVector = Icons.Rounded.CloudOff,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
+    },
     thumbnailContent = {
         when (playlist.thumbnails.size) {
             0 -> Icon(
