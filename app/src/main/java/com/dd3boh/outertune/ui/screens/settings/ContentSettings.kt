@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import com.dd3boh.outertune.constants.ContentLanguageKey
 import com.dd3boh.outertune.constants.CountryCodeToName
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.LanguageCodeToName
+import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.ProxyEnabledKey
 import com.dd3boh.outertune.constants.ProxyTypeKey
 import com.dd3boh.outertune.constants.ProxyUrlKey
@@ -61,6 +63,7 @@ fun ContentSettings(
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
+    val (ytmSync, onYtmSyncChange) = rememberPreference(LyricTrimKey, defaultValue = true)
     val (contentLanguage, onContentLanguageChange) = rememberPreference(key = ContentLanguageKey, defaultValue = "system")
     val (contentCountry, onContentCountryChange) = rememberPreference(key = ContentCountryKey, defaultValue = "system")
     val (proxyEnabled, onProxyEnabledChange) = rememberPreference(key = ProxyEnabledKey, defaultValue = false)
@@ -73,6 +76,9 @@ fun ContentSettings(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
     ) {
+        PreferenceGroupTitle(
+            title = "ACCOUNT"
+        )
         PreferenceEntry(
             title = { Text(if (isLoggedIn) accountName else stringResource(R.string.login)) },
             description = if (isLoggedIn) {
@@ -81,6 +87,17 @@ fun ContentSettings(
             } else null,
             icon = { Icon(Icons.Rounded.Person, null) },
             onClick = { navController.navigate("login") }
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.ytm_sync)) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
+            checked = ytmSync,
+            onCheckedChange = onYtmSyncChange,
+            isEnabled = isLoggedIn
+        )
+
+        PreferenceGroupTitle(
+            title = "LOCALIZATION"
         )
         ListPreference(
             title = { Text(stringResource(R.string.content_language)) },

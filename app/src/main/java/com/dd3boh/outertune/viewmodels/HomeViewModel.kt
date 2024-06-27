@@ -1,28 +1,39 @@
 package com.dd3boh.outertune.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dd3boh.outertune.constants.PlaylistSongSortDescendingKey
+import com.dd3boh.outertune.constants.PlaylistSongSortType
+import com.dd3boh.outertune.constants.PlaylistSongSortTypeKey
+import com.dd3boh.outertune.constants.YtmSyncKey
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.pages.ExplorePage
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.utils.SyncUtils
+import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
 import com.zionhuang.innertube.models.PlaylistItem
 import com.zionhuang.innertube.models.YTItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     val database: MusicDatabase,
     val syncUtils: SyncUtils
 ) : ViewModel() {
@@ -84,12 +95,19 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             load()
-        }
+            val syncYtm = context.dataStore.data
+                .map {
+                    it[YtmSyncKey]
+                }
+                .distinctUntilChanged()
 
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() }
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() }
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() }
+            if (syncYtm.first() != false) { // defaults to true
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() }
+            }
+        }
     }
 }

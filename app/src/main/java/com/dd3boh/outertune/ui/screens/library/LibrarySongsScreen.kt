@@ -74,6 +74,7 @@ fun LibrarySongsScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
+    val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val songs by viewModel.allSongs.collectAsState()
 
@@ -85,10 +86,12 @@ fun LibrarySongsScreen(
     var inLocal by viewModel.inLocal
 
     LaunchedEffect(Unit) {
-        when (filter) {
-            SongFilter.LIKED -> viewModel.syncLikedSongs()
-            SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
-            else -> return@LaunchedEffect
+        if (ytmSync) {
+            when (filter) {
+                SongFilter.LIKED -> viewModel.syncLikedSongs()
+                SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
+                else -> return@LaunchedEffect
+            }
         }
     }
 
@@ -102,8 +105,10 @@ fun LibrarySongsScreen(
             currentValue = filter,
             onValueUpdate = {
                 filter = it
-                if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
-                else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+                if (ytmSync) {
+                    if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
+                    else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+                }
             }
         )
     }
