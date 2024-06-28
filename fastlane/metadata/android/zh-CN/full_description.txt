@@ -1,0 +1,17 @@
+一款 YouTube Music 安卓客户端，采用 Material 3 设计
+
+<br><b>功能：</b>
+
+-无广告播放 Youtube/Youtube Music 中的歌曲
+-后台播放
+-搜索歌曲、视频、专辑和播放列表
+-库管理
+-缓存和下载歌曲以供离线播放
+-同步歌词
+-跳过静默
+-音频音量规范化
+-动态主题
+-良好的本地化
+-支持 Android Auto
+-支持歌曲快选 (quick picks)
+-Material 3 设计
