@@ -70,7 +70,7 @@ fun FolderMenu(
     SongFolderItem(
         folderTitle = folder.currentDir,
         modifier = Modifier,
-        subtitle = folder.parent,
+        subtitle = folder.parent.substringAfter("//storage//"),
     )
 
     HorizontalDivider()
