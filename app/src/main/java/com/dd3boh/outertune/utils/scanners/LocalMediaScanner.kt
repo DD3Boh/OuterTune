@@ -80,6 +80,7 @@ class LocalMediaScanner {
                         SongEntity(
                             SongEntity.generateSongId(),
                             path.substringAfterLast('/'),
+                            thumbnailUrl = path,
                             isLocal = true,
                             inLibrary = LocalDateTime.now(),
                             localPath = path
