@@ -151,6 +151,7 @@ class PlayerConnection(
         }
 
         updateCanSkipPreviousAndNext()
+        service.updateNotification()
     }
 
     override fun onRepeatModeChanged(mode: Int) {

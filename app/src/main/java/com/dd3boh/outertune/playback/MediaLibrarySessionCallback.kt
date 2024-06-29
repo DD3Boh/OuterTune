@@ -15,9 +15,6 @@ import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
-import com.google.common.collect.ImmutableList
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.MediaSessionConstants
 import com.dd3boh.outertune.constants.SongSortType
@@ -26,6 +23,10 @@ import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.toggleRepeatMode
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +69,7 @@ class MediaLibrarySessionCallback @Inject constructor(
         when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
             MediaSessionConstants.ACTION_TOGGLE_LIBRARY -> toggleLibrary()
-            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> session.player.shuffleModeEnabled = !session.player.shuffleModeEnabled
+            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> queueBoard.shuffleCurrent()
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))

@@ -51,11 +51,6 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.MoreExecutors
-import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.models.WatchEndpoint
-import com.zionhuang.innertube.models.response.PlayerResponse
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
@@ -98,6 +93,11 @@ import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.enumPreference
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
+import com.google.common.util.concurrent.MoreExecutors
+import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.models.SongItem
+import com.zionhuang.innertube.models.WatchEndpoint
+import com.zionhuang.innertube.models.response.PlayerResponse
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -393,12 +393,12 @@ class MusicService : MediaLibraryService(),
         }
     }
 
-    private fun updateNotification() {
+    fun updateNotification() {
         mediaSession.setCustomLayout(
             listOf(
                 CommandButton.Builder()
-                    .setDisplayName(getString(if (player.shuffleModeEnabled) R.string.action_shuffle_off else R.string.action_shuffle_on))
-                    .setIconResId(if (player.shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle)
+                    .setDisplayName(getString(if (queueBoard.getCurrentQueue()?.shuffled == true) R.string.action_shuffle_off else R.string.action_shuffle_on))
+                    .setIconResId(if (queueBoard.getCurrentQueue()?.shuffled == true) R.drawable.shuffle_on else R.drawable.shuffle)
                     .setSessionCommand(CommandToggleShuffle)
                     .build(),
                 CommandButton.Builder()
@@ -622,11 +622,6 @@ class MusicService : MediaLibraryService(),
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
             currentMediaMetadata.value = player.currentMetadata
         }
-    }
-
-
-    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-        updateNotification()
     }
 
     override fun onRepeatModeChanged(repeatMode: Int) {
