@@ -1,19 +1,30 @@
 package com.dd3boh.outertune.db
 
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
-import androidx.core.content.contentValuesOf
-import androidx.room.*
-import androidx.room.migration.AutoMigrationSpec
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import com.dd3boh.outertune.db.entities.*
-import com.dd3boh.outertune.extensions.toSQLiteQuery
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.util.*
+import com.dd3boh.outertune.db.entities.AlbumArtistMap
+import com.dd3boh.outertune.db.entities.AlbumEntity
+import com.dd3boh.outertune.db.entities.ArtistEntity
+import com.dd3boh.outertune.db.entities.Event
+import com.dd3boh.outertune.db.entities.FormatEntity
+import com.dd3boh.outertune.db.entities.GenreEntity
+import com.dd3boh.outertune.db.entities.LyricsEntity
+import com.dd3boh.outertune.db.entities.PlayCountEntity
+import com.dd3boh.outertune.db.entities.PlaylistEntity
+import com.dd3boh.outertune.db.entities.PlaylistSongMap
+import com.dd3boh.outertune.db.entities.PlaylistSongMapPreview
+import com.dd3boh.outertune.db.entities.RelatedSongMap
+import com.dd3boh.outertune.db.entities.SearchHistory
+import com.dd3boh.outertune.db.entities.SongAlbumMap
+import com.dd3boh.outertune.db.entities.SongArtistMap
+import com.dd3boh.outertune.db.entities.SongEntity
+import com.dd3boh.outertune.db.entities.SongGenreMap
+import com.dd3boh.outertune.db.entities.SortedSongAlbumMap
+import com.dd3boh.outertune.db.entities.SortedSongArtistMap
 
 class MusicDatabase(
     private val delegate: InternalDatabase,

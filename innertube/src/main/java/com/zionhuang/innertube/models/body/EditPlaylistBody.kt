@@ -1,7 +1,6 @@
 package com.zionhuang.innertube.models.body
 
 import com.zionhuang.innertube.models.Context
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable

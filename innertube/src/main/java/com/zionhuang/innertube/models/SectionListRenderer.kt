@@ -1,7 +1,6 @@
 package com.zionhuang.innertube.models
 
 import MusicEditablePlaylistDetailHeaderRenderer
-import com.zionhuang.innertube.models.response.BrowseResponse
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
