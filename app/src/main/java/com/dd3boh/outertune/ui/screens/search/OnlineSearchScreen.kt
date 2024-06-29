@@ -63,7 +63,7 @@ import com.dd3boh.outertune.ui.component.YouTubeListItem
 import com.dd3boh.outertune.viewmodels.OnlineSearchSuggestionViewModel
 import kotlinx.coroutines.flow.drop
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnlineSearchScreen(
     query: String,

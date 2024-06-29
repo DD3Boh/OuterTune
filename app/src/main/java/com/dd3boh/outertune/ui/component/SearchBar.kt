@@ -228,7 +228,7 @@ fun SearchBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchBarInputField(
     query: TextFieldValue,
