@@ -1,7 +1,7 @@
 package com.zionhuang.innertube.models.response
 
-import MusicDetailHeaderRenderer
-import MusicEditablePlaylistDetailHeaderRenderer
+import com.zionhuang.innertube.models.MusicDetailHeaderRenderer
+import com.zionhuang.innertube.models.MusicEditablePlaylistDetailHeaderRenderer
 import com.zionhuang.innertube.models.Button
 import com.zionhuang.innertube.models.Continuation
 import com.zionhuang.innertube.models.GridRenderer
