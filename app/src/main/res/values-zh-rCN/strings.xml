@@ -226,8 +226,6 @@
     <string name="about">关于</string>
     <string name="app_version">应用版本</string>
     <string name="new_version_available">有新版本</string>
-    <string name="translation_models">翻译模型</string>
-    <string name="clear_translation_models">清除翻译模型</string>
     <string name="delete_playlist_confirm">是否确实要删除播放列表“%s”？</string>
     <string name="remove_download_playlist_confirm">您真的想从下载的歌曲存储中删除所有“%s”播放列表中的歌曲吗？</string>
 </resources>

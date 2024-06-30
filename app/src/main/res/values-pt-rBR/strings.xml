@@ -246,8 +246,6 @@
     <string name="about">Sobre</string>
     <string name="app_version">Versão do app</string>
     <string name="new_version_available">Nova versão disponível</string>
-    <string name="translation_models">Modelos de Tradução</string>
-    <string name="clear_translation_models">Limpar modelos de tradução</string>
     <string name="remove_download_playlist_confirm">Você deseja realmente remover as músicas da playlist \"%s\" do armazenamento de Músicas Baixadas?</string>
     <string name="delete_playlist_confirm">Você deseja realmente excluir a playlist \"%s\"?</string>
 </resources>

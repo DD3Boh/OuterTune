@@ -253,6 +253,4 @@
     <string name="about">O aplikacji</string>
     <string name="app_version">Wersja aplikacji</string>
     <string name="new_version_available">Dostępna nowa wersja</string>
-    <string name="translation_models">Modele Tłumaczenia</string>
-    <string name="clear_translation_models">Wyczyść modele tłumaczenia</string>
 </resources>
