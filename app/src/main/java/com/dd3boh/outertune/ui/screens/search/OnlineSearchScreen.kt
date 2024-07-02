@@ -55,6 +55,7 @@ import com.dd3boh.outertune.constants.SuggestionItemHeight
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.SearchBarIconOffsetX
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
@@ -174,12 +175,23 @@ fun OnlineSearchScreen(
                                 is SongItem -> {
                                     if (item.id == mediaMetadata?.id) {
                                         playerConnection.player.togglePlayPause()
+                                    } else if (item.id.startsWith("LA")) {
+                                        playerConnection.playQueue(
+                                            ListQueue(
+                                                title = "Search: $query",
+                                                items = viewState.items.map { it as SongItem}.map { it.toMediaMetadata() }
+                                            ),
+                                            replace = true,
+                                            title = "Search: $query",
+                                        )
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue(
                                                 WatchEndpoint(videoId = item.id),
-                                                item.toMediaMetadata()
-                                            )
+                                                item.toMediaMetadata(),
+                                            ),
+                                            replace = true,
+                                            title = "Search: $query",
                                         )
                                         onDismiss()
                                     }

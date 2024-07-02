@@ -299,7 +299,7 @@ fun PlaylistMenu(
             onDismiss()
             playerConnection.playQueue(ListQueue(
                 title = playlist.playlist.name,
-                items = songs.map { it.toMediaItem() },
+                items = songs.map { it.toMediaMetadata()},
                 playlistId = playlist.playlist.browseId
             ))
         }
@@ -311,7 +311,7 @@ fun PlaylistMenu(
             onDismiss()
             playerConnection.playQueue(ListQueue(
                 title = playlist.playlist.name,
-                items = songs.shuffled().map { it.toMediaItem() },
+                items = songs.shuffled().map { it.toMediaMetadata() },
                 playlistId = playlist.playlist.browseId
             ))
         }

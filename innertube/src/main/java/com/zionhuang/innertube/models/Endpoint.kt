@@ -3,6 +3,7 @@ package com.zionhuang.innertube.models
 import com.zionhuang.innertube.models.BrowseEndpoint.BrowseEndpointContextSupportedConfigs.BrowseEndpointContextMusicConfig.Companion.MUSIC_PAGE_TYPE_ALBUM
 import com.zionhuang.innertube.models.BrowseEndpoint.BrowseEndpointContextSupportedConfigs.BrowseEndpointContextMusicConfig.Companion.MUSIC_PAGE_TYPE_ARTIST
 import com.zionhuang.innertube.models.BrowseEndpoint.BrowseEndpointContextSupportedConfigs.BrowseEndpointContextMusicConfig.Companion.MUSIC_PAGE_TYPE_PLAYLIST
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -16,15 +17,16 @@ data class WatchEndpoint(
     val params: String? = null,
     val index: Int? = null,
     val watchEndpointMusicSupportedConfigs: WatchEndpointMusicSupportedConfigs? = null,
-) : Endpoint() {
+) : Endpoint(), java.io.Serializable {
+
     @Serializable
     data class WatchEndpointMusicSupportedConfigs(
         val watchEndpointMusicConfig: WatchEndpointMusicConfig,
-    ) {
+    ): java.io.Serializable  {
         @Serializable
         data class WatchEndpointMusicConfig(
             val musicVideoType: String,
-        ) {
+        ): java.io.Serializable  {
             companion object {
                 const val MUSIC_VIDEO_TYPE_OMV = "MUSIC_VIDEO_TYPE_OMV"
                 const val MUSIC_VIDEO_TYPE_UGC = "MUSIC_VIDEO_TYPE_UGC"

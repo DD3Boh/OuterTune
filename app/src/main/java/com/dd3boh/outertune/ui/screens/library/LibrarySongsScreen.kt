@@ -38,6 +38,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.*
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
@@ -233,7 +234,7 @@ fun LibrarySongsScreen(
                                                     playerConnection.playQueue(
                                                         ListQueue(
                                                             title = context.getString(R.string.queue_all_songs),
-                                                            items = songs.map { it.toMediaItem() },
+                                                            items = songs.map { it.toMediaMetadata() },
                                                             startIndex = index
                                                         )
                                                     )
@@ -263,7 +264,7 @@ fun LibrarySongsScreen(
                     playerConnection.playQueue(
                         ListQueue(
                             title = context.getString(R.string.queue_all_songs),
-                            items = songs.shuffled().map { it.toMediaItem() }
+                            items = songs.shuffled().map { it.toMediaMetadata()}
                         )
                     )
                 }

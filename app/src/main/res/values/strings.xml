@@ -197,7 +197,7 @@
 
     <!-- Queue Title -->
     <string name="queue_all_songs">All songs</string>
-    <string name="queue_searched_songs">Searched songs</string>
+    <string name="queue_searched_songs">Search: </string>
 
     <!-- Notification name -->
     <string name="music_player">Music Player</string>
@@ -241,6 +241,8 @@
     <string name="audio_quality_high">High</string>
     <string name="audio_quality_low">Low</string>
     <string name="persistent_queue">Persistent queue</string>
+    <string name="swipe_to_dismiss_title">Swipe to remove songs in queue</string>
+    <string name="swipe_to_dismiss_description">Disable to prevent unwanted deletions when scrolling</string>
     <string name="skip_silence">Skip silence</string>
     <string name="audio_normalization">Audio normalization</string>
     <string name="equalizer">Equalizer</string>

@@ -20,6 +20,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
+import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
 import androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
@@ -44,18 +45,12 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.MoreExecutors
-import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.models.WatchEndpoint
-import com.zionhuang.innertube.models.response.PlayerResponse
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
@@ -83,13 +78,13 @@ import com.dd3boh.outertune.extensions.collect
 import com.dd3boh.outertune.extensions.collectLatest
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.findNextMediaItemById
-import com.dd3boh.outertune.extensions.mediaItems
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.lyrics.LyricsHelper
-import com.dd3boh.outertune.models.PersistQueue
+import com.dd3boh.outertune.models.QueueBoard
+import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.queues.EmptyQueue
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
@@ -98,6 +93,11 @@ import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.enumPreference
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
+import com.google.common.util.concurrent.MoreExecutors
+import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.models.SongItem
+import com.zionhuang.innertube.models.WatchEndpoint
+import com.zionhuang.innertube.models.response.PlayerResponse
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,7 +116,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
@@ -158,9 +157,9 @@ class MusicService : MediaLibraryService(),
 
     private val audioQuality by enumPreference(this, AudioQualityKey, AudioQuality.AUTO)
 
-    private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
     var queuePlaylistId: String? = null
+    private var lastMediaItemIndex = -1
 
     val currentMediaMetadata = MutableStateFlow<com.dd3boh.outertune.models.MediaMetadata?>(null)
 
@@ -191,6 +190,7 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
+    var saveQueueCD = false
 
     override fun onCreate() {
         super.onCreate()
@@ -264,6 +264,15 @@ class MusicService : MediaLibraryService(),
                         if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
                             player.prepare()
                             player.play()
+                        }
+                        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex)
+                        queueTitle = queueBoard.getCurrentQueue()?.title
+                        if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
+                            saveQueueToDisk() // save queue, but rate limited
+                            scope.launch {
+                                delay(30.seconds)
+                                saveQueueCD = false
+                            }
                         }
                     }
                 })
@@ -359,30 +368,37 @@ class MusicService : MediaLibraryService(),
             runCatching {
                 filesDir.resolve(PERSISTENT_QUEUE_FILE).inputStream().use { fis ->
                     ObjectInputStream(fis).use { oos ->
-                        oos.readObject() as PersistQueue
+                        oos.readObject() as QueueBoard
                     }
                 }
-            }.onSuccess { queue ->
-                playQueue(
-                    queue = ListQueue(
-                        title = queue.title,
-                        items = queue.items.map { it.toMediaItem() },
-                        startIndex = queue.mediaItemIndex,
-                        position = queue.position,
-                        playlistId = queue.playlistId
-                    ),
-                    playWhenReady = false
-                )
+            }.onSuccess { qb ->
+                queueBoard = qb
+                isShuffleEnabled.value = qb.getCurrentQueue()?.shuffled ?: false
+                if (qb.getAllQueues().isNotEmpty()) {
+                    val queue = queueBoard.getCurrentQueue()
+                    if (queue != null) {
+                        playQueue(
+                            queue = ListQueue(
+                                title = queue.title,
+                                items = qb.getCurrentQueueShuffled() ?: ArrayList(),
+                                startIndex = queue.queuePos,
+                                position = 0,
+                                playlistId = null
+                            ),
+                            playWhenReady = false
+                        )
+                    }
+                }
             }
         }
     }
 
-    private fun updateNotification() {
+    fun updateNotification() {
         mediaSession.setCustomLayout(
             listOf(
                 CommandButton.Builder()
-                    .setDisplayName(getString(if (player.shuffleModeEnabled) R.string.action_shuffle_off else R.string.action_shuffle_on))
-                    .setIconResId(if (player.shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle)
+                    .setDisplayName(getString(if (queueBoard.getCurrentQueue()?.shuffled == true) R.string.action_shuffle_off else R.string.action_shuffle_on))
+                    .setIconResId(if (queueBoard.getCurrentQueue()?.shuffled == true) R.drawable.shuffle_on else R.drawable.shuffle)
                     .setSessionCommand(CommandToggleShuffle)
                     .build(),
                 CommandButton.Builder()
@@ -464,32 +480,41 @@ class MusicService : MediaLibraryService(),
         }
     }
 
-    fun playQueue(queue: Queue, playWhenReady: Boolean = true) {
-        currentQueue = queue
-        queueTitle = null
+    /**
+     * Play a queue.
+     *
+     * @param queue Queue to play.
+     * @param playWhenReady
+     * @param replace Replace media items instead of the underlying logic
+     * @param title Title override for the queue. If this value us unspecified, this method takes the value from queue.
+     * If both are unspecified, the title will default to "Queue".
+     */
+    fun playQueue(queue: Queue, playWhenReady: Boolean = true, replace: Boolean = false, title: String? = null) {
+        queueTitle = title
         queuePlaylistId = queue.playlistId
-        player.shuffleModeEnabled = false
-        if (queue.preloadItem != null) {
-            player.setMediaItem(queue.preloadItem!!.toMediaItem())
-            player.prepare()
-            player.playWhenReady = playWhenReady
-        }
 
         scope.launch(SilentHandler) {
             val initialStatus = withContext(Dispatchers.IO) { queue.getInitialStatus() }
             if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
-            if (initialStatus.title != null) {
+            if (queueTitle == null && initialStatus.title != null) { // do not find a title if an override is provided
                 queueTitle = initialStatus.title
             }
+
+            // print out queue
+//            println("-----------------------------")
+//            initialStatus.items.map { println(it.title) }
             if (initialStatus.items.isEmpty()) return@launch
-            if (queue.preloadItem != null) {
-                player.addMediaItems(0, initialStatus.items.subList(0, initialStatus.mediaItemIndex))
-                player.addMediaItems(initialStatus.items.subList(initialStatus.mediaItemIndex + 1, initialStatus.items.size))
-            } else {
-                player.setMediaItems(initialStatus.items, if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0, initialStatus.position)
-                player.prepare()
-                player.playWhenReady = playWhenReady
-            }
+            queueBoard.add(
+                queueTitle?: "Queue",
+                initialStatus.items,
+                queue = queue,
+                startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0,
+                replace = replace
+            )
+            queueBoard.setCurrQueue(player)
+
+            player.prepare()
+            player.playWhenReady = playWhenReady
         }
     }
 
@@ -503,8 +528,7 @@ class MusicService : MediaLibraryService(),
             if (initialStatus.title != null) {
                 queueTitle = initialStatus.title
             }
-            player.addMediaItems(initialStatus.items.drop(1))
-            currentQueue = radioQueue
+            player.addMediaItems(initialStatus.items.drop(1).map { it.toMediaItem() })
         }
     }
 
@@ -514,7 +538,17 @@ class MusicService : MediaLibraryService(),
     }
 
     fun addToQueue(items: List<MediaItem>) {
-        player.addMediaItems(items)
+        val currentQueue = queueBoard.getCurrentQueue()
+        queueBoard.add(currentQueue?.title?: "Queue", items.map { it.metadata }, forceInsert = true, delta = false)
+
+        val pos = player.currentPosition
+        val newQueuePos = queueBoard.setCurrQueue(player, autoSeek = false)
+        queueBoard.getCurrentQueue()?.let {
+            if (newQueuePos != null) {
+                player.seekTo(newQueuePos, pos)
+            }
+        }
+
         player.prepare()
     }
 
@@ -558,25 +592,19 @@ class MusicService : MediaLibraryService(),
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        // Auto load more songs
-        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-            player.playbackState != STATE_IDLE &&
-            player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
-            currentQueue.hasNextPage()
-        ) {
-            scope.launch(SilentHandler) {
-                val mediaItems = currentQueue.nextPage()
-                if (player.playbackState != STATE_IDLE) {
-                    player.addMediaItems(mediaItems)
-                }
-            }
+        // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
+        // no, when repeat mode is on, player does not "STATE_ENDED"
+        if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
+            (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
+            isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
+            queueBoard.shuffleCurrent(false) // reshuffle queue
+            queueBoard.setCurrQueue(player)
         }
+        lastMediaItemIndex = player.currentMediaItemIndex
     }
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {
         if (playbackState == STATE_IDLE) {
-            currentQueue = EmptyQueue
-            player.shuffleModeEnabled = false
             queuePlaylistId = null
             queueTitle = null
         }
@@ -593,19 +621,6 @@ class MusicService : MediaLibraryService(),
         }
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
             currentMediaMetadata.value = player.currentMetadata
-        }
-    }
-
-
-    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-        updateNotification()
-        if (shuffleModeEnabled) {
-            // Always put current playing item at first
-            val shuffledIndices = IntArray(player.mediaItemCount) { it }
-            shuffledIndices.shuffle()
-            shuffledIndices[shuffledIndices.indexOf(player.currentMediaItemIndex)] = shuffledIndices[0]
-            shuffledIndices[0] = player.currentMediaItemIndex
-            player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
         }
     }
 
@@ -791,21 +806,10 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun saveQueueToDisk() {
-        if (player.playbackState == STATE_IDLE) {
-            filesDir.resolve(PERSISTENT_QUEUE_FILE).delete()
-            return
-        }
-        val persistQueue = PersistQueue(
-            title = queueTitle,
-            items = player.mediaItems.mapNotNull { it.metadata },
-            mediaItemIndex = player.currentMediaItemIndex,
-            position = player.currentPosition,
-            playlistId = queuePlaylistId
-        )
         runCatching {
             filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
                 ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(persistQueue)
+                    oos.writeObject(queueBoard)
                 }
             }
         }.onFailure {

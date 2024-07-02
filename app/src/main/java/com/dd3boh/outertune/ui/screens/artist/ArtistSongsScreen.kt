@@ -48,6 +48,7 @@ import com.dd3boh.outertune.constants.ArtistSongSortTypeKey
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.IconButton
@@ -171,8 +172,8 @@ fun ArtistSongsScreen(
                                                 CoroutineScope(Dispatchers.Main).launch {
                                                     playerConnection.playQueue(
                                                         ListQueue(
-                                                            title = context.getString(R.string.queue_all_songs),
-                                                            items = songs.map { it.toMediaItem() },
+                                                            title = artist?.artist?.name,
+                                                            items = songs.map { it.toMediaMetadata() },
                                                             startIndex = index,
                                                             playlistId = playlistId
                                                         )
@@ -222,7 +223,7 @@ fun ArtistSongsScreen(
                 playerConnection.playQueue(
                     ListQueue(
                         title = artist?.artist?.name,
-                        items = songs.shuffled().map { it.toMediaItem() },
+                        items = songs.shuffled().map { it.toMediaMetadata() },
                         playlistId = null,
                     )
                 )

@@ -1,6 +1,5 @@
 package com.dd3boh.outertune.playback
 
-import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -15,6 +14,8 @@ import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
 import com.dd3boh.outertune.extensions.metadata
+import com.dd3boh.outertune.models.QueueBoard
+import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.playback.MusicService.MusicBinder
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.utils.reportException
@@ -62,7 +63,6 @@ class PlayerConnection(
     var queuePlaylistId = MutableStateFlow<String?>(null)
     val currentWindowIndex = MutableStateFlow(-1)
 
-    val shuffleModeEnabled = MutableStateFlow(false)
     val repeatMode = MutableStateFlow(REPEAT_MODE_OFF)
 
     val canSkipPrevious = MutableStateFlow(true)
@@ -81,12 +81,11 @@ class PlayerConnection(
         queueWindows.value = player.getQueueWindows()
         currentWindowIndex.value = player.getCurrentQueueIndex()
         currentMediaItemIndex.value = player.currentMediaItemIndex
-        shuffleModeEnabled.value = player.shuffleModeEnabled
         repeatMode.value = player.repeatMode
     }
 
-    fun playQueue(queue: Queue) {
-        service.playQueue(queue)
+    fun playQueue(queue: Queue, replace: Boolean = true, title: String? = null) {
+        service.playQueue(queue, replace = replace, title = title)
     }
 
     fun playNext(item: MediaItem) = playNext(listOf(item))
@@ -132,11 +131,27 @@ class PlayerConnection(
         updateCanSkipPreviousAndNext()
     }
 
-    override fun onShuffleModeEnabledChanged(enabled: Boolean) {
-        shuffleModeEnabled.value = enabled
-        queueWindows.value = player.getQueueWindows()
-        currentWindowIndex.value = player.getCurrentQueueIndex()
+    /**
+     * Shuffles the queue
+     */
+    fun triggerShuffle() {
+        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex)
+
+        // actual shuffling
+        val newQueuePos = if (!isShuffleEnabled.value) {
+            queueBoard.shuffleCurrent()
+        } else {
+            queueBoard.unShuffleCurrent()
+        }
+        val pos = player.currentPosition
+        // load into player
+        queueBoard.setCurrQueue(this, false)
+        queueBoard.getCurrentQueue()?.let {
+            player.seekTo(newQueuePos, pos)
+        }
+
         updateCanSkipPreviousAndNext()
+        service.updateNotification()
     }
 
     override fun onRepeatModeChanged(mode: Int) {
@@ -167,5 +182,9 @@ class PlayerConnection(
 
     fun dispose() {
         player.removeListener(this)
+    }
+
+    companion object {
+        var queueBoard = QueueBoard()
     }
 }

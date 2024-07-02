@@ -26,6 +26,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ArtistSongSortType
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.extensions.toMediaItem
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.ArtistListItem
 import com.dd3boh.outertune.ui.component.GridMenu
@@ -87,7 +88,7 @@ fun ArtistMenu(
                 coroutineScope.launch {
                     val songs = withContext(Dispatchers.IO) {
                         database.artistSongs(artist.id, ArtistSongSortType.CREATE_DATE, true).first()
-                            .map { it.toMediaItem() }
+                            .map { it.toMediaMetadata() }
                     }
 
                     val playlistId = withContext(Dispatchers.IO) {
@@ -111,7 +112,7 @@ fun ArtistMenu(
                 coroutineScope.launch {
                     val songs = withContext(Dispatchers.IO) {
                         database.artistSongs(artist.id, ArtistSongSortType.CREATE_DATE, true).first()
-                            .map { it.toMediaItem() }
+                            .map { it.toMediaMetadata() }
                             .shuffled()
                     }
 

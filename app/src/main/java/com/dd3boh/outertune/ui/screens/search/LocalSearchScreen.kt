@@ -52,6 +52,7 @@ import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AlbumListItem
 import com.dd3boh.outertune.ui.component.ArtistListItem
@@ -193,11 +194,11 @@ fun LocalSearchScreen(
                                                 val songs = result.map
                                                     .getOrDefault(LocalFilter.SONG, emptyList())
                                                     .filterIsInstance<Song>()
-                                                    .map { it.toMediaItem() }
+                                                    .map { it.toMediaMetadata() }
                                                 playerConnection.playQueue(ListQueue(
-                                                    title = context.getString(R.string.queue_searched_songs),
+                                                    title = context.getString(R.string.queue_searched_songs) + query,
                                                     items = songs,
-                                                    startIndex = songs.indexOfFirst { it.mediaId == item.id }
+                                                    startIndex = songs.indexOfFirst { it.id == item.id }
                                                 ))
                                             }
                                         }

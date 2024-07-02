@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.VolumeUp
@@ -32,6 +33,7 @@ import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
+import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
@@ -48,6 +50,7 @@ fun PlayerSettings(
 ) {
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(key = AudioQualityKey, defaultValue = AudioQuality.AUTO)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(key = PersistentQueueKey, defaultValue = true)
+    val (swipeToDismiss, onSwipeToDismissChange) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
     val (skipSilence, onSkipSilenceChange) = rememberPreference(key = SkipSilenceKey, defaultValue = false)
     val (audioNormalization, onAudioNormalizationChange) = rememberPreference(key = AudioNormalizationKey, defaultValue = true)
 
@@ -74,6 +77,13 @@ fun PlayerSettings(
             icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
             checked = persistentQueue,
             onCheckedChange = onPersistentQueueChange
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.swipe_to_dismiss_title)) },
+            description = stringResource(R.string.swipe_to_dismiss_description),
+            icon = { Icon(Icons.Rounded.PlaylistRemove, null) },
+            checked = swipeToDismiss,
+            onCheckedChange = onSwipeToDismissChange
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.skip_silence)) },

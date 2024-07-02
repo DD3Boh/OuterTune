@@ -84,6 +84,7 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
 import com.dd3boh.outertune.ui.component.FontSizeRange
@@ -185,7 +186,10 @@ fun ArtistScreen(
                             artistPage.artist.shuffleEndpoint?.let { shuffleEndpoint ->
                                 Button(
                                     onClick = {
-                                        playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(shuffleEndpoint),
+                                            title = artistPage.artist.title
+                                        )
                                     },
                                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                     modifier = Modifier.weight(1f)
@@ -205,7 +209,10 @@ fun ArtistScreen(
                             artistPage.artist.radioEndpoint?.let { radioEndpoint ->
                                 OutlinedButton(
                                     onClick = {
-                                        playerConnection.playQueue(YouTubeQueue(radioEndpoint))
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(radioEndpoint),
+                                            title = "Radio: ${artistPage.artist.title}"
+                                        )
                                     },
                                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                     modifier = Modifier.weight(1f)
@@ -267,6 +274,13 @@ fun ArtistScreen(
                                         .combinedClickable {
                                             if (song.id == mediaMetadata?.id) {
                                                 playerConnection.player.togglePlayPause()
+                                            } else if (song.song.isLocal) {
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = "Library: ${artistPage.artist.title}",
+                                                        items = librarySongs.filter { it.song.isLocal } .toList().shuffled().map { it.toMediaMetadata() }
+                                                    )
+                                                )
                                             } else {
                                                 playerConnection.playQueue(
                                                     YouTubeQueue(
@@ -384,7 +398,8 @@ fun ArtistScreen(
                                                             YouTubeQueue(
                                                                 WatchEndpoint(videoId = item.id),
                                                                 item.toMediaMetadata()
-                                                            )
+                                                            ),
+                                                            title = artistPage.artist.title
                                                         )
 
                                                         is AlbumItem -> navController.navigate("album/${item.id}")
