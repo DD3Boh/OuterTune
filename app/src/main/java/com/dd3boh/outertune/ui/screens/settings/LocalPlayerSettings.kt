@@ -2,7 +2,6 @@ package com.dd3boh.outertune.ui.screens.settings
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Looper
@@ -26,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Autorenew
-import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.TextFields
@@ -52,17 +50,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.navigation.NavController
+import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
-import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.DialogCornerRadius
 import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LookupYtmArtistsKey
@@ -71,14 +69,12 @@ import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
-import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
-
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.utils.purgeCache
@@ -92,21 +88,20 @@ import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdv
 import com.dd3boh.outertune.utils.scanners.ScannerAbortException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalPlayerSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
-    context: Context,
-    database: MusicDatabase,
+
 ) {
+    val context = LocalContext.current
+    val database = LocalDatabase.current
+    val coroutineScope = rememberCoroutineScope()
     val mediaPermissionLevel =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
         else Manifest.permission.READ_EXTERNAL_STORAGE
-
-    val coroutineScope = rememberCoroutineScope()
 
     // scanner vars
     val isScannerActive by scannerActive.collectAsState()
@@ -136,9 +131,6 @@ fun LocalPlayerSettings(
     var fullRescan by remember { mutableStateOf(false) }
     val (lookupYtmArtists, onlookupYtmArtistsChange) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
 
-    // misc
-    val (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
-
     // other vars
     var tempScanPaths by remember { mutableStateOf("") }
 
@@ -155,7 +147,6 @@ fun LocalPlayerSettings(
             checked = autoScan,
             onCheckedChange = onAutoScanChange
         )
-
         // file path selector
         PreferenceEntry(
             title = { Text(stringResource(R.string.scan_paths_title)) },
@@ -330,12 +321,9 @@ fun LocalPlayerSettings(
             )
         }
 
-
-
         PreferenceGroupTitle(
             title = stringResource(R.string.manual_scanner_title)
         )
-
         // scanner
         Row(
             modifier = Modifier
@@ -509,7 +497,6 @@ fun LocalPlayerSettings(
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
         }
-
         // scanner checkboxes
         Column(
             modifier = Modifier
@@ -542,7 +529,6 @@ fun LocalPlayerSettings(
                 )
             }
         }
-
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -561,11 +547,9 @@ fun LocalPlayerSettings(
             )
         }
 
-
         PreferenceGroupTitle(
             title = stringResource(R.string.scanner_settings_title)
         )
-
         // scanner sensitivity
         EnumListPreference(
             title = { Text(stringResource(R.string.scanner_sensitivity_title)) },
@@ -580,8 +564,6 @@ fun LocalPlayerSettings(
                 }
             }
         )
-
-
         // strict file ext
         SwitchPreference(
             title = { Text(stringResource(R.string.scanner_strict_file_name_title)) },
@@ -590,45 +572,6 @@ fun LocalPlayerSettings(
             checked = strictExtensions,
             onCheckedChange = onStrictExtensionsChange
         )
-
-
-        if (devSettings) {
-            PreferenceGroupTitle(
-                title = stringResource(R.string.settings_debug)
-            )
-
-            PreferenceEntry(
-                title = { Text("DEBUG: Nuke local lib") },
-                icon = { Icon(Icons.Rounded.Backup, null) },
-                onClick = {
-                    Toast.makeText(
-                        context,
-                        "Nuking local files from database...",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    coroutineScope.launch(Dispatchers.IO) {
-                        Timber.tag("Settings").d("Nuke database status:  ${database.nukeLocalData()}")
-                    }
-                }
-            )
-
-            PreferenceEntry(
-                title = { Text("DEBUG: Force local to remote artist migration NOW") },
-                icon = { Icon(Icons.Rounded.Backup, null) },
-                onClick = {
-                    Toast.makeText(
-                        context,
-                        "Starting migration...",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    coroutineScope.launch(Dispatchers.IO) {
-                        Timber.tag("Settings")
-                            .d("Nuke database (MANUAL TRIGGERED) status:  ${database.nukeLocalData()}")
-                    }
-                }
-            )
-        }
-
     }
 
 

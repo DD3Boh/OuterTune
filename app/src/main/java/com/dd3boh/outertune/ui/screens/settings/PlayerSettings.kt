@@ -32,6 +32,7 @@ import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
+import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberEnumPreference
@@ -54,6 +55,9 @@ fun PlayerSettings(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
     ) {
+        PreferenceGroupTitle(
+            title = "Audio"
+        )
         EnumListPreference(
             title = { Text(stringResource(R.string.audio_quality)) },
             icon = { Icon(Icons.Rounded.GraphicEq, null) },
@@ -68,6 +72,22 @@ fun PlayerSettings(
             }
         )
         SwitchPreference(
+            title = { Text(stringResource(R.string.audio_normalization)) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.VolumeUp, null) },
+            checked = audioNormalization,
+            onCheckedChange = onAudioNormalizationChange
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.skip_silence)) },
+            icon = { Icon(painterResource(R.drawable.skip_next), null) },
+            checked = skipSilence,
+            onCheckedChange = onSkipSilenceChange
+        )
+
+        PreferenceGroupTitle(
+            title = "Behaviour"
+        )
+        SwitchPreference(
             title = { Text(stringResource(R.string.persistent_queue)) },
             icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
             checked = persistentQueue,
@@ -80,19 +100,6 @@ fun PlayerSettings(
             checked = swipeToDismiss,
             onCheckedChange = onSwipeToDismissChange
         )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.skip_silence)) },
-            icon = { Icon(painterResource(R.drawable.skip_next), null) },
-            checked = skipSilence,
-            onCheckedChange = onSkipSilenceChange
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.audio_normalization)) },
-            icon = { Icon(Icons.AutoMirrored.Rounded.VolumeUp, null) },
-            checked = audioNormalization,
-            onCheckedChange = onAudioNormalizationChange
-        )
-
         // lyrics settings
         PreferenceEntry(
             title = { Text(stringResource(R.string.lyrics_settings_title)) },

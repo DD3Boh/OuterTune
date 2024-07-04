@@ -42,7 +42,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.db.entities.Song
@@ -51,7 +50,6 @@ import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.menu.AddToPlaylistDialog
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberEnumPreference
-import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.BackupRestoreViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -63,7 +61,6 @@ fun BackupAndRestore(
     scrollBehavior: TopAppBarScrollBehavior,
     viewModel: BackupRestoreViewModel = hiltViewModel(),
 ) {
-    val (devSettings) = rememberPreference(DevSettingsKey, defaultValue = false)
     val (scannerSensitivity) = rememberEnumPreference(
         key = ScannerSensitivityKey,
         defaultValue = ScannerMatchCriteria.LEVEL_2
@@ -124,53 +121,51 @@ fun BackupAndRestore(
             }
         )
 
-        if (devSettings) {
-            // import m3u playlist
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.import_m3u)) },
-                icon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
-                onClick = {
-                    importM3uLauncher.launch(arrayOf("audio/*"))
+        // import m3u playlist
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.import_m3u)) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
+            onClick = {
+                importM3uLauncher.launch(arrayOf("audio/*"))
+            }
+        )
+        AddToPlaylistDialog(
+            isVisible = showChoosePlaylistDialog,
+            noSyncing = true,
+            initialTextFieldValue = importedTitle,
+            onAdd = { playlist ->
+                viewModel.importPlaylist(importedSongs, playlist)
+            },
+            onDismiss = { showChoosePlaylistDialog = false }
+        )
+
+        if (rejectedSongs.isNotEmpty()) {
+            LazyColumn(
+                modifier = Modifier
+                    .heightIn(max = 250.dp)
+                    .padding(20.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Could not import:",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-            )
-            AddToPlaylistDialog(
-                isVisible = showChoosePlaylistDialog,
-                noSyncing = true,
-                initialTextFieldValue = importedTitle,
-                onAdd = { playlist ->
-                    viewModel.importPlaylist(importedSongs, playlist)
-                },
-                onDismiss = { showChoosePlaylistDialog = false }
-            )
 
-            if (rejectedSongs.isNotEmpty()) {
-                LazyColumn(
-                    modifier = Modifier
-                        .heightIn(max = 250.dp)
-                        .padding(20.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "Could not import:",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-
-                    itemsIndexed(
-                        items = rejectedSongs,
-                        key = { _, song -> song.hashCode() }
-                    ) { index, item ->
-                        Text(
-                            text = item,
-                            fontSize = 14.sp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        )
-                    }
+                itemsIndexed(
+                    items = rejectedSongs,
+                    key = { _, song -> song.hashCode() }
+                ) { index, item ->
+                    Text(
+                        text = item,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
                 }
             }
         }
