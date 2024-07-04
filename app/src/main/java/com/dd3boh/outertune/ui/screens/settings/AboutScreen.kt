@@ -76,7 +76,7 @@ fun AboutScreen(
         ) {
             Text(
                 text = "OuterTune",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
@@ -132,6 +132,25 @@ fun AboutScreen(
                 )
             }
         }
+
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.Top,
+        ) {
+            Text(
+                text = "Special Thanks",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
+        }
+
+        Text(
+            text = "Zion Huang for InnerTune",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
 
     }
 
