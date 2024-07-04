@@ -17,7 +17,6 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,14 +25,15 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,6 +42,7 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.*
+import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -64,14 +65,13 @@ import java.time.ZoneOffset
 import java.util.Stack
 
 @SuppressLint("StateFlowValueCalledInComposition")
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LibrarySongsFolderScreen(
     navController: NavController,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
     filterContent: @Composable() (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
@@ -97,7 +97,7 @@ fun LibrarySongsFolderScreen(
     if (folderStack.isEmpty()) {
         val cachedTree = getDirectoryTree()
         if (cachedTree == null) {
-            viewModel.getLocalSongs(context, viewModel.databaseLink)
+            viewModel.getLocalSongs(viewModel.databaseLink)
         }
 
         folderStack.push(
@@ -111,30 +111,36 @@ fun LibrarySongsFolderScreen(
         mutableStateOf(folderStack.peek())
     }
 
-    val wrappedSongs = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
-
-    // sort songs
-    wrappedSongs.sortBy {
-        when (sortType) {
-            SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
-            SongSortType.NAME -> it.item.song.title
-            SongSortType.ARTIST -> it.item.artists.firstOrNull()?.name
-            SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
-        }
-    }
-    if (sortDescending) {
-        wrappedSongs.reverse()
-    }
-
-    // sort folders
-    currDir.subdirs.sortBy { it.currentDir } // only sort by name
-
-    if (sortDescending) {
-        currDir.subdirs.reverse()
+    val wrappedSongs = remember {
+        mutableStateListOf<ItemWrapper<Song>>()
     }
 
     var selection by remember {
         mutableStateOf(false)
+    }
+
+    LaunchedEffect(sortType, sortDescending, currDir) {
+        val tempList = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
+        // sort songs
+        tempList.sortBy {
+            when (sortType) {
+                SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
+                SongSortType.NAME -> it.item.song.title
+                SongSortType.ARTIST -> it.item.artists.firstOrNull()?.name
+                SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
+            }
+        }
+
+        // sort folders
+        currDir.subdirs.sortBy { it.currentDir } // only sort by name
+
+        if (sortDescending) {
+            currDir.subdirs.reverse()
+            tempList.reverse()
+        }
+
+        wrappedSongs.clear()
+        wrappedSongs.addAll(tempList)
     }
 
     BackHandler {
@@ -299,7 +305,7 @@ fun LibrarySongsFolderScreen(
                                                         items = currDir
                                                             .toList()
                                                             .map { it.toMediaMetadata() },
-                                                        startIndex = index
+                                                            startIndex = currDir.toList().indexOf(songWrapper.item)
                                                     )
                                                 )
                                             }

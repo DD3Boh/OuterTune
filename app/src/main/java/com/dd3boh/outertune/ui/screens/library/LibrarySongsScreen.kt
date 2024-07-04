@@ -187,7 +187,10 @@ fun LibrarySongsScreen(
                         SongFolderItem(
                             folderTitle = "Internal Storage",
                             modifier = Modifier
-                                .clickable { inLocal = true }
+                                .clickable {
+                                    inLocal = true
+                                    viewModel.getLocalSongs(database = viewModel.databaseLink)
+                                }
                                 .animateItemPlacement()
                         )
                     }

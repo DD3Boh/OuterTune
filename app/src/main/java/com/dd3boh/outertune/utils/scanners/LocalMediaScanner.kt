@@ -80,6 +80,7 @@ class LocalMediaScanner {
                         SongEntity(
                             SongEntity.generateSongId(),
                             path.substringAfterLast('/'),
+                            thumbnailUrl = path,
                             isLocal = true,
                             inLibrary = LocalDateTime.now(),
                             localPath = path
@@ -220,9 +221,17 @@ class LocalMediaScanner {
         noDisable: Boolean = false
     ) {
         Timber.tag(TAG).d("------------ SYNC: Starting Local Library Sync ------------")
-        Timber.tag(TAG).d("Entries to process: ${newSongs.size}")
-
+        // deduplicate
+        val finalSongs = ArrayList<Song>()
         newSongs.forEach { song ->
+            if (finalSongs.none { s -> compareSong(song, s, matchStrength, strictFileNames) }) {
+                finalSongs.add(song)
+            }
+        }
+        Timber.tag(TAG).d("Entries to process: ${newSongs.size}. After dedup: ${finalSongs.size}")
+
+        // sync
+        finalSongs.forEach { song ->
             if (scannerRequestCancel) {
                 if (SCANNER_DEBUG)
                     Timber.tag(TAG).d("WARNING: Requested to cancel Local Library Sync. Aborting.")
@@ -323,7 +332,7 @@ class LocalMediaScanner {
 
         // do not delete songs from database automatically, we just disable them
         if (!noDisable) {
-            disableSongs(newSongs, database)
+            disableSongs(finalSongs, database)
         }
         Timber.tag(TAG).d("------------ SYNC: Finished Local Library Sync ------------")
     }
@@ -418,8 +427,11 @@ class LocalMediaScanner {
                 song?.song?.let { finalSongs.add(song) }
             }
 
-            if (delta.isNotEmpty()) {
+            if (finalSongs.isNotEmpty()) {
                 syncDB(database, finalSongs, matchCriteria, strictFileNames, noDisable = true)
+            } else {
+                if (SCANNER_DEBUG)
+                    Timber.tag(TAG).d("Not syncing, no valid songs found!")
             }
 
             // we handle disabling songs here instead

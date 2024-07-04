@@ -74,10 +74,12 @@ class LibrarySongsViewModel @Inject constructor(
      *
      * @return DirectoryTree
      */
-    fun getLocalSongs(context: Context, database: MusicDatabase): MutableStateFlow<DirectoryTree> {
+    fun getLocalSongs(database: MusicDatabase): MutableStateFlow<DirectoryTree> {
         val directoryStructure =
             refreshLocal(database, scanPaths.split('\n'),
                 excludedScanPaths.split('\n')).value
+
+        localSongDirectoryTree.value = directoryStructure
         return MutableStateFlow(directoryStructure)
     }
 

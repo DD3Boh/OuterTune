@@ -196,6 +196,7 @@ class FFProbeScanner : MetadataScanner {
                     id = songId,
                     title = title,
                     duration = duration.toInt(), // we use seconds for duration
+                    thumbnailUrl = path,
                     albumId = albumId,
                     albumName = albumName,
                     year = year,

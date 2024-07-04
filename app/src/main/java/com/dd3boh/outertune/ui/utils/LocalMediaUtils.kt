@@ -16,7 +16,7 @@ const val TAG = "LocalMediaUtils"
  */
 const val SCANNER_CRASH_AT_FIRST_ERROR = false // crash at first FFmpeg scanner error. Currently not implemented
 const val SYNC_SCANNER = false // true will not use multithreading for scanner
-const val MAX_CONCURRENT_JOBS = 16
+const val MAX_CONCURRENT_JOBS = 8
 const val SCANNER_DEBUG = false
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -68,9 +68,9 @@ fun getLocalThumbnail(path: String?, resize: Boolean): Bitmap? {
     }
 
     val mData = MediaMetadataRetriever()
-    mData.setDataSource(path)
 
     var image: Bitmap = try {
+        mData.setDataSource(path)
         val art = mData.embeddedPicture
         BitmapFactory.decodeByteArray(art, 0, art!!.size)
     } catch (e: Exception) {

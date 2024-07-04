@@ -90,6 +90,7 @@ import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
@@ -989,14 +990,25 @@ fun PlaylistListItem(
                 modifier = Modifier.size(ListThumbnailSize)
             )
 
-            1 -> AsyncImage(
-                model = playlist.thumbnails[0],
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(ListThumbnailSize)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
-            )
+            1 -> if (playlist.thumbnails[0].startsWith("/storage")) {
+                AsyncImage(
+                    model = playlist.thumbnails[0],
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(ListThumbnailSize)
+                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                )
+            } else {
+                AsyncImage(
+                    model = playlist.thumbnails[0],
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(ListThumbnailSize)
+                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                )
+            }
 
             else -> Box(
                 modifier = Modifier
@@ -1009,14 +1021,25 @@ fun PlaylistListItem(
                     Alignment.BottomStart,
                     Alignment.BottomEnd
                 ).fastForEachIndexed { index, alignment ->
-                    AsyncImage(
-                        model = playlist.thumbnails.getOrNull(index),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .align(alignment)
-                            .size(ListThumbnailSize / 2)
-                    )
+                    if (playlist.thumbnails.getOrNull(index)?.startsWith("/storage") == true) {
+                        AsyncLocalImage(
+                            image = { getLocalThumbnail(playlist.thumbnails[index], true) },
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .align(alignment)
+                                .size(ListThumbnailSize / 2)
+                        )
+                    } else {
+                        AsyncImage(
+                            model = playlist.thumbnails.getOrNull(index),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .align(alignment)
+                                .size(ListThumbnailSize / 2)
+                        )
+                    }
                 }
             }
         }

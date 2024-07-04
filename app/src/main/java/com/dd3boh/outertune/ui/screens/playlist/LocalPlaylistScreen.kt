@@ -103,6 +103,7 @@ import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
+import com.dd3boh.outertune.ui.component.AsyncLocalImage
 import com.dd3boh.outertune.ui.component.AutoResizeText
 import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.EmptyPlaceholder
@@ -123,6 +124,7 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
 import com.dd3boh.outertune.ui.menu.SelectionSongMenu
 import com.dd3boh.outertune.ui.utils.ItemWrapper
+import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -392,14 +394,25 @@ fun LocalPlaylistScreen(
                                         .clip(RoundedCornerShape(ThumbnailCornerRadius))
                                 )
 
-                                1 -> AsyncImage(
-                                    model = playlist.thumbnails[0],
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .size(AlbumThumbnailSize)
-                                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                                )
+                                1 -> if (playlist.thumbnails[0].startsWith("/storage")) {
+                                    AsyncLocalImage(
+                                        image = { getLocalThumbnail(playlist.thumbnails[0], true) },
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(AlbumThumbnailSize)
+                                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = playlist.thumbnails[0],
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(AlbumThumbnailSize)
+                                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                    )
+                                }
 
                                 else -> Box(
                                     modifier = Modifier
@@ -412,15 +425,26 @@ fun LocalPlaylistScreen(
                                         Alignment.BottomStart,
                                         Alignment.BottomEnd
                                     ).fastForEachIndexed { index, alignment ->
-                                        AsyncImage(
-                                            model = playlist.thumbnails.getOrNull(index),
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .align(alignment)
-                                                .size(AlbumThumbnailSize / 2)
-                                        )
-                                    }
+                                            if (playlist.thumbnails.getOrNull(index)?.startsWith("/storage") == true) {
+                                                AsyncLocalImage(
+                                                    image = { getLocalThumbnail(playlist.thumbnails[index], true) },
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .align(alignment)
+                                                        .size(AlbumThumbnailSize / 2)
+                                                )
+                                            } else {
+                                                AsyncImage(
+                                                    model = playlist.thumbnails.getOrNull(index),
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .align(alignment)
+                                                        .size(AlbumThumbnailSize / 2)
+                                                )
+                                            }
+                                        }
                                 }
                             }
 
