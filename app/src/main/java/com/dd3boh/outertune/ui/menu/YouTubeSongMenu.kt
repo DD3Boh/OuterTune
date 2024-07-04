@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.menu
 
 import android.content.Intent
+import android.database.sqlite.SQLiteConstraintException
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -104,13 +105,24 @@ fun YouTubeSongMenu(
         isVisible = showChoosePlaylistDialog,
         onAdd = { playlist ->
             database.query {
-                insert(
-                    PlaylistSongMap(
-                        songId = song.id,
-                        playlistId = playlist.id,
-                        position = playlist.songCount
+                try {
+                    insert(
+                        PlaylistSongMap(
+                            songId = song.id,
+                            playlistId = playlist.id,
+                            position = playlist.songCount
+                        )
                     )
-                )
+                } catch(e: SQLiteConstraintException) {
+                    insert(song.toMediaMetadata())
+                    insert(
+                        PlaylistSongMap(
+                            songId = song.id,
+                            playlistId = playlist.id,
+                            position = playlist.songCount
+                        )
+                    )
+                }
 
                 coroutineScope.launch(Dispatchers.IO) {
                     playlist.playlist.browseId?.let { browseId ->
