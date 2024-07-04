@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.db.entities
 
 import androidx.compose.runtime.Immutable
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import org.apache.commons.lang3.RandomStringUtils
@@ -18,6 +19,7 @@ class GenreEntity(
     val playEndpointParams: String? = null,
     val shuffleEndpointParams: String? = null,
     val radioEndpointParams: String? = null,
+    @ColumnInfo(name = "isLocal", defaultValue = false.toString())
     val isLocal: Boolean = false,
     // In hopes of not having to modify the database again, I barf vals
 ) {
