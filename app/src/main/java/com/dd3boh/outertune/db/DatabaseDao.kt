@@ -10,9 +10,6 @@ import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
-import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.pages.AlbumPage
-import com.zionhuang.innertube.pages.ArtistPage
 import com.dd3boh.outertune.constants.AlbumSortType
 import com.dd3boh.outertune.constants.ArtistSongSortType
 import com.dd3boh.outertune.constants.ArtistSortType
@@ -48,12 +45,12 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.resize
 import com.zionhuang.innertube.models.AlbumItem
 import com.zionhuang.innertube.models.PlaylistItem
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.zionhuang.innertube.models.SongItem
+import com.zionhuang.innertube.pages.AlbumPage
+import com.zionhuang.innertube.pages.ArtistPage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.ZoneOffset

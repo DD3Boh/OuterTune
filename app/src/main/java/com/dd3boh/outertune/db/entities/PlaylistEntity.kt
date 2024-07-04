@@ -1,11 +1,9 @@
 package com.dd3boh.outertune.db.entities
 
 import androidx.compose.runtime.Immutable
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel

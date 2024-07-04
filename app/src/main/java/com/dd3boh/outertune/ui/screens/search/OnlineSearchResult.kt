@@ -1,7 +1,6 @@
 package com.dd3boh.outertune.ui.screens.search
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,22 +33,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_ALBUM
-import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_ARTIST
-import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_COMMUNITY_PLAYLIST
-import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_FEATURED_PLAYLIST
-import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_SONG
-import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_VIDEO
-import com.zionhuang.innertube.models.AlbumItem
-import com.zionhuang.innertube.models.ArtistItem
-import com.zionhuang.innertube.models.PlaylistItem
-import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.models.WatchEndpoint
-import com.zionhuang.innertube.models.YTItem
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
@@ -73,6 +59,18 @@ import com.dd3boh.outertune.ui.menu.YouTubeArtistMenu
 import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.menu.YouTubeSongMenu
 import com.dd3boh.outertune.viewmodels.OnlineSearchViewModel
+import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_ALBUM
+import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_ARTIST
+import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_COMMUNITY_PLAYLIST
+import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_FEATURED_PLAYLIST
+import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_SONG
+import com.zionhuang.innertube.YouTube.SearchFilter.Companion.FILTER_VIDEO
+import com.zionhuang.innertube.models.AlbumItem
+import com.zionhuang.innertube.models.ArtistItem
+import com.zionhuang.innertube.models.PlaylistItem
+import com.zionhuang.innertube.models.SongItem
+import com.zionhuang.innertube.models.WatchEndpoint
+import com.zionhuang.innertube.models.YTItem
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)

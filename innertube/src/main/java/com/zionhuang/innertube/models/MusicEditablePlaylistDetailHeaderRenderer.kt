@@ -1,8 +1,5 @@
-import com.zionhuang.innertube.models.Menu
-import com.zionhuang.innertube.models.MusicResponsiveHeaderRenderer
-import com.zionhuang.innertube.models.Run
-import com.zionhuang.innertube.models.Runs
-import com.zionhuang.innertube.models.ThumbnailRenderer
+package com.zionhuang.innertube.models
+
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -1,6 +1,5 @@
 package com.dd3boh.outertune.ui.screens
 
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic

@@ -23,7 +23,7 @@ fun BigSeekBar(
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     var width by remember {
-        mutableStateOf(0f)
+        mutableFloatStateOf(0f)
     }
 
     Canvas(
