@@ -493,7 +493,7 @@ class MusicService : MediaLibraryService(),
         queueTitle = title
         queuePlaylistId = queue.playlistId
 
-        scope.launch(SilentHandler) {
+        CoroutineScope(Dispatchers.Main).launch {
             val initialStatus = withContext(Dispatchers.IO) { queue.getInitialStatus() }
             if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
             if (queueTitle == null && initialStatus.title != null) { // do not find a title if an override is provided
