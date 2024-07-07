@@ -312,10 +312,8 @@ fun LibrarySongsFolderScreen(
                                                     ListQueue(
                                                         title = currDir.currentDir,
                                                         // I surely hope this applies to all in this folder...
-                                                        items = currDir
-                                                            .toList()
-                                                            .map { it.toMediaMetadata() },
-                                                            startIndex = currDir.toList().indexOf(songWrapper.item)
+                                                        items = wrappedSongs.map { it.item.toMediaMetadata() },
+                                                            startIndex = currDir.toSortedList(sortType, sortDescending).indexOf(songWrapper.item)
                                                     )
                                                 )
                                             }
@@ -344,7 +342,7 @@ fun LibrarySongsFolderScreen(
                 playerConnection.playQueue(
                     ListQueue(
                         title = currDir.currentDir,
-                        items = currDir.toList().shuffled().map { it.toMediaMetadata() }
+                        items = currDir.toSortedList(sortType, sortDescending).shuffled().map { it.toMediaMetadata() }
                     )
                 )
             }
