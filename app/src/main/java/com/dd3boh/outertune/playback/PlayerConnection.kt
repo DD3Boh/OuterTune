@@ -10,6 +10,7 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.db.entities.LyricsEntity
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -47,6 +49,18 @@ class PlayerConnection(
         database.song(it?.id)
     }
     val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
+        // local songs will always look at lrc files first
+        if (mediaMetadata?.isLocal == true) {
+            val lyrics = service.lyricsHelper.getLocalLyrics(mediaMetadata)
+            if (lyrics != null) {
+                return@flatMapLatest flowOf(
+                    LyricsEntity(
+                        id = mediaMetadata.id,
+                        lyrics = lyrics
+                    )
+                )
+            }
+        }
         database.lyrics(mediaMetadata?.id)
     }
     val currentFormat = mediaMetadata.flatMapLatest { mediaMetadata ->
