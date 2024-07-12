@@ -33,12 +33,12 @@ class LyricsHelper @Inject constructor(
             }
 
             // "lazy eval" the remote lyrics cuz it is laughably slow
-            remoteLyrics= getRemoteLyrics(mediaMetadata)
+            remoteLyrics = getRemoteLyrics(mediaMetadata)
             if (remoteLyrics != null) {
                 return remoteLyrics
             }
         } else {
-            remoteLyrics= getRemoteLyrics(mediaMetadata)
+            remoteLyrics = getRemoteLyrics(mediaMetadata)
             if (remoteLyrics != null) {
                 return remoteLyrics
             } else if (localLyrics != null) {
@@ -74,7 +74,7 @@ class LyricsHelper @Inject constructor(
     /**
      * Lookup lyrics from local disk (.lrc) file
      */
-    private suspend fun getLocalLyrics(mediaMetadata: MediaMetadata): String? {
+    suspend fun getLocalLyrics(mediaMetadata: MediaMetadata): String? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             throw Exception("Local lyrics are not supported below SDK 26 (Oreo)")
         }
