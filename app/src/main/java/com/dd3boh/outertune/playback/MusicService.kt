@@ -741,29 +741,27 @@ class MusicService : MediaLibraryService(),
 
             // write to cache
             songUrlCache[mediaId] = format.url!! to playerResponse.streamingData!!.expiresInSeconds * 1000L
-            val resultDataSpec = dataSpec.withUri(format.url!!.toUri())
+            val resultDataSpec = dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
 
             if (dataStore[MaxSongCacheSizeKey] == 0) { // cache disabled
                 // null pref will use caching (default caching on)
-                return@Factory resultDataSpec.subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+                return@Factory resultDataSpec
             }
 
-            CoroutineScope(Dispatchers.IO).launch {
-                val cache = CacheDataSource.Factory()
-                    .setCache(downloadCache)
-                    .setUpstreamDataSourceFactory(
-                        CacheDataSource.Factory()
-                            .setCache(playerCache)
-                            .setUpstreamDataSourceFactory(
-                                DefaultDataSource.Factory(this@MusicService)
-                            )
-                    )
-                    .setCacheWriteDataSinkFactory(null)
-                    .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
-                CacheWriter(cache.createDataSource(), resultDataSpec, null, null).cache()
-            }
+            val cache = CacheDataSource.Factory()
+                .setCache(downloadCache)
+                .setUpstreamDataSourceFactory(
+                    CacheDataSource.Factory()
+                        .setCache(playerCache)
+                        .setUpstreamDataSourceFactory(
+                            DefaultDataSource.Factory(this)
+                        )
+                )
+                .setCacheWriteDataSinkFactory(null)
+                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+            CacheWriter(cache.createDataSource(), resultDataSpec, null, null).cache()
 
-            resultDataSpec.subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+            resultDataSpec
         }
     }
 
