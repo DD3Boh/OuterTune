@@ -139,6 +139,13 @@
         </service>
 
         <service
+            android:name=".playback.KeepAlive"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            tools:ignore="ExportedService">
+        </service>
+
+        <service
             android:name=".playback.ExoDownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync">

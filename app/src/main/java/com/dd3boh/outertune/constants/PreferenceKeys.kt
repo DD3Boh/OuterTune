@@ -31,6 +31,7 @@ val SwipeToDismissKey = booleanPreferencesKey("swipeToDismiss")
 val SkipSilenceKey = booleanPreferencesKey("skipSilence")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
 val YtmSyncKey = booleanPreferencesKey("ytmSync")
+val KeepAliveKey = booleanPreferencesKey("keepAlive")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")

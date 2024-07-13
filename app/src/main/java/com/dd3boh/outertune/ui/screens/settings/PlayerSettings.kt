@@ -1,5 +1,11 @@
 package com.dd3boh.outertune.ui.screens.settings
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +16,7 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.NoCell
 import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -17,18 +24,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
+import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.SwipeToDismissKey
+import com.dd3boh.outertune.playback.KeepAlive
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
@@ -37,6 +49,7 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import com.dd3boh.outertune.utils.reportException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,11 +57,59 @@ fun PlayerSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
+    val context = LocalContext.current
+
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(key = AudioQualityKey, defaultValue = AudioQuality.AUTO)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(key = PersistentQueueKey, defaultValue = true)
     val (swipeToDismiss, onSwipeToDismissChange) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
     val (skipSilence, onSkipSilenceChange) = rememberPreference(key = SkipSilenceKey, defaultValue = false)
     val (audioNormalization, onAudioNormalizationChange) = rememberPreference(key = AudioNormalizationKey, defaultValue = true)
+    val (keepAlive, onKeepAliveChange) = rememberPreference(key = KeepAliveKey, defaultValue = false)
+
+    fun toggleKeepAlive(newValue: Boolean) {
+        // disable and request if disabled
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            onKeepAliveChange(false)
+            Toast.makeText(
+                context,
+                "Notification permission is required",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf( Manifest.permission.POST_NOTIFICATIONS), PackageManager.PERMISSION_GRANTED
+            )
+            return
+        }
+
+        if (keepAlive != newValue) {
+            onKeepAliveChange(newValue)
+            // start/stop service accordingly
+            if (newValue) {
+                try {
+                    context.startService(Intent(context, KeepAlive::class.java))
+                } catch (e: Exception) {
+                    reportException(e)
+                }
+            } else {
+                try {
+                    context.stopService(Intent(context, KeepAlive::class.java))
+                } catch (e: Exception) {
+                    reportException(e)
+                }
+            }
+        }
+    }
+
+    // reset if no permission
+    LaunchedEffect(keepAlive) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            onKeepAliveChange(false)
+        }
+    }
 
     Column(
         Modifier
@@ -105,6 +166,14 @@ fun PlayerSettings(
             title = { Text(stringResource(R.string.lyrics_settings_title)) },
             icon = { Icon(Icons.Rounded.Lyrics, null) },
             onClick = { navController.navigate("settings/player/lyrics") }
+        )
+
+        SwitchPreference(
+            title = { Text(stringResource(R.string.keep_alive_title)) },
+            description = stringResource(R.string.keep_alive_description),
+            icon = { Icon(Icons.Rounded.NoCell, null) },
+            checked = keepAlive,
+            onCheckedChange = { toggleKeepAlive(it) }
         )
     }
 
