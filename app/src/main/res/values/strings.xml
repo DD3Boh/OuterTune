@@ -249,6 +249,8 @@
     <string name="audio_normalization">Audio normalization</string>
     <string name="equalizer">Equalizer</string>
     <string name="lyrics_settings_title">Lyrics</string>
+    <string name="keep_alive_title">Prevent system killing app</string>
+    <string name="keep_alive_description">Use a foreground notification to prevent OuterTune from being randomly closed by the system.</string>
 
     <string name="storage">Storage</string>
     <string name="cache">Cache</string>
