@@ -136,6 +136,8 @@
     <string name="artist_name">Artist name</string>
     <string name="error_artist_name_empty">Artist name cannot be empty.</string>
 
+    <string name="create_queue">New queue</string>
+
     <!-- Noun -->
     <plurals name="n_song">
         <item quantity="one">%d song</item>

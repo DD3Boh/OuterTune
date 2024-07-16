@@ -85,6 +85,7 @@ import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.MediaMetadataListItem
 import com.dd3boh.outertune.ui.component.ResizableIconButton
+import com.dd3boh.outertune.ui.menu.QueueMenu
 import com.dd3boh.outertune.ui.menu.SelectionMediaMetadataMenu
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberPreference
@@ -295,14 +296,24 @@ fun Queue(
                                         if (playingQueue == index) MaterialTheme.colorScheme.tertiary.copy(0.3f)
                                         else Color.Transparent
                                     )
-                                    .clickable {
-                                        // switch to this queue, don't skip if skipping to same queue
-                                        if (queueBoard.getCurrentQueue()?.title != mq.title) {
-                                            queueBoard.setCurrQueue(mq, playerConnection.player)
-                                        }
+                                    .combinedClickable(
+                                        onClick = {
+                                            // switch to this queue, don't skip if skipping to same queue
+                                            if (queueBoard.getCurrentQueue()?.title != mq.title) {
+                                                queueBoard.setCurrQueue(mq, playerConnection.player)
+                                            }
 
-                                        updateQueues()
-                                    }
+                                            updateQueues()
+                                        },
+                                        onLongClick = {
+                                            menuState.show {
+                                                QueueMenu(
+                                                    onDismiss = menuState::dismiss,
+                                                    refreshUi = { updateQueues() }
+                                                )
+                                            }
+                                        }
+                                    )
                             ) {
                                 Row ( // row contents (wrapper is needed for margin)
                                     horizontalArrangement = Arrangement.SpaceBetween,

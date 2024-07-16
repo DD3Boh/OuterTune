@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.internal.toImmutableList
 import timber.log.Timber
 import java.io.Serializable
-import kotlin.math.min
 import kotlin.math.max
+import kotlin.math.min
 
 const val QUEUE_DEBUG = false
 const val MAX_QUEUES = 20
@@ -28,7 +28,7 @@ var isShuffleEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
  * @param title Queue title (and UID)
  * @param queue List of media items
  */
-data class MultiQueueObject(
+class MultiQueueObject(
     val title: String?,
     /**
      * The order of songs are dynamic. This should not be accessed form outside QueueBoard.
@@ -41,7 +41,34 @@ data class MultiQueueObject(
     var shuffled: Boolean = false,
     var queuePos: Int = -1,
 //    val ytmQueue: Queue?
-) : Serializable
+) : Serializable {
+
+    /**
+     * Retrieve the current queue in list form, with shuffle state taken in account
+     *
+     * @return Queue object (entire object)
+     */
+    fun getCurrentQueueShuffled(): MutableList<MediaMetadata> {
+        return if (shuffled) {
+            queue
+        } else {
+            unShuffled
+        }
+    }
+
+    /**
+     * Retrieve the total duration of all songs
+     *
+     * @return Duration in seconds
+     */
+    fun getDuration(): Long {
+        var duration = 0L
+        getCurrentQueueShuffled().forEach {
+            duration += it.duration // seconds
+        }
+        return duration
+    }
+}
 
 /**
  * Multiple queues manager. Methods will not automatically (re)load queues into the player unless
@@ -442,22 +469,6 @@ class QueueBoard : Serializable {
         } catch (e: IndexOutOfBoundsException) {
             masterIndex = masterQueues.size - 1 // reset var if invalid
             return null
-        }
-    }
-
-    /**
-     * Retrieve the current queue in list form, with shuffle state taken in account
-     *
-     * @return Queue object (entire object)
-     */
-    fun getCurrentQueueShuffled(): MutableList<MediaMetadata>? {
-        val item = getCurrentQueue()
-        return if (item == null) {
-            null
-        } else if (item.shuffled) {
-            item.queue
-        } else {
-            item.unShuffled
         }
     }
 

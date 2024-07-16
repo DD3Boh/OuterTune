@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Edit
@@ -94,6 +95,7 @@ import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.MultiQueueObject
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.menu.FolderMenu
@@ -1160,6 +1162,27 @@ fun MediaMetadataListItem(
     isSelected = isSelected,
     isActive = isActive,
     isLocalSong = mediaMetadata.isLocal
+)
+
+@Composable
+fun QueueListItem(
+    queue: MultiQueueObject,
+    modifier: Modifier = Modifier,
+    number: Int? = null,
+) = ListItem(
+    title = (if (number != null) "$number. " else "") + (queue.title ?: "Queue"),
+    subtitle = joinByBullet(
+        pluralStringResource(R.plurals.n_song, queue.getCurrentQueueShuffled().size, queue.getCurrentQueueShuffled().size),
+        makeTimeString(queue.getDuration() * 1000L)
+    ),
+    thumbnailContent = {
+        Icon(
+            Icons.AutoMirrored.Rounded.QueueMusic,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp)
+        )
+    },
+    modifier = modifier
 )
 
 @Composable
