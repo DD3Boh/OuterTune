@@ -64,6 +64,7 @@ import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.PlayerVolumeKey
 import com.dd3boh.outertune.constants.RepeatModeKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
+import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Event
@@ -131,7 +132,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
-const val MAX_CONSECUTIVE_ERR = 5
+const val MAX_CONSECUTIVE_ERR = 2
 const val MIN_PLAYBACK_THRESHOLD = 0.3 // 0 <= MIN_PLAYBACK_THRESHOLD <= 1
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -231,6 +232,10 @@ class MusicService : MediaLibraryService(),
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
                         super.onPlayerError(error)
+                        if (!dataStore.get(SkipOnErrorKey, true)) {
+                            return
+                        }
+
                         consecutivePlaybackErr ++
 
                         Toast.makeText(
