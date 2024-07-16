@@ -62,7 +62,9 @@ import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
+import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.AlbumListItem
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
@@ -124,6 +126,21 @@ fun AlbumMenu(
     var showSelectArtistDialog by rememberSaveable {
         mutableStateOf(false)
     }
+
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
@@ -243,7 +260,7 @@ fun AlbumMenu(
             title = R.string.add_to_queue
         ) {
             onDismiss()
-            playerConnection.addToQueue(songs.map { it.toMediaItem() })
+            showChooseQueueDialog = true
         }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,

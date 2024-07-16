@@ -23,10 +23,12 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.extensions.toMediaItem
+import com.dd3boh.outertune.models.DirectoryTree
+import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.SongFolderItem
-import com.dd3boh.outertune.models.DirectoryTree
 
 @Composable
 fun FolderMenu(
@@ -40,10 +42,24 @@ fun FolderMenu(
 
     val allFolderSongs = folder.toList()
 
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
 
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, allFolderSongs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
@@ -98,9 +114,7 @@ fun FolderMenu(
             title = R.string.add_to_queue
         ) {
             onDismiss()
-            allFolderSongs.forEach {
-                playerConnection.addToQueue((it.toMediaItem()))
-            }
+            showChooseQueueDialog = true
         }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,

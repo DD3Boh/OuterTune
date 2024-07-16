@@ -54,6 +54,7 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.DefaultDialog
@@ -222,6 +223,21 @@ fun PlaylistMenu(
         )
     }
 
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
+
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
@@ -343,7 +359,7 @@ fun PlaylistMenu(
             title = R.string.add_to_queue
         ) {
             onDismiss()
-            playerConnection.addToQueue(songs.map { it.toMediaItem() })
+            showChooseQueueDialog = true
         }
 
         GridMenuItem(

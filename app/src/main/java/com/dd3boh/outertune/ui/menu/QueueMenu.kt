@@ -78,7 +78,7 @@ fun QueueMenu(
         },
         onDismiss = {
             showChooseQueueDialog = false
-            onDismiss()
+            onDismiss() // here we dismiss since we switch to the queue anyways
             refreshUi()
         }
     )

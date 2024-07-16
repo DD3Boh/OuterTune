@@ -31,16 +31,15 @@ import androidx.media3.exoplayer.offline.DownloadService
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.R
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
-import com.dd3boh.outertune.ui.component.DefaultDialog
-import com.dd3boh.outertune.R
-import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.ListQueue
+import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
@@ -78,6 +77,21 @@ fun SelectionSongMenu(
                     Download.STATE_STOPPED
         }
     }
+
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, songSelection.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -185,7 +199,7 @@ fun SelectionSongMenu(
             title = R.string.add_to_queue
         ) {
             onDismiss()
-            playerConnection.addToQueue(songSelection.map { it.toMediaItem() })
+            showChooseQueueDialog = true
             clearAction()
         }
 
@@ -285,6 +299,21 @@ fun SelectionMediaMetadataMenu(
                     Download.STATE_STOPPED
         }
     }
+
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, songSelection, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -407,7 +436,7 @@ fun SelectionMediaMetadataMenu(
             title = R.string.add_to_queue
         ) {
             onDismiss()
-            playerConnection.addToQueue(songSelection.map { it.toMediaItem() })
+            showChooseQueueDialog = true
             clearAction()
         }
 

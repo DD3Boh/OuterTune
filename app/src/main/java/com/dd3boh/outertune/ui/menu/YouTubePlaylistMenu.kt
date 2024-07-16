@@ -48,6 +48,7 @@ import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
@@ -79,6 +80,29 @@ fun YouTubePlaylistMenu(
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
+
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            coroutineScope.launch {
+                songs.ifEmpty {
+                    withContext(Dispatchers.IO) {
+                        YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
+                    }
+                }.let { songs ->
+                    queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+                    queueBoard.setCurrQueue(playerConnection)
+                }
+            }
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
@@ -296,15 +320,7 @@ fun YouTubePlaylistMenu(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
-            coroutineScope.launch {
-                songs.ifEmpty {
-                    withContext(Dispatchers.IO) {
-                        YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
-                    }
-                }.let { songs ->
-                    playerConnection.addToQueue(songs.map { it.toMediaItem() })
-                }
-            }
+            showChooseQueueDialog = true
             onDismiss()
         }
 
