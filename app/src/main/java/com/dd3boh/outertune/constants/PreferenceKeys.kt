@@ -34,7 +34,6 @@ val YtmSyncKey = booleanPreferencesKey("ytmSync")
 val KeepAliveKey = booleanPreferencesKey("keepAlive")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
-val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
 
 val PauseListenHistoryKey = booleanPreferencesKey("pauseListenHistory")
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
