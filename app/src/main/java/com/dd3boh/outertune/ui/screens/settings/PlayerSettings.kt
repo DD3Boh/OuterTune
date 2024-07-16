@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.NoCell
@@ -38,6 +39,7 @@ import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
+import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.playback.KeepAlive
@@ -63,6 +65,7 @@ fun PlayerSettings(
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(key = PersistentQueueKey, defaultValue = true)
     val (swipeToDismiss, onSwipeToDismissChange) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
     val (skipSilence, onSkipSilenceChange) = rememberPreference(key = SkipSilenceKey, defaultValue = false)
+    val (skipOnErrorKey, onSkipOnErrorChange) = rememberPreference(key = SkipOnErrorKey, defaultValue = true)
     val (audioNormalization, onAudioNormalizationChange) = rememberPreference(key = AudioNormalizationKey, defaultValue = true)
     val (keepAlive, onKeepAliveChange) = rememberPreference(key = KeepAliveKey, defaultValue = false)
 
@@ -143,6 +146,12 @@ fun PlayerSettings(
             icon = { Icon(painterResource(R.drawable.skip_next), null) },
             checked = skipSilence,
             onCheckedChange = onSkipSilenceChange
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.skip_silence)) },
+            icon = { Icon(Icons.Rounded.FastForward, null) },
+            checked = skipOnErrorKey,
+            onCheckedChange = onSkipOnErrorChange
         )
 
         PreferenceGroupTitle(
