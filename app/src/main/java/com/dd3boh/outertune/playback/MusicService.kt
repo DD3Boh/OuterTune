@@ -240,7 +240,7 @@ class MusicService : MediaLibraryService(),
 
                         Toast.makeText(
                             this@MusicService,
-                            "Playback error: Could not resolve data: ${error.message} (${error.errorCode})",
+                            "Playback error: ${error.message} (${error.errorCode}): ${error.cause?.message?: "No further errors."} ",
                             Toast.LENGTH_SHORT
                         ).show()
 
