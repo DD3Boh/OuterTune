@@ -168,6 +168,9 @@ fun Queue(
                 mutableQueueWindows.move(from.index, to.index)
             },
             onDragEnd = { fromIndex, toIndex ->
+                if (fromIndex == toIndex) {
+                    return@rememberReorderableLazyListState
+                }
                 val pos = playerConnection.player.currentPosition
                 val newQueuePos = queueBoard.moveSong(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
                 queueBoard.setCurrQueue(playerConnection, autoSeek = false)
