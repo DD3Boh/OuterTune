@@ -273,6 +273,8 @@ class LocalMediaScanner {
                     }
 
                     if (!refreshExisting) { // below is only for when rescan is enabled
+                        // always update the path
+                        database.updateLocalSongPath(songToUpdate.id, songToUpdate.inLibrary, songToUpdate.localPath)
                         return@runBlocking
                     }
 
@@ -364,7 +366,7 @@ class LocalMediaScanner {
             // get list of all songs in db, then get songs unknown to the database
             val allSongs = database.allLocalSongs().first()
             val delta = newSongs.filterNot {
-                allSongs.any { dbSong -> compareSong(it, dbSong, matchCriteria, strictFileNames) }
+                allSongs.any { dbSong -> compareSong(it, dbSong, matchCriteria, true) } // ignore user strictFileNames prefs for initial matching
             }
 
             val finalSongs = ArrayList<Song>()
