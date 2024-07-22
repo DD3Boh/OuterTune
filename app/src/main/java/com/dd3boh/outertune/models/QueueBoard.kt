@@ -543,6 +543,7 @@ class QueueBoard : Serializable {
             player.seekTo(queuePos, C.TIME_UNSET)
         }
 
+        bubbleUp(item)
         return queuePos
     }
 
