@@ -180,17 +180,9 @@ fun Queue(
                 if (fromIndex == toIndex) {
                     return@rememberReorderableLazyListState
                 }
-                val pos = playerConnection.player.currentPosition
-                val newQueuePos = queueBoard.moveSong(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
-                queueBoard.setCurrQueue(playerConnection, autoSeek = false)
-                queueBoard.getCurrentQueue()?.let {
-                    if (newQueuePos != null) {
-                        try {
-                            playerConnection.player.seekTo(newQueuePos, pos)
-                        } catch (e: Exception) {
-                        }
-                    }
-                }
+
+                queueBoard.moveSong(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
+                playerConnection.player.moveMediaItem(fromIndex, toIndex)
             }
         )
 
