@@ -601,6 +601,8 @@ class MusicService : MediaLibraryService(),
             queueBoard.setCurrQueue(player)
         }
         lastMediaItemIndex = player.currentMediaItemIndex
+
+        updateNotification() // also updates when queue changes
     }
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {

@@ -6,6 +6,7 @@ import androidx.media3.common.Player
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
+import com.dd3boh.outertune.playback.MusicService
 import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.playback.queues.EmptyQueue
 import com.dd3boh.outertune.playback.queues.Queue
