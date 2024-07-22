@@ -6,7 +6,6 @@ import androidx.media3.common.Player
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
-import com.dd3boh.outertune.playback.MusicService
 import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.playback.queues.EmptyQueue
 import com.dd3boh.outertune.playback.queues.Queue
@@ -78,6 +77,7 @@ class MultiQueueObject(
 class QueueBoard : Serializable {
     private val masterQueues: ArrayList<MultiQueueObject> = ArrayList()
     private var masterIndex = -1 // current queue index
+    var detachedHead = false
 
 
     /**
@@ -491,6 +491,22 @@ class QueueBoard : Serializable {
      * @return New current position tracker
      */
     fun setCurrQueue(player: Player, autoSeek: Boolean = true) = setCurrQueue(getCurrentQueue(), player, autoSeek)
+
+    /**
+     * Load a queue into the media player\
+     *
+     * @param index Index of queue
+     * @param player Player link
+     * @param autoSeek true will automatically jump to a position in the queue after loading it
+     * @return New current position tracker
+     */
+    fun setCurrQueue(index: Int, player: Player, autoSeek: Boolean = true): Int? {
+        return try {
+            setCurrQueue(masterQueues[index], player, autoSeek)
+        } catch (e: IndexOutOfBoundsException) {
+            -1
+        }
+    }
 
     /**
      * Load a queue into the media player\

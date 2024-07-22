@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckBox
@@ -68,6 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.media3.common.C
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
@@ -104,8 +106,8 @@ import org.burnoutcrew.reorderable.reorderable
 fun Queue(
     state: BottomSheetState,
     onTerminate: () -> Unit,
-    onBackgroundColor: Color = Color.Unspecified,
     modifier: Modifier = Modifier,
+    onBackgroundColor: Color = Color.Unspecified,
 ) {
     val (swipeToDismiss) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
 
@@ -145,7 +147,8 @@ fun Queue(
                     )
                 }
             }
-        }
+        },
+        onDismiss = { queueBoard.detachedHead = false }
     ) {
         val coroutineScope = rememberCoroutineScope()
 
@@ -161,6 +164,12 @@ fun Queue(
         var multiqueueExpand by remember { mutableStateOf(false) }
         val mutableQueues = remember { mutableStateListOf<MultiQueueObject>() }
         var playingQueue by remember { mutableIntStateOf(queueBoard.getMasterIndex()) }
+        var detachedHead by remember { mutableStateOf(queueBoard.detachedHead) }
+        val detachedQueue = remember { mutableStateListOf<MediaMetadata>() }
+        var detachedQueueIndex by remember { mutableIntStateOf(-1) }
+        var detachedQueuePos by remember { mutableIntStateOf(-1) }
+        var detachedQueueTitle by remember { mutableStateOf("") }
+        val detachedQueueListState = rememberLazyListState()
 
         // for main songs list
         val reorderableState = rememberReorderableLazyListState(
@@ -190,6 +199,14 @@ fun Queue(
          * does not trigger LaunchedEffect, even though that is the point of remember.
          */
         fun updateQueues() {
+            if (detachedHead) {
+                coroutineScope.launch {
+                    delay(300) // needed for scrolling to queue when switching to new queue
+                    detachedQueueListState.animateScrollToItem(detachedQueuePos)
+                }
+                return
+            }
+
             mutableQueues.apply {
                 clear()
                 addAll(queueBoard.getAllQueues())
@@ -268,7 +285,7 @@ fun Queue(
                     ResizableIconButton(
                         icon = Icons.Rounded.Close,
                         onClick = {
-                          multiqueueExpand = false
+                            multiqueueExpand = false
                         },
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
@@ -296,14 +313,26 @@ fun Queue(
                             Row( // wrapper
                                 modifier = Modifier
                                     .background(
-                                        if (playingQueue == index) MaterialTheme.colorScheme.tertiary.copy(0.3f)
-                                        else Color.Transparent
+                                        if (playingQueue == index) {
+                                            MaterialTheme.colorScheme.tertiary.copy(0.3f)
+                                        } else if (detachedHead && detachedQueueIndex == index) {
+                                            MaterialTheme.colorScheme.tertiary.copy(0.1f)
+                                        } else {
+                                            Color.Transparent
+                                        }
                                     )
                                     .combinedClickable(
                                         onClick = {
-                                            // switch to this queue, don't skip if skipping to same queue
-                                            if (queueBoard.getCurrentQueue()?.title != mq.title) {
-                                                queueBoard.setCurrQueue(mq, playerConnection.player)
+                                            // clicking on queue shows it in the ui
+                                            if (playingQueue == index) {
+                                                detachedHead = false
+                                            } else {
+                                                detachedHead = true
+                                                detachedQueue.clear()
+                                                detachedQueue.addAll(mq.getCurrentQueueShuffled())
+                                                detachedQueueIndex = index
+                                                detachedQueuePos = mq.queuePos
+                                                detachedQueueTitle = mq.title?: ""
                                             }
 
                                             updateQueues()
@@ -318,7 +347,7 @@ fun Queue(
                                         }
                                     )
                             ) {
-                                Row ( // row contents (wrapper is needed for margin)
+                                Row( // row contents (wrapper is needed for margin)
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
@@ -331,6 +360,7 @@ fun Queue(
                                             onClick = {
                                                 val remainingQueues = queueBoard.deleteQueue(mq)
                                                 queueBoard.setCurrQueue(playerConnection)
+                                                detachedHead = false
                                                 updateQueues()
                                                 if (remainingQueues < 1) {
                                                     onTerminate.invoke()
@@ -366,7 +396,7 @@ fun Queue(
                 Row(modifier = Modifier.padding(vertical = 4.dp)) { }
 
                 Text(
-                    text = "Songs",
+                    text = "Songs" + if (detachedHead) ": $detachedQueueTitle" else "",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -376,119 +406,97 @@ fun Queue(
             }
 
             // songs list
-            LazyColumn(
-                state = reorderableState.listState,
-                modifier = Modifier
-                    .reorderable(reorderableState)
-                    .nestedScroll(state.preUpPostDownNestedScrollConnection)
-            ) {
-                itemsIndexed(
-                    items = mutableQueueWindows,
-                    key = { _, item -> item.uid.hashCode() }
-                ) { index, window ->
-                    ReorderableItem(
-                        reorderableState = reorderableState,
-                        key = window.uid.hashCode()
-                    ) {
-                        val currentItem by rememberUpdatedState(window)
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            positionalThreshold = { totalDistance ->
-                                totalDistance
-                            },
-                            confirmValueChange = { dismissValue ->
-                                if (!swipeToDismiss) {
-                                    return@rememberSwipeToDismissBoxState false
-                                }
-                                when (dismissValue) {
-                                    SwipeToDismissBoxValue.StartToEnd -> {
-                                        playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
-                                        return@rememberSwipeToDismissBoxState true
-                                    }
-
-                                    SwipeToDismissBoxValue.EndToStart -> {
-                                        playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
-                                        return@rememberSwipeToDismissBoxState true
-                                    }
-
-                                    SwipeToDismissBoxValue.Settled -> {
-                                        return@rememberSwipeToDismissBoxState false
-                                    }
-                                }
-                            }
-                        )
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            backgroundContent = {},
-                            content = {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    // selection checkbox. Standard multiselect doesn't work in queue...
-                                    if (selection) {
-                                        IconButton(
-                                            modifier = Modifier
-                                                .align(Alignment.CenterVertically),
-                                            onClick = {
-                                                if (window.mediaItem.metadata!! in selectedSongs) {
-                                                    selectedSongs.remove(window.mediaItem.metadata!!)
-                                                    selectedItems.remove(currentItem)
-                                                } else {
-                                                    selectedSongs.add(window.mediaItem.metadata!!)
-                                                    selectedItems.add(currentItem)
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox
-                                                else Icons.Rounded.CheckBoxOutlineBlank,
-                                                contentDescription = null,
-                                                tint = LocalContentColor.current,
-                                            )
-                                        }
-                                    }
-
-                                    MediaMetadataListItem(
-                                        mediaMetadata = window.mediaItem.metadata!!,
-                                        isActive = index == currentWindowIndex,
-                                        isPlaying = isPlaying,
-                                        trailingContent = {
-                                            IconButton(
-                                                onClick = { },
-                                                modifier = Modifier
-                                                    .detectReorder(reorderableState)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.DragHandle,
-                                                    contentDescription = null
-                                                )
+            if (detachedHead) { // detached head queue
+                /**
+                 * TODO: Probably integrate this with the main queue. Currently it is read only
+                 * Not sure if we even want all the extra complexity both in code and for the user
+                 */
+                LazyColumn(
+                    state = detachedQueueListState,
+                    modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
+                ) {
+                    itemsIndexed(
+                        items = detachedQueue,
+                        key = { _, item -> item.hashCode() }
+                    ) { index, window ->
+                        Row(
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            MediaMetadataListItem(
+                                mediaMetadata = window,
+                                isActive = index == detachedQueueIndex,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {
+                                            coroutineScope.launch(Dispatchers.Main) {
+                                                // change to this queue, seek to the item clicked on
+                                                queueBoard.setCurrQueue(detachedQueueIndex, playerConnection.player, false)
+                                                playerConnection.player.seekTo(index, C.TIME_UNSET)
+                                                detachedHead = false
+                                                updateQueues()
                                             }
                                         },
-                                        isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .combinedClickable(
+                                        onLongClick = { }
+                                    )
+                            )
+                        }
+                    }
+                }
+            } else { // actual playing queue
+                LazyColumn(
+                    state = reorderableState.listState,
+                    modifier = Modifier
+                        .reorderable(reorderableState)
+                        .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                ) {
+                    itemsIndexed(
+                        items = mutableQueueWindows,
+                        key = { _, item -> item.uid.hashCode() }
+                    ) { index, window ->
+                        ReorderableItem(
+                            reorderableState = reorderableState,
+                            key = window.uid.hashCode()
+                        ) {
+                            val currentItem by rememberUpdatedState(window)
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                positionalThreshold = { totalDistance ->
+                                    totalDistance
+                                },
+                                confirmValueChange = { dismissValue ->
+                                    if (!swipeToDismiss) {
+                                        return@rememberSwipeToDismissBoxState false
+                                    }
+                                    when (dismissValue) {
+                                        SwipeToDismissBoxValue.StartToEnd -> {
+                                            playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                            return@rememberSwipeToDismissBoxState true
+                                        }
+
+                                        SwipeToDismissBoxValue.EndToStart -> {
+                                            playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                            return@rememberSwipeToDismissBoxState true
+                                        }
+
+                                        SwipeToDismissBoxValue.Settled -> {
+                                            return@rememberSwipeToDismissBoxState false
+                                        }
+                                    }
+                                }
+                            )
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {},
+                                content = {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        // selection checkbox. Standard multiselect doesn't work in queue...
+                                        if (selection) {
+                                            IconButton(
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterVertically),
                                                 onClick = {
-                                                    if (selectedSongs.isEmpty()) {
-                                                        coroutineScope.launch(Dispatchers.Main) {
-                                                            if (index == currentWindowIndex) {
-                                                                playerConnection.player.togglePlayPause()
-                                                            } else {
-                                                                playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
-                                                                playerConnection.player.playWhenReady = true
-                                                            }
-                                                        }
-                                                    } else {
-                                                        if (window.mediaItem.metadata!! in selectedSongs) {
-                                                            selectedSongs.remove(window.mediaItem.metadata!!)
-                                                            selectedItems.remove(currentItem)
-                                                        } else {
-                                                            selectedSongs.add(window.mediaItem.metadata!!)
-                                                            selectedItems.add(currentItem)
-                                                        }
-                                                    }
-                                                },
-                                                onLongClick = {
-                                                    selection = true
                                                     if (window.mediaItem.metadata!! in selectedSongs) {
                                                         selectedSongs.remove(window.mediaItem.metadata!!)
                                                         selectedItems.remove(currentItem)
@@ -497,12 +505,73 @@ fun Queue(
                                                         selectedItems.add(currentItem)
                                                     }
                                                 }
-                                            )
-                                            .detectReorderAfterLongPress(reorderableState)
-                                    )
+                                            ) {
+                                                Icon(
+                                                    if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox
+                                                    else Icons.Rounded.CheckBoxOutlineBlank,
+                                                    contentDescription = null,
+                                                    tint = LocalContentColor.current,
+                                                )
+                                            }
+                                        }
+
+                                        MediaMetadataListItem(
+                                            mediaMetadata = window.mediaItem.metadata!!,
+                                            isActive = index == currentWindowIndex,
+                                            isPlaying = isPlaying,
+                                            trailingContent = {
+                                                IconButton(
+                                                    onClick = { },
+                                                    modifier = Modifier
+                                                        .detectReorder(reorderableState)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.DragHandle,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            },
+                                            isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        if (selectedSongs.isEmpty()) {
+                                                            coroutineScope.launch(Dispatchers.Main) {
+                                                                if (index == currentWindowIndex) {
+                                                                    playerConnection.player.togglePlayPause()
+                                                                } else {
+                                                                    playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                                    playerConnection.player.playWhenReady = true
+                                                                }
+                                                            }
+                                                        } else {
+                                                            if (window.mediaItem.metadata!! in selectedSongs) {
+                                                                selectedSongs.remove(window.mediaItem.metadata!!)
+                                                                selectedItems.remove(currentItem)
+                                                            } else {
+                                                                selectedSongs.add(window.mediaItem.metadata!!)
+                                                                selectedItems.add(currentItem)
+                                                            }
+                                                        }
+                                                    },
+                                                    onLongClick = {
+                                                        selection = true
+                                                        if (window.mediaItem.metadata!! in selectedSongs) {
+                                                            selectedSongs.remove(window.mediaItem.metadata!!)
+                                                            selectedItems.remove(currentItem)
+                                                        } else {
+                                                            selectedSongs.add(window.mediaItem.metadata!!)
+                                                            selectedItems.add(currentItem)
+                                                        }
+                                                    }
+                                                )
+                                                .detectReorderAfterLongPress(reorderableState)
+                                        )
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -651,9 +720,9 @@ fun Queue(
                 .fillMaxWidth()
                 .height(
                     ListItemHeight +
-                            WindowInsets.systemBars
-                                .asPaddingValues()
-                                .calculateBottomPadding()
+                        WindowInsets.systemBars
+                            .asPaddingValues()
+                            .calculateBottomPadding()
                 )
                 .align(Alignment.BottomCenter)
                 .clickable {
