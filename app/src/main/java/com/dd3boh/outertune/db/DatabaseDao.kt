@@ -582,6 +582,18 @@ interface DatabaseDao {
     @Query("UPDATE song SET inLibrary = null, localPath = null WHERE id = :songId")
     fun disableLocalSong(songId: String)
 
+    fun updateLocalSongPath(songId: String, inLibrary: LocalDateTime?, localPath: String?) {
+        if (localPath != null) {
+            updateLSP(songId, inLibrary, localPath)
+        }
+    }
+
+    /**
+     * DON'T USE THIS DIRECTLY, USE updateLocalSongPath(...) instead!
+     */
+    @Query("UPDATE song SET inLibrary = :inLibrary, localPath = :localPath WHERE id = :songId")
+    fun updateLSP(songId: String, inLibrary: LocalDateTime?, localPath: String)
+
     @Query("SELECT COUNT(1) FROM related_song_map WHERE songId = :songId LIMIT 1")
     fun hasRelatedSongs(songId: String): Boolean
 
