@@ -528,7 +528,7 @@ fun Queue(
                                                 .fillMaxWidth()
                                                 .combinedClickable(
                                                     onClick = {
-                                                        if (selectedSongs.isEmpty()) {
+                                                        if (!selection) {
                                                             coroutineScope.launch(Dispatchers.Main) {
                                                                 if (index == currentWindowIndex) {
                                                                     playerConnection.player.togglePlayPause()
