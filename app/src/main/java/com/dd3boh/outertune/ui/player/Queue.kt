@@ -9,6 +9,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -148,7 +149,6 @@ fun Queue(
                 }
             }
         },
-        onDismiss = { queueBoard.detachedHead = false }
     ) {
         val coroutineScope = rememberCoroutineScope()
 
@@ -416,7 +416,7 @@ fun Queue(
                         ) {
                             MediaMetadataListItem(
                                 mediaMetadata = window,
-                                isActive = index == detachedQueueIndex,
+                                isActive = index == detachedQueuePos,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .combinedClickable(
@@ -438,6 +438,7 @@ fun Queue(
             } else { // actual playing queue
                 LazyColumn(
                     state = reorderableState.listState,
+                    contentPadding = if (multiqueueExpand) PaddingValues(0.dp) else PaddingValues(0.dp, 16.dp), // header may cut off first song
                     modifier = Modifier
                         .reorderable(reorderableState)
                         .nestedScroll(state.preUpPostDownNestedScrollConnection)
