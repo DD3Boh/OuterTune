@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
@@ -21,7 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -36,8 +39,15 @@ import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,14 +81,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.C
+import androidx.media3.common.Player.REPEAT_MODE_ALL
+import androidx.media3.common.Player.REPEAT_MODE_OFF
+import androidx.media3.common.Player.REPEAT_MODE_ONE
+import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
+import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.extensions.toggleRepeatMode
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.MultiQueueObject
 import com.dd3boh.outertune.models.isShuffleEnabled
@@ -114,11 +130,19 @@ fun Queue(
 
     val menuState = LocalMenuState.current
 
+    // player vars
     val playerConnection = LocalPlayerConnection.current ?: return
+
+    val shuffleModeEnabled by isShuffleEnabled.collectAsState()
+    val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
+    val canSkipNext by playerConnection.canSkipNext.collectAsState()
+    val playbackState by playerConnection.playbackState.collectAsState()
+    val repeatMode by playerConnection.repeatMode.collectAsState()
     val isPlaying by playerConnection.isPlaying.collectAsState()
 
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
 
+    // selection vars
     var selection by remember {
         mutableStateOf(false)
     }
@@ -246,17 +270,19 @@ fun Queue(
             updateQueues() // initiate queues
         }
 
+        // queue contents
         Column(
             modifier = Modifier
                 .nestedScroll(state.preUpPostDownNestedScrollConnection)
-                .padding(WindowInsets.systemBars
-                    .add(
-                        WindowInsets(
-                            top = ListItemHeight,
-                            bottom = ListItemHeight
+                .padding(
+                    WindowInsets.systemBars
+                        .add(
+                            WindowInsets(
+                                bottom = ListItemHeight * 2
+                            )
                         )
-                    )
-                    .asPaddingValues())
+                        .asPaddingValues()
+                )
         ) {
             // multiqueue list
             if (multiqueueExpand) {
@@ -324,7 +350,7 @@ fun Queue(
                                                 detachedQueue.addAll(mq.getCurrentQueueShuffled())
                                                 detachedQueueIndex = index
                                                 detachedQueuePos = mq.queuePos
-                                                detachedQueueTitle = mq.title?: ""
+                                                detachedQueueTitle = mq.title ?: ""
                                             }
 
                                             updateQueues()
@@ -387,14 +413,51 @@ fun Queue(
 
                 Row(modifier = Modifier.padding(vertical = 4.dp)) { }
 
-                Text(
-                    text = "Songs" + if (detachedHead) ": $detachedQueueTitle" else "",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-                )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "Songs",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+
+                        if (detachedHead) {
+                            Text(
+                                text = detachedQueueTitle,
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+
+                    // play the detached queue
+                    if (detachedHead) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.PlayArrow,
+                            onClick = {
+                                coroutineScope.launch(Dispatchers.Main) {
+                                    // change to this queue, seek to the item clicked on
+                                    queueBoard.setCurrQueue(detachedQueueIndex, playerConnection.player, false)
+                                    playerConnection.player.seekTo(detachedQueuePos, C.TIME_UNSET)
+                                    playerConnection.player.playWhenReady = true
+                                    detachedHead = false
+                                    updateQueues()
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
             }
 
             // songs list
@@ -570,18 +633,22 @@ fun Queue(
             }
         }
 
-        Box(
+        // bottom nav bar
+        Column(
             modifier = Modifier
-                .background(
-                    MaterialTheme.colorScheme
-                        .surfaceColorAtElevation(NavigationBarDefaults.Elevation)
-                        .copy(alpha = 0.95f)
-                )
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .clickable {
+                    state.collapseSoft()
+                }
                 .windowInsetsPadding(
                     WindowInsets.systemBars
-                        .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                        .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
                 )
+                .padding(horizontal = 12.dp)
         ) {
+            // queue info
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -703,54 +770,100 @@ fun Queue(
                     }
                 }
             }
-        }
 
-        val shuffleModeEnabled by isShuffleEnabled.collectAsState()
+            // player controls
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = PlayerHorizontalPadding)
+                ) {
 
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f))
-                .fillMaxWidth()
-                .height(
-                    ListItemHeight +
-                        WindowInsets.systemBars
-                            .asPaddingValues()
-                            .calculateBottomPadding()
-                )
-                .align(Alignment.BottomCenter)
-                .clickable {
-                    state.collapseSoft()
-                }
-                .windowInsetsPadding(
-                    WindowInsets.systemBars
-                        .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-                )
-                .padding(12.dp)
-        ) {
-            IconButton(
-                modifier = Modifier.align(Alignment.CenterStart),
-                onClick = {
-                    coroutineScope.launch {
-                        reorderableState.listState.animateScrollToItem(
-                            if (shuffleModeEnabled) playerConnection.player.currentMediaItemIndex else 0
+                    Box(modifier = Modifier.weight(1f)) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.Shuffle,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center)
+                                .padding(4.dp)
+                                .alpha(if (shuffleModeEnabled) 1f else 0.3f),
+                            color = onBackgroundColor,
+                            onClick = { playerConnection.triggerShuffle() }
                         )
-                    }.invokeOnCompletion {
-                        playerConnection.triggerShuffle()
+                    }
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.SkipPrevious,
+                            enabled = canSkipPrevious,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center),
+                            color = onBackgroundColor,
+                            onClick = playerConnection.player::seekToPrevious
+                        )
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        ResizableIconButton(
+                            icon = if (playbackState == STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .align(Alignment.Center),
+                            color = onBackgroundColor,
+                            onClick = {
+                                if (playbackState == STATE_ENDED) {
+                                    playerConnection.player.seekTo(0, 0)
+                                    playerConnection.player.playWhenReady = true
+                                } else {
+                                    playerConnection.player.togglePlayPause()
+                                }
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.SkipNext,
+                            enabled = canSkipNext,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center),
+                            color = onBackgroundColor,
+                            onClick = playerConnection.player::seekToNext
+                        )
+                    }
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        ResizableIconButton(
+                            icon = when (repeatMode) {
+                                REPEAT_MODE_OFF, REPEAT_MODE_ALL -> Icons.Rounded.Repeat
+                                REPEAT_MODE_ONE -> Icons.Rounded.RepeatOne
+                                else -> throw IllegalStateException()
+                            },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center)
+                                .padding(4.dp)
+                                .alpha(if (repeatMode == REPEAT_MODE_OFF) 0.3f else 1f),
+                            color = onBackgroundColor,
+                            onClick = playerConnection.player::toggleRepeatMode
+                        )
                     }
                 }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Shuffle,
-                    contentDescription = null,
-                    modifier = Modifier.alpha(if (shuffleModeEnabled) 1f else 0.5f)
-                )
             }
 
-            Icon(
-                imageVector = Icons.Rounded.ExpandMore,
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
