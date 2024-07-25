@@ -7,10 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.pages.SearchSummaryPage
 import com.dd3boh.outertune.models.ItemsPage
 import com.dd3boh.outertune.utils.reportException
+import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.pages.SearchSummaryPage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -21,7 +21,12 @@ import javax.inject.Inject
 class OnlineSearchViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val query = URLDecoder.decode(savedStateHandle.get<String>("query")!!, "UTF-8")!!
+    val query = try {
+        URLDecoder.decode(savedStateHandle.get<String>("query")!!, "UTF-8")!!
+    } catch (e: IllegalArgumentException) {
+        savedStateHandle.get<String>("query")!!
+    }
+
     val filter = MutableStateFlow<YouTube.SearchFilter?>(null)
     var summaryPage by mutableStateOf<SearchSummaryPage?>(null)
     val viewStateMap = mutableStateMapOf<String, ItemsPage?>()
