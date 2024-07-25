@@ -380,7 +380,7 @@ class MusicService : MediaLibraryService(),
                         playQueue(
                             queue = ListQueue(
                                 title = queue.title,
-                                items = qb.getCurrentQueueShuffled() ?: ArrayList(),
+                                items = qb.getCurrentQueue()?.getCurrentQueueShuffled() ?: ArrayList(),
                                 startIndex = queue.queuePos,
                                 position = 0,
                                 playlistId = null
@@ -601,6 +601,8 @@ class MusicService : MediaLibraryService(),
             queueBoard.setCurrQueue(player)
         }
         lastMediaItemIndex = player.currentMediaItemIndex
+
+        updateNotification() // also updates when queue changes
     }
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {

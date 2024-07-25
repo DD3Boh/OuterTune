@@ -53,8 +53,6 @@ import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.WatchEndpoint
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
@@ -68,6 +66,7 @@ import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
@@ -75,6 +74,8 @@ import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -113,6 +114,21 @@ fun SongMenu(
             }
         )
     }
+
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, listOf(song.toMediaMetadata()), forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+        }
+    )
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -236,17 +252,17 @@ fun SongMenu(
             playerConnection.playNext(song.toMediaItem())
         }
         GridMenuItem(
-            icon = Icons.AutoMirrored.Rounded.QueueMusic,
-            title = R.string.add_to_queue
-        ) {
-            onDismiss()
-            playerConnection.addToQueue((song.toMediaItem()))
-        }
-        GridMenuItem(
             icon = Icons.Rounded.Edit,
             title = R.string.edit
         ) {
             showEditDialog = true
+        }
+        GridMenuItem(
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
+            title = R.string.add_to_queue
+        ) {
+            onDismiss()
+            showChooseQueueDialog = true
         }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,

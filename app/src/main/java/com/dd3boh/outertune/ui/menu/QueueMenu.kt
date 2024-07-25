@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -14,63 +13,50 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
-import com.dd3boh.outertune.extensions.toMediaItem
-import com.dd3boh.outertune.models.DirectoryTree
-import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
-import com.dd3boh.outertune.ui.component.SongFolderItem
+import com.dd3boh.outertune.ui.component.QueueListItem
 
 @Composable
-fun FolderMenu(
-    folder: DirectoryTree,
-    event: Event? = null,
-    navController: NavController,
+fun QueueMenu(
     onDismiss: () -> Unit,
+    refreshUi: () -> Unit,
 ) {
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
 
-    val allFolderSongs = folder.toList()
-
-    var showChooseQueueDialog by rememberSaveable {
-        mutableStateOf(false)
+    val currQueue = queueBoard.getCurrentQueue()
+    if (currQueue == null) {
+        onDismiss()
+        refreshUi()
+        return
     }
+    val songs = currQueue.getCurrentQueueShuffled()
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
 
-    AddToQueueDialog(
-        isVisible = showChooseQueueDialog,
-        onAdd = { queueName ->
-            queueBoard.add(queueName, allFolderSongs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
-            queueBoard.setCurrQueue(playerConnection)
-        },
-        onDismiss = {
-            showChooseQueueDialog = false
-        }
-    )
-
+    // dialogs
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
         onAdd = { playlist ->
-            // shove all folder songs into the playlist
+            // shove all songs into the playlist
             var position = playlist.songCount
             database.query {
-                allFolderSongs.forEach {
+                songs.forEach {
                     insert(
                         PlaylistSongMap(
-                            songId = it.song.id,
+                            songId = it.id,
                             playlistId = playlist.id,
                             position = position++
                         )
@@ -79,19 +65,30 @@ fun FolderMenu(
 
             }
         },
-        onDismiss = { showChoosePlaylistDialog = false }
+        onDismiss = {
+            showChoosePlaylistDialog = false
+        }
     )
 
-    // folder info
-    SongFolderItem(
-        folderTitle = folder.currentDir,
-        modifier = Modifier,
-        subtitle = folder.parent.substringAfter("//storage//"),
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, songs, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+            onDismiss() // here we dismiss since we switch to the queue anyways
+            refreshUi()
+        }
     )
+
+    // queue item
+    QueueListItem(queue = currQueue)
 
     HorizontalDivider()
 
-    // options
+    // menu options
     GridMenu(
         contentPadding = PaddingValues(
             start = 8.dp,
@@ -101,19 +98,9 @@ fun FolderMenu(
         )
     ) {
         GridMenuItem(
-            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
-            title = R.string.play_next
-        ) {
-            onDismiss()
-            allFolderSongs.forEach {
-                playerConnection.playNext(it.toMediaItem())
-            }
-        }
-        GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
         }
         GridMenuItem(
