@@ -262,7 +262,6 @@ fun YouTubeAlbumMenu(
             title = R.string.add_to_queue
         ) {
             showChooseQueueDialog = true
-            onDismiss()
         }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,

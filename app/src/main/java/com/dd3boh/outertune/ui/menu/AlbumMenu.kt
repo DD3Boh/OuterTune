@@ -259,7 +259,6 @@ fun AlbumMenu(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
         }
         GridMenuItem(
