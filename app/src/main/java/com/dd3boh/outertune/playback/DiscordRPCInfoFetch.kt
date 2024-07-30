@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.playback
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,61 +54,66 @@ fun DiscordRPCInfoFetch(mediaID: String, discordToken: String){
                 val json = JSONObject(responseBody)
                 thumb = json.getString("thumbnailUrl")
                 title = json.getString("title")
-                artist = json.getString("uploader")
+                artist = json.getString("uploader").split(" - Topic")[0]
                 artistThumb = json.getString("uploaderAvatar")
 
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    try {
-//                        val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + thumb) {
-//                        }
-//                        val responseBody: String = response.bodyAsText()
-//
-//                        // Parse the JSON response
-//                        val json = JSONObject(responseBody)
-//                        thumbCDN = json.getString("id")
-//                    } catch (e: Exception) {
-//                        println("Error: ${e.message}")
-//                    } finally {
-//                        clientDiscordCDN.close()
-//                    }
-//                }
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    try {
-//                        val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + artistThumb) {
-//                        }
-//                        val responseBody: String = response.bodyAsText()
-//
-//                        // Parse the JSON response
-//                        val json = JSONObject(responseBody)
-//                        artistThumbCDN = json.getString("id")
-//                    } catch (e: Exception) {
-//                        println("Error: ${e.message}")
-//                    } finally {
-//                        clientDiscordCDN.close()
-//                    }
-//                }
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + artistThumb) {
+                        }
+                        val responseBody: String = response.bodyAsText()
 
-                rpc.setActivity(
-                        activity = Activity(
-                                name = title,
-                                details = title,
-                                state = artist,
-                                type = 2,
-                                assets = Assets(
-//                                        largeImage = thumbCDN,
-//                                        smallImage = artistThumbCDN,
-                                        largeImage = "mp:external/Z904ZdR3rHmGftxQ0qanQ9HrMEViB8AiIl_42N-d54Y/https/nextadmit.com/assets/images/icons/gohar-2.jpeg",
-                                        smallImage = "mp:external/Z904ZdR3rHmGftxQ0qanQ9HrMEViB8AiIl_42N-d54Y/https/nextadmit.com/assets/images/icons/gohar-2.jpeg",
-                                        largeText = title,
-                                        smallText = artist,
-                                ),
+                        // Parse the JSON response
+                        val json = JSONObject(responseBody)
+                        artistThumbCDN = json.getString("id")
+                    } catch (e: Exception) {
+                        println("Error: ${e.message}")
+                    } finally {
+                        clientDiscordCDN.close()
+                    }
+                }
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + thumb) {
+                        }
+                        val responseBody: String = response.bodyAsText()
 
-                                ),
-                )
+                        // Parse the JSON response
+                        val json = JSONObject(responseBody)
+                        thumbCDN = json.getString("id")
+                        Thread.sleep(500)
+                        if (artistThumbCDN == ""){
+                            artistThumbCDN = "mp:external/_jGArMHI-5rpJu4qVDuiBARu8iEXnHeT0SZS6tZnZug/https/i.imgur.com/zDxXZKk.png"
+                        }
+                        rpc.setActivity(
+                                activity = Activity(
+                                        name = title,
+                                        details = title,
+                                        state = artist,
+                                        type = 2,
+                                        assets = Assets(
+                                                largeImage = thumbCDN,
+                                                smallImage = artistThumbCDN,
+                                                largeText = title,
+                                                smallText = artist,
+                                        ),
+
+                                        ),
+                        )
+
+                    } catch (e: Exception) {
+                        println("Error: ${e.message}")
+                    } finally {
+                        clientDiscordCDN.close()
+                    }
+                }
+
+
             } catch (e: Exception) {
                 println("Error: ${e.message}")
             } finally {
                 client.close()
+
             }
         }
 }

@@ -135,6 +135,7 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
+        player.currentMediaItem?.let { DiscordRPCInfoFetch(mediaID = it.mediaId, discordToken = discordToken) }
     }
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
         queueWindows.value = player.getQueueWindows()
@@ -143,8 +144,7 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
-        player.currentMediaItem?.let { Log.e("Kizzy", it.mediaId) }
-        player.currentMediaItem?.let { DiscordRPCInfoFetch(mediaID = it.mediaId, discordToken = discordToken) }
+
     }
     /**
      * Shuffles the queue
@@ -198,6 +198,7 @@ class PlayerConnection(
 
     fun dispose() {
         player.removeListener(this)
+        Log.e("Kizzy", "Player Removed")
     }
 
     companion object {
