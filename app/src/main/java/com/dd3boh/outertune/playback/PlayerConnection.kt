@@ -138,7 +138,7 @@ class PlayerConnection(
 
 //        Log.e("kizzy album", player.currentMediaItem?.mediaMetadata?.albumTitle.toString())
 
-        DiscordRPCInfoFetch(player = player, ctx = ctx)
+        createDiscordRPC(player = player, ctx = ctx)
 
     }
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -202,7 +202,6 @@ class PlayerConnection(
 
     fun dispose() {
         player.removeListener(this)
-        Log.e("Kizzy", "Player Removed")
     }
 
     companion object {

@@ -112,6 +112,7 @@ fun DiscordSettings(
         )
         SwitchPreference(
                 title = { Text(stringResource(R.string.show_artist_icon)) },
+                description = stringResource(R.string.unstable_warning),
                 icon = { Icon(Icons.Rounded.Person, null) },
                 checked = showArtist,
                 onCheckedChange = onShowArtistChange,

@@ -285,6 +285,7 @@
     <string name="logout">Logout</string>
     <string name="enable_rpc">Enable RPC</string>
     <string name="show_artist_icon">Show Artist Icon on RPC</string>
+    <string name="unstable_warning">Might make RPC Unstable</string>
 
 
 
