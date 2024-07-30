@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import com.dd3boh.outertune.constants.PlayerVolumeKey
+import com.dd3boh.outertune.extensions.mediaItems
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import kotlinx.coroutines.FlowPreview
@@ -63,7 +64,6 @@ class PlayerConnection(
     val currentPlayCount = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.getLifetimePlayCount(mediaMetadata?.id)
     }
-    val discordToken = ctx.dataStore.get(DiscordTokenKey, "")
 
     private val currentMediaItemIndex = MutableStateFlow(-1)
 
@@ -129,13 +129,17 @@ class PlayerConnection(
     override fun onPlayWhenReadyChanged(newPlayWhenReady: Boolean, reason: Int) {
         playWhenReady.value = newPlayWhenReady
     }
-
+    val ctx = ctx
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         mediaMetadata.value = mediaItem?.metadata
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
-        player.currentMediaItem?.let { DiscordRPCInfoFetch(mediaID = it.mediaId, discordToken = discordToken) }
+
+//        Log.e("kizzy album", player.currentMediaItem?.mediaMetadata?.albumTitle.toString())
+
+        DiscordRPCInfoFetch(player = player, ctx = ctx)
+
     }
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
         queueWindows.value = player.getQueueWindows()

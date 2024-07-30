@@ -283,6 +283,10 @@
 
     <string name="discord">Discord</string>
     <string name="logout">Logout</string>
+    <string name="enable_rpc">Enable RPC</string>
+    <string name="show_artist_icon">Show Artist Icon on RPC</string>
+
+
 
     <string name="about">About</string>
     <string name="app_version">App version</string>

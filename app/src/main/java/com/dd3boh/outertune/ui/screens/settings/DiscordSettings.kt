@@ -33,6 +33,7 @@ import com.dd3boh.outertune.constants.AccountNameKey
 import com.dd3boh.outertune.constants.DiscordTokenKey
 import com.dd3boh.outertune.constants.DiscordUsernameKey
 import com.dd3boh.outertune.constants.DiscordNameKey
+import com.dd3boh.outertune.constants.EnableDiscordRPCKey
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.LanguageCodeToName
 import com.dd3boh.outertune.constants.LyricTrimKey
@@ -40,6 +41,7 @@ import com.dd3boh.outertune.constants.ProxyEnabledKey
 import com.dd3boh.outertune.constants.ProxyTypeKey
 import com.dd3boh.outertune.constants.ProxyUrlKey
 import com.dd3boh.outertune.constants.SYSTEM_DEFAULT
+import com.dd3boh.outertune.constants.ShowArtistRPCKey
 import com.dd3boh.outertune.ui.component.EditTextPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.ListPreference
@@ -62,9 +64,9 @@ fun DiscordSettings(
     var discordUsername by rememberPreference(DiscordUsernameKey, "")
     var discordName by rememberPreference(DiscordNameKey, "")
 
-//    var (discordToken, onDiscordTokenChange) = rememberPreference(DiscordTokenKey, defaultValue = "")
-//    var (discordUsername, onDiscordUsernameChange) = rememberPreference(DiscordUsernameKey, defaultValue = "")
-//    var (discordName, onDiscordNameChange) = rememberPreference(DiscordNameKey, defaultValue = "")
+    val (discordRPC, onDiscordRPCChange) = rememberPreference(key = EnableDiscordRPCKey, defaultValue = true)
+    val (showArtist, onShowArtistChange) = rememberPreference(key = ShowArtistRPCKey, defaultValue = true)
+
 
     var isLoggedIn = remember(discordToken) {
         discordToken != ""
@@ -75,6 +77,9 @@ fun DiscordSettings(
                     .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
                     .verticalScroll(rememberScrollState())
     ) {
+        PreferenceGroupTitle(
+                title = "ACCOUNT"
+        )
         PreferenceEntry(
                 title = { Text(if (isLoggedIn) discordName else stringResource(R.string.login)) },
                 description = if (isLoggedIn) {
@@ -95,8 +100,24 @@ fun DiscordSettings(
 
                 }
         )
-    }
 
+        PreferenceGroupTitle(
+                title = "OPTIONS"
+        )
+        SwitchPreference(
+                title = { Text(stringResource(R.string.enable_rpc)) },
+                checked = discordRPC,
+                onCheckedChange = onDiscordRPCChange,
+                isEnabled = isLoggedIn
+        )
+        SwitchPreference(
+                title = { Text(stringResource(R.string.show_artist_icon)) },
+                icon = { Icon(Icons.Rounded.Person, null) },
+                checked = showArtist,
+                onCheckedChange = onShowArtistChange,
+                isEnabled = isLoggedIn
+        )
+    }
     TopAppBar(
             title = { Text(stringResource(R.string.discord)) },
             navigationIcon = {
