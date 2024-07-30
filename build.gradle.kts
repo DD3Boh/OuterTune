@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.hilt) apply(false)
     alias(libs.plugins.kotlin.ksp) apply(false)
+    id("io.ktor.plugin") version "2.3.12"
+
 }
 
 buildscript {
@@ -16,6 +18,11 @@ buildscript {
     dependencies {
         classpath(libs.gradle)
         classpath(kotlin("gradle-plugin", libs.versions.kotlin.get()))
+        classpath("com.github.caoimhebyrne:KDiscordIPC:0.2.2")
+        classpath("io.ktor:ktor-server-core:2.3.12")
+        classpath("io.ktor:ktor-server-netty:2.3.12")
+
+
     }
 }
 

@@ -20,6 +20,10 @@ val ProxyEnabledKey = booleanPreferencesKey("proxyEnabled")
 val ProxyUrlKey = stringPreferencesKey("proxyUrl")
 val ProxyTypeKey = stringPreferencesKey("proxyType")
 
+val DiscordUsernameKey = stringPreferencesKey("discordUsername")
+val DiscordTokenKey = stringPreferencesKey("discordToken")
+val DiscordNameKey = stringPreferencesKey("discordName")
+
 val AudioQualityKey = stringPreferencesKey("audioQuality")
 
 enum class AudioQuality {

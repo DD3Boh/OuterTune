@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
-        minSdk = 24
+        minSdk = 27
         targetSdk = 34
         versionCode = 20
         versionName = "0.6.0-beta1"
@@ -46,8 +46,8 @@ android {
             reset()
 
             // all common abis
-            // include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
-            isUniversalApk = false
+             include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
+            isUniversalApk = true
         }
     }
 
@@ -114,6 +114,10 @@ ksp {
 }
 
 dependencies {
+    implementation("io.ktor:ktor-client-core:1.6.0")
+    implementation("io.ktor:ktor-client-cio:1.6.0")
+    implementation("com.github.dead8309:KizzyRPC:1.0.71")
+
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
     implementation(libs.concurrent.futures)
