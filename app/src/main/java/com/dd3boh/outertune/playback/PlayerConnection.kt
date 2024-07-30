@@ -1,5 +1,7 @@
 package com.dd3boh.outertune.playback
-
+import android.content.Context
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -9,6 +11,7 @@ import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
+import com.dd3boh.outertune.constants.DiscordTokenKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
@@ -26,12 +29,18 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import com.dd3boh.outertune.constants.PlayerVolumeKey
+import com.dd3boh.outertune.utils.dataStore
+import com.dd3boh.outertune.utils.get
+import kotlinx.coroutines.FlowPreview
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@SuppressLint("SetJavaScriptEnabled")
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class PlayerConnection(
     binder: MusicBinder,
     val database: MusicDatabase,
     scope: CoroutineScope,
+    ctx: Context
 ) : Player.Listener {
     val service = binder.service
     val player = service.player
@@ -54,6 +63,7 @@ class PlayerConnection(
     val currentPlayCount = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.getLifetimePlayCount(mediaMetadata?.id)
     }
+    val discordToken = ctx.dataStore.get(DiscordTokenKey, "")
 
     private val currentMediaItemIndex = MutableStateFlow(-1)
 
@@ -82,10 +92,15 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         currentMediaItemIndex.value = player.currentMediaItemIndex
         repeatMode.value = player.repeatMode
+
+
     }
+
+
 
     fun playQueue(queue: Queue, replace: Boolean = true, title: String? = null) {
         service.playQueue(queue, replace = replace, title = title)
+
     }
 
     fun playNext(item: MediaItem) = playNext(listOf(item))
@@ -121,7 +136,6 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
     }
-
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
         queueWindows.value = player.getQueueWindows()
         queueTitle.value = service.queueTitle
@@ -129,8 +143,9 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
+        player.currentMediaItem?.let { Log.e("Kizzy", it.mediaId) }
+        player.currentMediaItem?.let { DiscordRPCInfoFetch(mediaID = it.mediaId, discordToken = discordToken) }
     }
-
     /**
      * Shuffles the queue
      */
@@ -178,6 +193,7 @@ class PlayerConnection(
             canSkipPrevious.value = false
             canSkipNext.value = false
         }
+
     }
 
     fun dispose() {

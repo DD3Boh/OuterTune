@@ -171,7 +171,6 @@ import com.dd3boh.outertune.ui.screens.settings.AppearanceSettings
 import com.dd3boh.outertune.ui.screens.settings.BackupAndRestore
 import com.dd3boh.outertune.ui.screens.settings.ContentSettings
 import com.dd3boh.outertune.ui.screens.settings.DarkMode
-import com.dd3boh.outertune.ui.screens.settings.DiscordLoginScreen
 import com.dd3boh.outertune.ui.screens.settings.DiscordSettings
 import com.dd3boh.outertune.ui.screens.settings.ExperimentalSettings
 import com.dd3boh.outertune.ui.screens.settings.LocalPlayerSettings
@@ -229,7 +228,7 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service is MusicBinder) {
-                playerConnection = PlayerConnection(service, database, lifecycleScope)
+                playerConnection = PlayerConnection(service, database, lifecycleScope, this@MainActivity)
             }
         }
 

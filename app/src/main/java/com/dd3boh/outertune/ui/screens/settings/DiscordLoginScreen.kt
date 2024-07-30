@@ -120,27 +120,7 @@ fun DiscordLoginScreen(
                             discordToken = message
                             val rpc = KizzyRPC(message)
 //                            https://kizzyapi-1-z9614716.deta.app/image?url=
-                            rpc.setActivity(
-                                    activity = Activity(
-                                            name = "A song",
-                                            details = "details",
-                                            state = "state",
-                                            type = 2,
-                                            timestamps = Timestamps(
-                                                    start = System.currentTimeMillis(),
-                                                    end = System.currentTimeMillis() + 500000
-                                            ),
-                                            assets = Assets(
-                                                    largeImage = "mp:external/Z904ZdR3rHmGftxQ0qanQ9HrMEViB8AiIl_42N-d54Y/https/nextadmit.com/assets/images/icons/gohar-2.jpeg",
-                                                    smallImage = "mp:attachments/1167627343695720530/1267645857000456202/dji_fly_20240729_194652_72_1722300466752_photo_optimized.jpg?ex=66a98ab4&is=66a83934&hm=8188df037447d497c72c4faeccb8a35e034a7a415862bdcb842afd263ceff00d&=&format=webp&width=1191&height=670",
-                                                    largeText = "large-image-text",
-                                                    smallText = "small-image-text",
-                                            ),
 
-                                    ),
-                                    status = "online",
-                                    since = System.currentTimeMillis()
-                            )
 
                             val client = HttpClient()
 
