@@ -116,7 +116,7 @@ fun DiscordSettings(
                 icon = { Icon(Icons.Rounded.Person, null) },
                 checked = showArtist,
                 onCheckedChange = onShowArtistChange,
-                isEnabled = isLoggedIn
+                isEnabled = isLoggedIn && discordRPC
         )
     }
     TopAppBar(

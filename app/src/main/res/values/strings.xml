@@ -281,11 +281,11 @@
     <string name="restore_failed">Failed to restore backup</string>
     <string name="m3u_import_failed">Failed to import playlist</string>
 
-    <string name="discord">Discord</string>
+    <string name="discord" translatable="false">Discord</string>
     <string name="logout">Logout</string>
     <string name="enable_rpc">Enable RPC</string>
     <string name="show_artist_icon">Show Artist Icon on RPC</string>
-    <string name="unstable_warning">Might make RPC Unstable</string>
+    <string name="unstable_warning">May make RPC Unstable</string>
 
 
 
