@@ -37,7 +37,9 @@ var rpc = KizzyRPC("")
 
 @SuppressLint("SetJavaScriptEnabled", "CoroutineCreationDuringComposition")
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
-fun closeDiscordRPC(){
+fun closeDiscordRPC(ctx: Context){
+    val discordToken = ctx.dataStore.get(DiscordTokenKey, "")
+    rpc.token = discordToken
     rpc.closeRPC()
 }
 
@@ -45,14 +47,17 @@ fun closeDiscordRPC(){
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 fun createDiscordRPC(player: Player, ctx: Context){
     val discordToken = ctx.dataStore.get(DiscordTokenKey, "")
+    rpc.token = discordToken
+
+    while (rpc.isRpcRunning()){
+        rpc.closeRPC()
+    }
     val enableRPC = ctx.dataStore.get(EnableDiscordRPCKey, true)
     val showArtistAvatar = ctx.dataStore.get(ShowArtistRPCKey, true)
 
     if (discordToken != "" || !enableRPC){
         val client = HttpClient()
         val clientDiscordCDN = HttpClient()
-        rpc.token = discordToken
-//        val rpc = KizzyRPC(discordToken)
 
         var mediaID = player.currentMediaItem?.mediaId
         var title = player.currentMediaItem?.mediaMetadata?.title.toString()
@@ -61,7 +66,7 @@ fun createDiscordRPC(player: Player, ctx: Context){
         var artwork = player.currentMediaItem?.mediaMetadata?.artworkUri.toString()
 
         if (title == "null"){
-            closeDiscordRPC()
+            rpc.closeRPC()
             return
         }
 
@@ -85,7 +90,7 @@ fun createDiscordRPC(player: Player, ctx: Context){
                         val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + artistArtwork) {
                         }
                         artistArtworkCDN = JSONObject(response.bodyAsText()).getString("id")
-                        
+
                     } catch (e: Exception) {
                         println("Error: ${e.message}")
                         
@@ -99,7 +104,7 @@ fun createDiscordRPC(player: Player, ctx: Context){
                         }
 
                         artworkCDN = JSONObject(response.bodyAsText()).getString("id")
-                        
+
                         Thread.sleep(500)
                         if (artistArtworkCDN == ""){
                             artistArtworkCDN = "mp:external/_jGArMHI-5rpJu4qVDuiBARu8iEXnHeT0SZS6tZnZug/https/i.imgur.com/zDxXZKk.png"
@@ -141,7 +146,7 @@ fun createDiscordRPC(player: Player, ctx: Context){
         
         
         else{
-        CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + artwork) {
                 }

@@ -79,6 +79,7 @@ class PlayerConnection(
     val canSkipNext = MutableStateFlow(true)
 
     val error = MutableStateFlow<PlaybackException?>(null)
+    val ctx = ctx
 
     init {
         player.addListener(this)
@@ -124,20 +125,19 @@ class PlayerConnection(
     override fun onPlaybackStateChanged(state: Int) {
         playbackState.value = state
         error.value = player.playerError
+
     }
 
     override fun onPlayWhenReadyChanged(newPlayWhenReady: Boolean, reason: Int) {
         playWhenReady.value = newPlayWhenReady
     }
-    val ctx = ctx
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         mediaMetadata.value = mediaItem?.metadata
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
 
-//        Log.e("kizzy album", player.currentMediaItem?.mediaMetadata?.albumTitle.toString())
-
+        closeDiscordRPC(ctx)
         createDiscordRPC(player = player, ctx = ctx)
 
     }
@@ -198,9 +198,12 @@ class PlayerConnection(
             canSkipNext.value = false
         }
 
+
+
     }
 
     fun dispose() {
+        closeDiscordRPC(ctx)
         player.removeListener(this)
     }
 
