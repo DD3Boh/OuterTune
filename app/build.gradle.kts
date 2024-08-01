@@ -46,8 +46,8 @@ android {
             reset()
 
             // all common abis
-             include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
-            isUniversalApk = true
+            // include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
+            isUniversalApk = false
         }
     }
 
@@ -114,9 +114,10 @@ ksp {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-client-core:1.6.0")
-    implementation("io.ktor:ktor-client-cio:1.6.0")
-    implementation("com.github.dead8309:KizzyRPC:1.0.71")
+    implementation(libs.kizzyrpc)
+
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.serialization.json)
 
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
@@ -176,6 +177,6 @@ dependencies {
      * to work on the scanner itself, switch the implementation below AND
      * include the project (uncomment the include line) in /settings.gradle.kts
      */
-      implementation(files("prebuilt/ffMetadataEx-release.aar")) // prebuilt
+    implementation(files("prebuilt/ffMetadataEx-release.aar")) // prebuilt
 //     implementation(project(":ffMetadataEx")) // self built
 }

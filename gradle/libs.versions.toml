@@ -1,5 +1,5 @@
 [versions]
-androidGradlePlugin = "8.2.2"
+androidGradlePlugin = "8.5.1"
 kotlin = "2.0.0"
 compose = "1.6.8"
 lifecycle = "2.8.2"
@@ -61,6 +61,8 @@ ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.r
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-encoding = { group = "io.ktor", name = "ktor-client-encoding", version.ref = "ktor" }
 ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+kizzyrpc = { group = "com.github.dead8309", name = "KizzyRPC", version = "1.0.71" }
 
 brotli = { group = "org.brotli", name = "dec", version = "0.1.2" }
 

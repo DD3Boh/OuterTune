@@ -73,9 +73,9 @@ fun DiscordSettings(
     }
 
     Column(
-            Modifier
-                    .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-                    .verticalScroll(rememberScrollState())
+        Modifier
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+            .verticalScroll(rememberScrollState())
     ) {
         PreferenceGroupTitle(
                 title = "ACCOUNT"

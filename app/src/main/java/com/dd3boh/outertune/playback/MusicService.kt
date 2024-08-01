@@ -435,9 +435,6 @@ class MusicService : MediaLibraryService(),
 
     private suspend fun recoverSong(mediaId: String, playerResponse: PlayerResponse? = null) {
         var playbackUrl = database.format(mediaId).first()?.playbackUrl
-        if (playbackUrl != null) {
-            Log.i("playbackurl", playbackUrl)
-        }
         if (playbackUrl == null) {
             playbackUrl = if (playerResponse?.playbackTracking?.videostatsPlaybackUrl?.baseUrl == null)
                 YouTube.player(mediaId, registerPlayback = false).getOrNull()?.playbackTracking

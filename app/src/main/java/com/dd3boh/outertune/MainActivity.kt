@@ -875,7 +875,6 @@ class MainActivity : ComponentActivity() {
                                 composable("login") {
                                     LoginScreen(navController)
                                 }
-
                             }
                         }
 

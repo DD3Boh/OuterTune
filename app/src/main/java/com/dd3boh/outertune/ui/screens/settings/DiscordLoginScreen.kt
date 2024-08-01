@@ -94,11 +94,7 @@ fun DiscordLoginScreen(
                         ): Boolean {
                             stopLoading()
                             if (url.endsWith("/app")) {
-//                                loadUrl("javascript:alert('this is the uesent')")
                                 loadUrl("javascript:alert((webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken());")
-//                                    loadUrl("javascript:var i=document.createElement('iframe');document.body.appendChild(i);alert(JSON.parse(i.contentWindow.localStorage.MultiAccountStore)._state.users[0].id)")
-//                                  loadUrl("javascript:setTimeout(function(){var i=document.createElement('iframe');document.body.appendChild(i);alert(JSON.stringify(i.contentWindow.localStorage))}, 1000)")
-
                             }
                             return false
                         }
@@ -118,12 +114,8 @@ fun DiscordLoginScreen(
                                 result: JsResult,
                         ): Boolean {
                             discordToken = message
-                            val rpc = KizzyRPC(message)
-//                            https://kizzyapi-1-z9614716.deta.app/image?url=
-
 
                             val client = HttpClient()
-
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
                                     val response: HttpResponse = client.get("https://discord.com/api/v9/users/@me") {
@@ -147,62 +139,8 @@ fun DiscordLoginScreen(
                                 }
                             }
 
-
                             navController::navigateUp
                             return true
-//                            val client = OkHttpClient.Builder()
-//                                    .readTimeout(0, TimeUnit.MILLISECONDS)
-//                                    .build()
-//
-//                            val request = Request.Builder()
-//                                    .url("wss://g ateway.discord.gg/?v=6&encoding=json")
-//                                    .build()
-//
-//                            val listener = object : WebSocketListener() {
-//                                override fun onOpen(webSocket: WebSocket, response: Response) {
-//                                    val payload = JSONObject()
-//                                            .put("op", 2)
-//                                            .put("d", JSONObject()
-//                                                    .put("token", discordToken)
-//                                                    .put("properties", JSONObject())
-//                                                    .put("compress", false)
-//                                                    .put("large_threshold", 250)
-//                                            )
-//                                    webSocket.send(payload.toString())
-//                                }
-//
-//                                override fun onMessage(webSocket: WebSocket, text: String) {
-//                                    val data = JSONObject(text)
-//                                    if (data.getString("t") == "READY") {
-//                                        val user = data.getJSONObject("d").getJSONObject("user")
-//                                        val userId = user.getString("id")
-//                                        webSocket.close(1000, null)
-//                                        val request = Request.Builder()
-//                                                .url("https://kizzyapi-1-z9614716.deta.app/user/$userId")
-//                                                .build()
-//
-//                                        client.newCall(request).execute().use { response ->
-//                                            if (!response.isSuccessful) {
-//                                                discordUsername = "error"
-//                                            }
-//                                            else {
-//                                                val responseData = JSONObject(response.body!!.string())
-//                                                val username = responseData.getString("username")
-//                                                val globalName = responseData.getString("global_name")
-//
-//                                                discordUsername = username
-//                                                discordName = globalName
-//                                            }
-//                                        }
-//
-//                                    }
-//                                }
-//                            }
-//
-//                            client.newWebSocket(request, listener)
-//                            client.dispatcher.executorService.shutdown()
-
-
                         }
                     }
                     loadUrl(url)

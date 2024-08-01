@@ -94,14 +94,11 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         repeatMode.value = player.repeatMode
 
-
+        createDiscordRPC(player = player, ctx = ctx)
     }
-
-
 
     fun playQueue(queue: Queue, replace: Boolean = true, title: String? = null) {
         service.playQueue(queue, replace = replace, title = title)
-
     }
 
     fun playNext(item: MediaItem) = playNext(listOf(item))
@@ -125,22 +122,21 @@ class PlayerConnection(
     override fun onPlaybackStateChanged(state: Int) {
         playbackState.value = state
         error.value = player.playerError
-
     }
 
     override fun onPlayWhenReadyChanged(newPlayWhenReady: Boolean, reason: Int) {
         playWhenReady.value = newPlayWhenReady
     }
+
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         mediaMetadata.value = mediaItem?.metadata
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
 
-        closeDiscordRPC(ctx)
         createDiscordRPC(player = player, ctx = ctx)
-
     }
+
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
         queueWindows.value = player.getQueueWindows()
         queueTitle.value = service.queueTitle
@@ -148,7 +144,6 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
-
     }
     /**
      * Shuffles the queue
@@ -197,9 +192,6 @@ class PlayerConnection(
             canSkipPrevious.value = false
             canSkipNext.value = false
         }
-
-
-
     }
 
     fun dispose() {
