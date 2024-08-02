@@ -28,6 +28,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -46,7 +47,7 @@ android {
             reset()
 
             // all common abis
-            // include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
+//            include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
             isUniversalApk = false
         }
     }
@@ -114,6 +115,8 @@ ksp {
 }
 
 dependencies {
+    implementation(libs.gson)
+
     implementation(libs.kizzyrpc)
 
     implementation(libs.ktor.client.core)

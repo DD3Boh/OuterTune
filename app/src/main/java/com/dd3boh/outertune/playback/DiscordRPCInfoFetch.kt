@@ -2,29 +2,19 @@ package com.dd3boh.outertune.playback
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.media3.common.Player
-import androidx.navigation.NavController
 import com.dd3boh.outertune.constants.DiscordTokenKey
 import com.dd3boh.outertune.constants.EnableDiscordRPCKey
 import com.dd3boh.outertune.constants.ShowArtistRPCKey
-import com.dd3boh.outertune.extensions.mediaItems
-import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
-import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.reportException
 import com.my.kizzyrpc.KizzyRPC
 import com.my.kizzyrpc.model.Activity
 import com.my.kizzyrpc.model.Assets
-import com.my.kizzyrpc.model.Timestamps
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
-import io.ktor.client.request.headers
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +40,7 @@ fun createDiscordRPC(player: Player, ctx: Context) {
     val discordToken = ctx.dataStore.get(DiscordTokenKey, "")
     rpc.token = discordToken
 
+    rpc.closeRPC()
     while (rpc.isRpcRunning()) {
         rpc.closeRPC()
     }
@@ -61,11 +52,11 @@ fun createDiscordRPC(player: Player, ctx: Context) {
         val client = HttpClient()
         val clientDiscordCDN = HttpClient()
 
-        var mediaID = player.currentMediaItem?.mediaId
-        var title = player.currentMediaItem?.mediaMetadata?.title.toString()
-        var album = if (title == player.currentMediaItem?.mediaMetadata?.albumTitle.toString()) "Single" else player.currentMediaItem?.mediaMetadata?.albumTitle.toString()
-        var artist = player.currentMediaItem?.mediaMetadata?.artist.toString()
-        var artwork = player.currentMediaItem?.mediaMetadata?.artworkUri.toString()
+        val mediaID = player.currentMediaItem?.mediaId
+        val title = player.currentMediaItem?.mediaMetadata?.title.toString()
+        val album = if (title == player.currentMediaItem?.mediaMetadata?.albumTitle.toString()) "Single" else player.currentMediaItem?.mediaMetadata?.albumTitle.toString()
+        val artist = player.currentMediaItem?.mediaMetadata?.artist.toString()
+        val artwork = player.currentMediaItem?.mediaMetadata?.artworkUri.toString()
 
         if (title == "null") {
             rpc.closeRPC()
@@ -75,16 +66,18 @@ fun createDiscordRPC(player: Player, ctx: Context) {
         if (showArtistAvatar) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-
                     val response: HttpResponse = client.get("https://pipedapi.r4fo.com/streams/" + mediaID)
                     val responseBody: String = response.bodyAsText()
 
                     var artistArtwork = ""
                     var artistArtworkCDN = ""
                     var artworkCDN = ""
+                    var uploader = ""
 
                     val json = JSONObject(responseBody)
+
                     artistArtwork = json.getString("uploaderAvatar")
+                    uploader = json.getString("uploader").split(" - Topic")[0]
 
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
@@ -96,6 +89,7 @@ fun createDiscordRPC(player: Player, ctx: Context) {
                             clientDiscordCDN.close()
                         }
                     }
+
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             val response: HttpResponse = clientDiscordCDN.get("https://kizzyapi-1-z9614716.deta.app/image?url=" + artwork)
@@ -114,8 +108,8 @@ fun createDiscordRPC(player: Player, ctx: Context) {
                                     assets = Assets(
                                             largeImage = artworkCDN,
                                             smallImage = artistArtworkCDN,
-                                            largeText = if (album != "Single") "On $album" else album,
-                                            smallText = artist,
+                                            largeText = if (album != "Single" && album != "null") "On $album" else "Single",
+                                            smallText = uploader,
                                     )
                                 )
                             )
@@ -141,7 +135,6 @@ fun createDiscordRPC(player: Player, ctx: Context) {
                     val responseBody: String = response.bodyAsText()
 
                     var artworkCDN = JSONObject(responseBody).getString("id")
-
                     rpc.setActivity(
                             activity = Activity(
                                     name = title,
@@ -151,12 +144,11 @@ fun createDiscordRPC(player: Player, ctx: Context) {
                                     assets = Assets(
                                             largeImage = artworkCDN,
                                             smallImage = null,
-                                            largeText = if (album != "Single") "On $album" else album,
+                                            largeText = if (album != "Single" && album != "null") "On $album" else "Single",
                                     ),
 
-                                    ),
+                            ),
                     )
-
                 } catch (e: Exception) {
                     reportException(e)
                 } finally {

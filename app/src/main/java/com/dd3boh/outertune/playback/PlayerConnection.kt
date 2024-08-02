@@ -80,6 +80,7 @@ class PlayerConnection(
 
     val error = MutableStateFlow<PlaybackException?>(null)
     val ctx = ctx
+    var previousSong = ""
 
     init {
         player.addListener(this)
@@ -93,8 +94,6 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         currentMediaItemIndex.value = player.currentMediaItemIndex
         repeatMode.value = player.repeatMode
-
-        createDiscordRPC(player = player, ctx = ctx)
     }
 
     fun playQueue(queue: Queue, replace: Boolean = true, title: String? = null) {
@@ -133,8 +132,10 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
-
-        createDiscordRPC(player = player, ctx = ctx)
+        if (previousSong != mediaItem?.mediaId.toString()) {
+            createDiscordRPC(player = player, ctx = ctx)
+        }
+        previousSong = mediaItem?.mediaId.toString()
     }
 
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -145,6 +146,7 @@ class PlayerConnection(
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
     }
+
     /**
      * Shuffles the queue
      */
@@ -195,7 +197,6 @@ class PlayerConnection(
     }
 
     fun dispose() {
-        closeDiscordRPC(ctx)
         player.removeListener(this)
     }
 
