@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.playback
 import android.content.Context
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -10,6 +11,8 @@ import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
+import com.dd3boh.outertune.constants.HideRPCOnPauseKey
+import com.dd3boh.outertune.constants.ShowArtistRPCKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
@@ -19,6 +22,8 @@ import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.playback.MusicService.MusicBinder
 import com.dd3boh.outertune.playback.queues.Queue
+import com.dd3boh.outertune.utils.dataStore
+import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -74,7 +79,6 @@ class PlayerConnection(
 
     val error = MutableStateFlow<PlaybackException?>(null)
     val ctx = ctx
-    var previousSong = ""
 
     init {
         player.addListener(this)
@@ -126,6 +130,13 @@ class PlayerConnection(
 
     override fun onPlayWhenReadyChanged(newPlayWhenReady: Boolean, reason: Int) {
         playWhenReady.value = newPlayWhenReady
+        if (ctx.dataStore.get(HideRPCOnPauseKey, true)) {
+            if (newPlayWhenReady) {
+                createDiscordRPC(player = player, ctx = ctx)
+            } else {
+                closeDiscordRPC(ctx = ctx)
+            }
+        }
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -133,8 +144,12 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
+        if (reason == 1) {
+            closeDiscordRPC(ctx = ctx)
+            createDiscordRPC(player = player, ctx = ctx)
+        }
         if (player.currentMediaItem?.mediaMetadata?.title.toString() == "null") {
-            rpc.closeRPC()
+            closeDiscordRPC(ctx = ctx)
             return
         }
     }

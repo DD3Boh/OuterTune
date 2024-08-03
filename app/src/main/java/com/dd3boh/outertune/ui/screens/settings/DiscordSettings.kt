@@ -34,6 +34,7 @@ import com.dd3boh.outertune.constants.DiscordTokenKey
 import com.dd3boh.outertune.constants.DiscordUsernameKey
 import com.dd3boh.outertune.constants.DiscordNameKey
 import com.dd3boh.outertune.constants.EnableDiscordRPCKey
+import com.dd3boh.outertune.constants.HideRPCOnPauseKey
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.LanguageCodeToName
 import com.dd3boh.outertune.constants.LyricTrimKey
@@ -66,6 +67,7 @@ fun DiscordSettings(
 
     val (discordRPC, onDiscordRPCChange) = rememberPreference(key = EnableDiscordRPCKey, defaultValue = true)
     val (showArtist, onShowArtistChange) = rememberPreference(key = ShowArtistRPCKey, defaultValue = true)
+    val (hideRPCOnPause, onHideRPCOnPauseChange) = rememberPreference(key = HideRPCOnPauseKey, defaultValue = true)
 
 
     var isLoggedIn = remember(discordToken) {
@@ -117,6 +119,14 @@ fun DiscordSettings(
                 checked = showArtist,
                 onCheckedChange = onShowArtistChange,
                 isEnabled = isLoggedIn && discordRPC
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.hide_RPC_on_pause)) },
+            description = stringResource(R.string.unstable_warning),
+            icon = { Icon(Icons.Rounded.Person, null) },
+            checked = hideRPCOnPause,
+            onCheckedChange = onHideRPCOnPauseChange,
+            isEnabled = isLoggedIn && discordRPC
         )
     }
     TopAppBar(

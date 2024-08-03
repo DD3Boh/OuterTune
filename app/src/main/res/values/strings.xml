@@ -286,8 +286,7 @@
     <string name="enable_rpc">Enable RPC</string>
     <string name="show_artist_icon">Show Artist Icon on RPC</string>
     <string name="unstable_warning">May make RPC Unstable</string>
-
-
+    <string name="hide_RPC_on_pause">Hide RPC when Paused</string>
 
     <string name="about">About</string>
     <string name="app_version">App version</string>
