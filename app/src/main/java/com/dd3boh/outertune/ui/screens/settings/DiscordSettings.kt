@@ -7,11 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -123,7 +120,7 @@ fun DiscordSettings(
         SwitchPreference(
             title = { Text(stringResource(R.string.hide_RPC_on_pause)) },
             description = stringResource(R.string.unstable_warning),
-            icon = { Icon(Icons.Rounded.Person, null) },
+            icon = { Icon(Icons.Rounded.Pause, null) },
             checked = hideRPCOnPause,
             onCheckedChange = onHideRPCOnPauseChange,
             isEnabled = isLoggedIn && discordRPC
