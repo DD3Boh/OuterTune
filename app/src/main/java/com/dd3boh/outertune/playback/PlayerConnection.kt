@@ -1,7 +1,6 @@
 package com.dd3boh.outertune.playback
 import android.content.Context
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -11,7 +10,6 @@ import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
-import com.dd3boh.outertune.constants.DiscordTokenKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
@@ -29,10 +27,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
-import com.dd3boh.outertune.constants.PlayerVolumeKey
-import com.dd3boh.outertune.extensions.mediaItems
-import com.dd3boh.outertune.utils.dataStore
-import com.dd3boh.outertune.utils.get
 import kotlinx.coroutines.FlowPreview
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -121,6 +115,13 @@ class PlayerConnection(
     override fun onPlaybackStateChanged(state: Int) {
         playbackState.value = state
         error.value = player.playerError
+
+        if (state == 2) {
+            closeDiscordRPC(ctx = ctx)
+        }
+        if (state == 3) {
+            createDiscordRPC(player = player, ctx = ctx)
+        }
     }
 
     override fun onPlayWhenReadyChanged(newPlayWhenReady: Boolean, reason: Int) {
@@ -132,10 +133,10 @@ class PlayerConnection(
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
-        if (previousSong != mediaItem?.mediaId.toString()) {
-            createDiscordRPC(player = player, ctx = ctx)
+        if (player.currentMediaItem?.mediaMetadata?.title.toString() == "null") {
+            rpc.closeRPC()
+            return
         }
-        previousSong = mediaItem?.mediaId.toString()
     }
 
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
