@@ -47,7 +47,7 @@ android {
             reset()
 
             // all common abis
-//            include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
+            // include("x86_64", "x86", "armeabi-v7a", "arm64-v8a") // universal
             isUniversalApk = false
         }
     }

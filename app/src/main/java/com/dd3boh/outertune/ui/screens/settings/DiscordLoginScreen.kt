@@ -77,6 +77,7 @@ fun DiscordLoginScreen(
     var webView: WebView? = null
 
     val url = "https://discord.com/login"
+
     AndroidView(
             factory = {
                 WebView(it).apply {
@@ -130,10 +131,8 @@ fun DiscordLoginScreen(
                                     discordUsername = json.getString("username")
                                     discordName = json.getString("global_name")
 
-
-
                                 } catch (e: Exception) {
-                                    println("Error: ${e.message}")
+                                    reportException(e)
                                 } finally {
                                     client.close()
                                 }
