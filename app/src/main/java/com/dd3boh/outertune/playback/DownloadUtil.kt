@@ -44,17 +44,13 @@ class DownloadUtil @Inject constructor(
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
     private val songUrlCache = HashMap<String, Pair<String, Long>>()
     private val dataSourceFactory = ResolvingDataSource.Factory(
-        CacheDataSource.Factory()
-            .setUpstreamDataSourceFactory(
-                OkHttpDataSource.Factory(
-                    OkHttpClient.Builder()
-                        .proxy(YouTube.proxy)
-                        .build()
-                )
-            )
+        OkHttpDataSource.Factory(
+            OkHttpClient.Builder()
+                .proxy(YouTube.proxy)
+                .build()
+        )
     ) { dataSpec ->
         val mediaId = dataSpec.key ?: error("No media id")
-        val length = if (dataSpec.length >= 0) dataSpec.length else 1
 
         songUrlCache[mediaId]?.takeIf { it.second < System.currentTimeMillis() }?.let {
             return@Factory dataSpec.withUri(it.first.toUri())
