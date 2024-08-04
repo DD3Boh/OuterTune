@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.component
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +85,7 @@ fun Lyrics(
     val menuState = LocalMenuState.current
     val density = LocalDensity.current
     var showLyrics by rememberPreference(ShowLyricsKey, false)
+    val landscapeOffset = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.CENTER)
 
@@ -160,8 +163,21 @@ fun Lyrics(
     val lazyListState = rememberLazyListState()
 
     LaunchedEffect(currentLineIndex, lastPreviewTime) {
-        fun calculateOffset() = // based on how many lines (\n chars)
-            with(density) { 20.dp.toPx().toInt() * (lines[currentLineIndex].text.count { it == '\n' }) }
+        /**
+         * Count number of new lines in a lyric
+         */
+        fun countNewLine(str: String) = str.count { it == '\n' }
+
+        /**
+         * Calculate the lyric offset Based on how many lines (\n chars)
+         */
+        fun calculateOffset() = with(density) {
+            if (landscapeOffset) {
+                16.dp.toPx().toInt() * countNewLine(lines[currentLineIndex].text) // landscape sits higher by default
+            } else {
+                20.dp.toPx().toInt() * countNewLine(lines[currentLineIndex].text)
+            }
+        }
 
         if (!isSynced) return@LaunchedEffect
         if (currentLineIndex != -1) {
