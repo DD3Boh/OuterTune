@@ -75,7 +75,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -87,7 +86,6 @@ import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.LocalPlayerConnection
-import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.SwipeToDismissKey
@@ -759,7 +757,7 @@ fun Queue(
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Text(
-                            text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size),
+                            text = "${currentWindowIndex + 1} / ${queueWindows.size}",
                             style = MaterialTheme.typography.bodyMedium
                         )
 
