@@ -193,7 +193,7 @@ fun LocalSearchScreen(
                                                     .filterIsInstance<Song>()
                                                     .map { it.toMediaMetadata() }
                                                 playerConnection.playQueue(ListQueue(
-                                                    title = context.getString(R.string.queue_searched_songs) + query,
+                                                    title = "${context.getString(R.string.queue_searched_songs)}: $query",
                                                     items = songs,
                                                     startIndex = songs.indexOfFirst { it.id == item.id }
                                                 ))
