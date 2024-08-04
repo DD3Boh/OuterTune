@@ -1,6 +1,7 @@
 package com.dd3boh.outertune.ui.player
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,10 +18,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -75,6 +77,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -173,6 +176,7 @@ fun Queue(
         },
     ) {
         val coroutineScope = rememberCoroutineScope()
+        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         // current queue vars
         val queueTitle by playerConnection.queueTitle.collectAsState()
@@ -228,9 +232,7 @@ fun Queue(
             playingQueue = queueBoard.getMasterIndex()
             coroutineScope.launch {
                 delay(300) // needed for scrolling to queue when switching to new queue
-                reorderableState.listState.animateScrollToItem(
-                   playerConnection.player.currentMediaItemIndex
-                )
+                reorderableState.listState.animateScrollToItem(playerConnection.player.currentMediaItemIndex)
             }
         }
 
@@ -268,36 +270,23 @@ fun Queue(
             updateQueues() // initiate queues
         }
 
-        // queue contents
-        Column(
-            modifier = Modifier
-                .nestedScroll(state.preUpPostDownNestedScrollConnection)
-                .padding(
-                    WindowInsets.systemBars
-                        .add(
-                            WindowInsets(
-                                bottom = ListItemHeight * 2
-                            )
-                        )
-                        .asPaddingValues()
+
+        val queueList: @Composable ColumnScope.() -> Unit = {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "Queues",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-        ) {
-            // multiqueue list
-            if (multiqueueExpand) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Queues",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                if (!landscape)
                     ResizableIconButton(
                         icon = Icons.Rounded.Close,
                         onClick = {
@@ -305,160 +294,159 @@ fun Queue(
                         },
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
-                }
+            }
 
-                if (mutableQueues.isEmpty()) {
-                    Text(text = "No queues")
-                }
+            if (mutableQueues.isEmpty()) {
+                Text(text = "No queues")
+            }
 
-                LazyColumn(
-                    state = reorderableStateEx.listState,
-                    modifier = Modifier
-                        .reorderable(reorderableStateEx)
-                        .nestedScroll(state.preUpPostDownNestedScrollConnection)
-                        .heightIn(max = 250.dp) // TODO: set to 50% ish height
-                ) {
-                    itemsIndexed(
-                        items = mutableQueues,
-                        key = { _, item -> item.hashCode() }
-                    ) { index, mq ->
-                        ReorderableItem(
-                            reorderableState = reorderableStateEx,
-                            key = mq.hashCode()
-                        ) {
-                            Row( // wrapper
-                                modifier = Modifier
-                                    .background(
-                                        if (playingQueue == index) {
-                                            MaterialTheme.colorScheme.tertiary.copy(0.3f)
-                                        } else if (detachedHead && detachedQueueIndex == index) {
-                                            MaterialTheme.colorScheme.tertiary.copy(0.1f)
-                                        } else {
-                                            Color.Transparent
-                                        }
-                                    )
-                                    .combinedClickable(
-                                        onClick = {
-                                            // clicking on queue shows it in the ui
-                                            if (playingQueue == index) {
-                                                detachedHead = false
-                                            } else {
-                                                detachedHead = true
-                                                detachedQueue.clear()
-                                                detachedQueue.addAll(mq.getCurrentQueueShuffled())
-                                                detachedQueueIndex = index
-                                                detachedQueuePos = mq.queuePos
-                                                detachedQueueTitle = mq.title ?: ""
-                                            }
-
-                                            updateQueues()
-                                        },
-                                        onLongClick = {
-                                            menuState.show {
-                                                QueueMenu(
-                                                    onDismiss = menuState::dismiss,
-                                                    refreshUi = { updateQueues() }
-                                                )
-                                            }
-                                        }
-                                    )
-                            ) {
-                                Row( // row contents (wrapper is needed for margin)
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .padding(horizontal = 40.dp, vertical = 8.dp)
-                                        .fillMaxWidth()
-                                ) {
-                                    Row {
-                                        ResizableIconButton(
-                                            icon = Icons.Rounded.Close,
-                                            onClick = {
-                                                val remainingQueues = queueBoard.deleteQueue(mq)
-                                                queueBoard.setCurrQueue(playerConnection)
-                                                detachedHead = false
-                                                updateQueues()
-                                                if (remainingQueues < 1) {
-                                                    onTerminate.invoke()
-                                                } else {
-                                                    coroutineScope.launch {
-                                                        reorderableState.listState.animateScrollToItem(
-                                                            playerConnection.player.currentMediaItemIndex
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                        )
-                                        Text(
-                                            text = "${index + 1}. ${mq.title}",
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp)
-                                        )
+            LazyColumn(
+                state = reorderableStateEx.listState,
+                modifier = Modifier
+                    .reorderable(reorderableStateEx)
+                    .nestedScroll(state.preUpPostDownNestedScrollConnection)
+            ) {
+                itemsIndexed(
+                    items = mutableQueues,
+                    key = { _, item -> item.hashCode() }
+                ) { index, mq ->
+                    ReorderableItem(
+                        reorderableState = reorderableStateEx,
+                        key = mq.hashCode()
+                    ) {
+                        Row( // wrapper
+                            modifier = Modifier
+                                .background(
+                                    if (playingQueue == index) {
+                                        MaterialTheme.colorScheme.tertiary.copy(0.3f)
+                                    } else if (detachedHead && detachedQueueIndex == index) {
+                                        MaterialTheme.colorScheme.tertiary.copy(0.1f)
+                                    } else {
+                                        Color.Transparent
                                     }
+                                )
+                                .combinedClickable(
+                                    onClick = {
+                                        // clicking on queue shows it in the ui
+                                        if (playingQueue == index) {
+                                            detachedHead = false
+                                        } else {
+                                            detachedHead = true
+                                            detachedQueue.clear()
+                                            detachedQueue.addAll(mq.getCurrentQueueShuffled())
+                                            detachedQueueIndex = index
+                                            detachedQueuePos = mq.queuePos
+                                            detachedQueueTitle = mq.title ?: ""
+                                        }
 
+                                        updateQueues()
+                                    },
+                                    onLongClick = {
+                                        menuState.show {
+                                            QueueMenu(
+                                                onDismiss = menuState::dismiss,
+                                                refreshUi = { updateQueues() }
+                                            )
+                                        }
+                                    }
+                                )
+                        ) {
+                            Row( // row contents (wrapper is needed for margin)
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(horizontal = 40.dp, vertical = 8.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                Row {
                                     ResizableIconButton(
-                                        icon = Icons.Rounded.DragHandle,
-                                        onClick = { },
-                                        modifier = Modifier
-                                            .detectReorder(reorderableStateEx)
+                                        icon = Icons.Rounded.Close,
+                                        onClick = {
+                                            val remainingQueues = queueBoard.deleteQueue(mq)
+                                            queueBoard.setCurrQueue(playerConnection)
+                                            detachedHead = false
+                                            updateQueues()
+                                            if (remainingQueues < 1) {
+                                                onTerminate.invoke()
+                                            } else {
+                                                coroutineScope.launch {
+                                                    reorderableState.listState.animateScrollToItem(
+                                                        playerConnection.player.currentMediaItemIndex
+                                                    )
+                                                }
+                                            }
+                                        },
+                                    )
+                                    Text(
+                                        text = "${index + 1}. ${mq.title}",
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp)
                                     )
                                 }
+
+                                ResizableIconButton(
+                                    icon = Icons.Rounded.DragHandle,
+                                    onClick = { },
+                                    modifier = Modifier
+                                        .detectReorder(reorderableStateEx)
+                                )
                             }
-                        } // ReorderableItem
-                    }
+                        }
+                    } // ReorderableItem
                 }
+            }
+        }
 
-                Row(modifier = Modifier.padding(vertical = 4.dp)) { }
+        val songHeader: @Composable ColumnScope.() -> Unit = {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "Songs",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
 
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                ) {
-                    Column {
+                    if (detachedHead) {
                         Text(
-                            text = "Songs",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = detachedQueueTitle,
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-
-                        if (detachedHead) {
-                            Text(
-                                text = detachedQueueTitle,
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontSize = 12.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-
-                    // play the detached queue
-                    if (detachedHead) {
-                        ResizableIconButton(
-                            icon = Icons.Rounded.PlayArrow,
-                            onClick = {
-                                coroutineScope.launch(Dispatchers.Main) {
-                                    // change to this queue, seek to the item clicked on
-                                    queueBoard.setCurrQueue(detachedQueueIndex, playerConnection.player, false)
-                                    playerConnection.player.seekTo(detachedQueuePos, C.TIME_UNSET)
-                                    playerConnection.player.playWhenReady = true
-                                    detachedHead = false
-                                    updateQueues()
-                                }
-                            },
-                            modifier = Modifier.size(32.dp)
-                        )
                     }
                 }
-            }
 
-            // songs list
+                // play the detached queue
+                if (detachedHead) {
+                    ResizableIconButton(
+                        icon = Icons.Rounded.PlayArrow,
+                        onClick = {
+                            coroutineScope.launch(Dispatchers.Main) {
+                                // change to this queue, seek to the item clicked on
+                                queueBoard.setCurrQueue(detachedQueueIndex, playerConnection.player, false)
+                                playerConnection.player.seekTo(detachedQueuePos, C.TIME_UNSET)
+                                playerConnection.player.playWhenReady = true
+                                detachedHead = false
+                                updateQueues()
+                            }
+                        },
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+        }
+
+        val songList: @Composable ColumnScope.() -> Unit = {
             if (detachedHead) { // detached head queue
                 /**
                  * TODO: Probably integrate this with the main queue. Currently it is read only
@@ -484,7 +472,11 @@ fun Queue(
                                         onClick = {
                                             coroutineScope.launch(Dispatchers.Main) {
                                                 // change to this queue, seek to the item clicked on
-                                                queueBoard.setCurrQueue(detachedQueueIndex, playerConnection.player, false)
+                                                queueBoard.setCurrQueue(
+                                                    detachedQueueIndex,
+                                                    playerConnection.player,
+                                                    false
+                                                )
                                                 playerConnection.player.seekTo(index, C.TIME_UNSET)
                                                 detachedHead = false
                                                 updateQueues()
@@ -499,7 +491,8 @@ fun Queue(
             } else { // actual playing queue
                 LazyColumn(
                     state = reorderableState.listState,
-                    contentPadding = if (multiqueueExpand) PaddingValues(0.dp) else PaddingValues(0.dp, 16.dp), // header may cut off first song
+                    contentPadding = if (multiqueueExpand && !landscape) PaddingValues(0.dp)
+                                     else PaddingValues(0.dp, 16.dp), // header may cut off first song
                     modifier = Modifier
                         .reorderable(reorderableState)
                         .nestedScroll(state.preUpPostDownNestedScrollConnection)
@@ -631,21 +624,8 @@ fun Queue(
             }
         }
 
-        // bottom nav bar
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .clickable {
-                    state.collapseSoft()
-                }
-                .windowInsetsPadding(
-                    WindowInsets.systemBars
-                        .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-                )
-                .padding(horizontal = 12.dp)
-        ) {
+        // queue info + player controls
+        val bottomNav: @Composable ColumnScope.() -> Unit = {
             // queue info
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -731,7 +711,11 @@ fun Queue(
                             .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp))
                             .padding(2.dp)
                             .weight(1f)
-                            .clickable { multiqueueExpand = !multiqueueExpand }
+                            .clickable {
+                                if (!landscape) {
+                                    multiqueueExpand = !multiqueueExpand
+                                }
+                            }
                     ) {
                         Text(
                             text = queueTitle.orEmpty(),
@@ -744,6 +728,7 @@ fun Queue(
                         )
                         ResizableIconButton(
                             icon = if (multiqueueExpand) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            enabled = !landscape,
                             onClick = {
                                 multiqueueExpand = !multiqueueExpand
                             },
@@ -774,7 +759,7 @@ fun Queue(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                    .padding(horizontal = 4.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -862,6 +847,103 @@ fun Queue(
             }
 
             Spacer(Modifier.height(8.dp))
+        }
+
+        // finally render ui
+        if (landscape) {
+            Row(
+                modifier = Modifier
+                    .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                    .padding(WindowInsets.systemBars.asPaddingValues())
+            ) {
+                // song header & song list
+                Column(
+                    modifier = Modifier.fillMaxWidth(0.5f)
+                ) {
+                    songHeader()
+                    songList()
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                // multiqueue list & navbar
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                            .weight(1f, false)
+                    ) {
+                        queueList()
+                    }
+
+                    // nav bar
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .fillMaxWidth()
+                            .clickable {
+                                state.collapseSoft()
+                            }
+                            .windowInsetsPadding(
+                                WindowInsets.systemBars
+                                    .only(WindowInsetsSides.Bottom)
+                            )
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        bottomNav()
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+        } else {
+            // queue contents
+            Column(
+                modifier = Modifier
+                    .nestedScroll(state.preUpPostDownNestedScrollConnection)
+                    .padding(
+                        WindowInsets.systemBars
+                            .add(WindowInsets(bottom = ListItemHeight * 2))
+                            .asPaddingValues()
+                    )
+            ) {
+                // multiqueue list
+                if (multiqueueExpand) {
+                    Column(
+                        modifier = Modifier.fillMaxHeight(0.4f)
+                    ) {
+                        queueList()
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    songHeader() // song header
+                }
+
+                songList() // song list
+            }
+
+            // nav bar
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .clickable {
+                        state.collapseSoft()
+                    }
+                    .windowInsetsPadding(
+                        WindowInsets.systemBars
+                            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    )
+                    .padding(horizontal = 12.dp)
+            ) {
+                bottomNav()
+                Spacer(Modifier.height(8.dp))
+            }
         }
     }
 }
