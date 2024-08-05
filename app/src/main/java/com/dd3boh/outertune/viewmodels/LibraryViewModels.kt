@@ -8,8 +8,32 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.offline.Download
-import com.zionhuang.innertube.YouTube
-import com.dd3boh.outertune.constants.*
+import com.dd3boh.outertune.constants.AlbumFilter
+import com.dd3boh.outertune.constants.AlbumFilterKey
+import com.dd3boh.outertune.constants.AlbumSortDescendingKey
+import com.dd3boh.outertune.constants.AlbumSortType
+import com.dd3boh.outertune.constants.AlbumSortTypeKey
+import com.dd3boh.outertune.constants.ArtistFilter
+import com.dd3boh.outertune.constants.ArtistFilterKey
+import com.dd3boh.outertune.constants.ArtistSongSortDescendingKey
+import com.dd3boh.outertune.constants.ArtistSongSortType
+import com.dd3boh.outertune.constants.ArtistSongSortTypeKey
+import com.dd3boh.outertune.constants.ArtistSortDescendingKey
+import com.dd3boh.outertune.constants.ArtistSortType
+import com.dd3boh.outertune.constants.ArtistSortTypeKey
+import com.dd3boh.outertune.constants.ExcludedScanPathsKey
+import com.dd3boh.outertune.constants.LibrarySortDescendingKey
+import com.dd3boh.outertune.constants.LibrarySortType
+import com.dd3boh.outertune.constants.LibrarySortTypeKey
+import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
+import com.dd3boh.outertune.constants.PlaylistSortType
+import com.dd3boh.outertune.constants.PlaylistSortTypeKey
+import com.dd3boh.outertune.constants.ScanPathsKey
+import com.dd3boh.outertune.constants.SongFilter
+import com.dd3boh.outertune.constants.SongFilterKey
+import com.dd3boh.outertune.constants.SongSortDescendingKey
+import com.dd3boh.outertune.constants.SongSortType
+import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
@@ -17,19 +41,28 @@ import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
-import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.models.DirectoryTree
+import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.refreshLocal
+import com.zionhuang.innertube.YouTube
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
@@ -111,6 +144,8 @@ class LibrarySongsViewModel @Inject constructor(
                                     .map { songs ->
                                         when (sortType) {
                                             SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
+                                            SongSortType.MODIFIED_DATE -> songs.sortedBy { it.song.getDateModifiedLong() }
+                                            SongSortType.RELEASE_DATE -> songs.sortedBy { it.song.getDateLong() }
                                             SongSortType.NAME -> songs.sortedBy { it.song.title }
                                             SongSortType.ARTIST -> songs.sortedBy { song ->
                                                 song.artists.joinToString(separator = "") { it.name }

@@ -76,7 +76,7 @@ enum class LibraryViewType {
 }
 
 enum class SongSortType {
-    CREATE_DATE, NAME, ARTIST, PLAY_TIME
+    CREATE_DATE, MODIFIED_DATE, RELEASE_DATE, NAME, ARTIST, PLAY_TIME
 }
 
 enum class PlaylistSongSortType {

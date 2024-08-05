@@ -135,6 +135,8 @@ fun LibrarySongsFolderScreen(
         tempList.sortBy {
             when (sortType) {
                 SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
+                SongSortType.MODIFIED_DATE -> it.item.song.getDateModifiedLong().toString()
+                SongSortType.RELEASE_DATE -> it.item.song.getDateLong().toString()
                 SongSortType.NAME -> it.item.song.title
                 SongSortType.ARTIST -> it.item.artists.firstOrNull()?.name
                 SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
@@ -198,6 +200,8 @@ fun LibrarySongsFolderScreen(
                                 sortTypeText = { sortType ->
                                     when (sortType) {
                                         SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                        SongSortType.MODIFIED_DATE -> R.string.sort_by_date_modified
+                                        SongSortType.RELEASE_DATE -> R.string.sort_by_date_released
                                         SongSortType.NAME -> R.string.sort_by_name
                                         SongSortType.ARTIST -> R.string.sort_by_artist
                                         SongSortType.PLAY_TIME -> R.string.sort_by_play_time

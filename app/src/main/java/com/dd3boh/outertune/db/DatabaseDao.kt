@@ -50,6 +50,7 @@ import com.zionhuang.innertube.pages.AlbumPage
 import com.zionhuang.innertube.pages.ArtistPage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
@@ -66,6 +67,14 @@ interface DatabaseDao {
     fun songsByCreateDateAsc(): Flow<List<Song>>
 
     @Transaction
+    @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY date")
+    fun songsByReleaseDateAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY dateModified")
+    fun songsByDateModifiedAsc(): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY title")
     fun songsByNameAsc(): Flow<List<Song>>
 
@@ -73,9 +82,29 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY totalPlayTime")
     fun songsByPlayTimeAsc(): Flow<List<Song>>
 
+    @Transaction
+    @Query("""
+        SELECT song.*, (SELECT COUNT(playCount.song) 
+            FROM playCount 
+            WHERE playCount.song = song.id) AS pc 
+        FROM song 
+        WHERE inLibrary IS NOT NULL 
+        ORDER BY pc ASC
+    """)
+    fun songsByPlayCountAsc(): Flow<List<Song>>
+
     fun songs(sortType: SongSortType, descending: Boolean) =
         when (sortType) {
             SongSortType.CREATE_DATE -> songsByCreateDateAsc()
+            SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
+                SongSortType.RELEASE_DATE -> {
+                val songs = songsByReleaseDateAsc()
+                runBlocking {
+                    flowOf(songs.first().sortedBy {
+                        it.song.getDateLong()
+                    })
+                }
+            }
             SongSortType.NAME -> songsByNameAsc()
             SongSortType.ARTIST -> songsByRowIdAsc().map { songs ->
                 songs.sortedBy { song ->
@@ -95,6 +124,14 @@ interface DatabaseDao {
     fun likedSongsByCreateDateAsc(): Flow<List<Song>>
 
     @Transaction
+    @Query("SELECT * FROM song WHERE liked IS NOT NULL ORDER BY date")
+    fun likedSongsByReleaseDateAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE liked IS NOT NULL ORDER BY dateModified")
+    fun likedSongsByDateModifiedAsc(): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song WHERE liked ORDER BY title")
     fun likedSongsByNameAsc(): Flow<List<Song>>
 
@@ -102,9 +139,29 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE liked ORDER BY totalPlayTime")
     fun likedSongsByPlayTimeAsc(): Flow<List<Song>>
 
+    @Transaction
+    @Query("""
+        SELECT song.*, (SELECT COUNT(playCount.song) 
+            FROM playCount 
+            WHERE playCount.song = song.id) AS pc 
+        FROM song 
+        WHERE liked IS NOT NULL 
+        ORDER BY pc ASC
+    """)
+    fun likedSongsByPlayCountAsc(): Flow<List<Song>>
+
     fun likedSongs(sortType: SongSortType, descending: Boolean) =
         when (sortType) {
             SongSortType.CREATE_DATE -> likedSongsByCreateDateAsc()
+            SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
+            SongSortType.RELEASE_DATE -> {
+                val songs = songsByReleaseDateAsc()
+                runBlocking {
+                    flowOf(songs.first().sortedBy {
+                        it.song.getDateLong()
+                    })
+                }
+            }
             SongSortType.NAME -> likedSongsByNameAsc()
             SongSortType.ARTIST -> likedSongsByRowIdAsc().map { songs ->
                 songs.sortedBy { song ->

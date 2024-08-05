@@ -444,6 +444,8 @@ fun AutoPlaylistScreen(
                                 sortTypeText = { sortType ->
                                     when (sortType) {
                                         SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                        SongSortType.MODIFIED_DATE -> R.string.sort_by_date_modified
+                                        SongSortType.RELEASE_DATE -> R.string.sort_by_date_released
                                         SongSortType.NAME -> R.string.sort_by_name
                                         SongSortType.ARTIST -> R.string.sort_by_artist
                                         SongSortType.PLAY_TIME -> R.string.sort_by_play_time

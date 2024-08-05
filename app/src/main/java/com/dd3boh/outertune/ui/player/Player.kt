@@ -256,6 +256,8 @@ fun BottomSheetPlayer(
                     listOf(
                         stringResource(R.string.song_title) to mediaMetadata?.title,
                         stringResource(R.string.song_artists) to mediaMetadata?.artists?.joinToString { it.name },
+                        stringResource(R.string.sort_by_date_released) to mediaMetadata?.getDateString(),
+                        stringResource(R.string.sort_by_date_modified) to mediaMetadata?.getDateModifiedString(),
                         stringResource(R.string.media_id) to mediaMetadata?.id,
                         stringResource(R.string.play_count) to currentPlayCount.toString(),
                         "Itag" to currentFormat?.itag?.toString(),

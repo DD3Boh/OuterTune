@@ -179,6 +179,8 @@ class DirectoryTree(path: String) {
         songs.sortBy {
             when (sortType) {
                 SongSortType.CREATE_DATE -> it.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
+                SongSortType.MODIFIED_DATE -> it.song.getDateModifiedLong().toString()
+                SongSortType.RELEASE_DATE -> it.song.getDateLong().toString()
                 SongSortType.NAME -> it.song.title
                 SongSortType.ARTIST -> it.artists.firstOrNull()?.name
                 SongSortType.PLAY_TIME -> it.song.totalPlayTime.toString()

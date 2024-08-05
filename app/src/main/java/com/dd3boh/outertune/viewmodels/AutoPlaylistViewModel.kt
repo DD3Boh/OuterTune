@@ -70,6 +70,8 @@ class AutoPlaylistViewModel @Inject constructor(
                         .map { songs ->
                             when (sortType) {
                                 SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
+                                SongSortType.MODIFIED_DATE -> songs.sortedBy { it.song.getDateModifiedLong().toString() }
+                                SongSortType.RELEASE_DATE -> songs.sortedBy { it.song.getDateLong().toString() }
                                 SongSortType.NAME -> songs.sortedBy { it.song.title }
                                 SongSortType.ARTIST -> songs.sortedBy { song ->
                                     song.artists.joinToString(separator = "") { it.name }

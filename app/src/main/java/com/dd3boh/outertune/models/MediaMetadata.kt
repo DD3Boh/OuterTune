@@ -1,11 +1,12 @@
 package com.dd3boh.outertune.models
 
 import androidx.compose.runtime.Immutable
-import com.zionhuang.innertube.models.SongItem
 import com.dd3boh.outertune.db.entities.*
 import com.dd3boh.outertune.ui.utils.resize
+import com.zionhuang.innertube.models.SongItem
 import java.io.Serializable
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Immutable
 data class MediaMetadata(
@@ -17,8 +18,8 @@ data class MediaMetadata(
     val album: Album? = null,
     val genre: List<Genre>?,
     val year: Int? = null,
-    val date: LocalDateTime? = null, // ID3 tag property
-    val dateModified: LocalDateTime? = null, // file property
+    private val date: LocalDateTime? = null, // ID3 tag property
+    private val dateModified: LocalDateTime? = null, // file property
     val dateAdded: LocalDateTime? = null, // aka inLibrary
     val setVideoId: String? = null,
     val isLocal: Boolean = false,
@@ -56,6 +57,36 @@ data class MediaMetadata(
         inLibrary = if (isLocal) LocalDateTime.now() else null,
         localPath = localPath
     )
+
+    /**
+     * Returns a full date string. If no full date is present, returns the year.
+     * This is the song's tag's date/year, NOT dateModified.
+     */
+    fun getDateString(): String? {
+        return date?.toLocalDate()?.toString()
+            ?: if (year != null) {
+                return year.toString()
+            } else {
+                return null
+            }
+    }
+
+    /**
+     * Returns a full date modified string
+     */
+    fun getDateModifiedString(): String? {
+        return dateModified?.toLocalDate()?.toString()
+    }
+
+    /**
+     * Get the value of the date released in Epoch Seconds
+     */
+    fun getDateLong(): Long? = date?.toEpochSecond(ZoneOffset.UTC)
+
+    /**
+     * Get the value of the date modified in Epoch Seconds
+     */
+    fun getDateModifiedLong(): Long? = dateModified?.toEpochSecond(ZoneOffset.UTC)
 }
 
 fun Song.toMediaMetadata() = MediaMetadata(

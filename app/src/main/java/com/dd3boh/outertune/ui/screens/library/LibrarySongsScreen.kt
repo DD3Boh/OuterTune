@@ -4,7 +4,15 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -35,7 +43,14 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.*
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
+import com.dd3boh.outertune.constants.CONTENT_TYPE_SONG
+import com.dd3boh.outertune.constants.SongFilter
+import com.dd3boh.outertune.constants.SongFilterKey
+import com.dd3boh.outertune.constants.SongSortDescendingKey
+import com.dd3boh.outertune.constants.SongSortType
+import com.dd3boh.outertune.constants.SongSortTypeKey
+import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -49,10 +64,10 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
-import com.dd3boh.outertune.ui.utils.ItemWrapper
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -132,6 +147,8 @@ fun LibrarySongsScreen(
                     sortTypeText = { sortType ->
                         when (sortType) {
                             SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                            SongSortType.MODIFIED_DATE -> R.string.sort_by_date_modified
+                            SongSortType.RELEASE_DATE -> R.string.sort_by_date_released
                             SongSortType.NAME -> R.string.sort_by_name
                             SongSortType.ARTIST -> R.string.sort_by_artist
                             SongSortType.PLAY_TIME -> R.string.sort_by_play_time
