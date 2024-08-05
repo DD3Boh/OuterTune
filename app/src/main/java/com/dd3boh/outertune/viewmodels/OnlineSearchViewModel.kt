@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.viewmodels
 
+import android.util.Base64
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +22,7 @@ import javax.inject.Inject
 class OnlineSearchViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val query = URLDecoder.decode(savedStateHandle.get<String>("query")!!, "UTF-8")!!
+    val query = String(Base64.decode(savedStateHandle.get<String>("query")!!, Base64.DEFAULT))
     val filter = MutableStateFlow<YouTube.SearchFilter?>(null)
     var summaryPage by mutableStateOf<SearchSummaryPage?>(null)
     val viewStateMap = mutableStateMapOf<String, ItemsPage?>()

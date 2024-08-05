@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -208,7 +209,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.URLEncoder
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -445,7 +445,7 @@ class MainActivity : ComponentActivity() {
                     val onSearch: (String) -> Unit = {
                         if (it.isNotEmpty()) {
                             onActiveChange(false)
-                            navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                            navController.navigate("search/${Base64.encodeToString(it.toByteArray(), Base64.DEFAULT)}")
                             if (dataStore[PauseSearchHistoryKey] != true) {
                                 database.query {
                                     insert(SearchHistory(query = it))
@@ -505,7 +505,7 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(navBackStackEntry) {
                         if (navBackStackEntry?.destination?.route?.startsWith("search/") == true) {
                             val searchQuery = withContext(Dispatchers.IO) {
-                                URLDecoder.decode(navBackStackEntry?.arguments?.getString("query")!!, "UTF-8")
+                                String(Base64.decode(navBackStackEntry?.arguments?.getString("query")!!, Base64.DEFAULT))
                             }
                             onQueryChange(TextFieldValue(searchQuery, TextRange(searchQuery.length)))
                         } else if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
@@ -988,7 +988,7 @@ class MainActivity : ComponentActivity() {
                                             onQueryChange = onQueryChange,
                                             navController = navController,
                                             onSearch = {
-                                                navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                                                navController.navigate("search/${Base64.encodeToString(it.toByteArray(), Base64.DEFAULT)}")
                                                 if (dataStore[PauseSearchHistoryKey] != true) {
                                                     database.query {
                                                         insert(SearchHistory(query = it))
