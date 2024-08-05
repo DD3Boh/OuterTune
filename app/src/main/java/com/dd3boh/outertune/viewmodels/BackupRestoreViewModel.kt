@@ -18,8 +18,9 @@ import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.div
 import com.dd3boh.outertune.extensions.zipInputStream
 import com.dd3boh.outertune.extensions.zipOutputStream
+import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.playback.MusicService
-import com.dd3boh.outertune.playback.MusicService.Companion.PERSISTENT_QUEUE_FILE
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.compareSong
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -90,7 +91,7 @@ class BackupRestoreViewModel @Inject constructor(
                 }
             }
             context.stopService(Intent(context, MusicService::class.java))
-            context.filesDir.resolve(PERSISTENT_QUEUE_FILE).delete()
+            queueBoard = QueueBoard(database.readQueue().toMutableList()) // read queue from db
             context.startActivity(Intent(context, MainActivity::class.java))
             exitProcess(0)
         }.onFailure {

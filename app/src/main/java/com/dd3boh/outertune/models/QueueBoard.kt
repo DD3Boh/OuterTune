@@ -29,7 +29,7 @@ var isShuffleEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
  * @param queue List of media items
  */
 class MultiQueueObject(
-    val title: String?,
+    val title: String,
     /**
      * The order of songs are dynamic. This should not be accessed form outside QueueBoard.
      */
@@ -74,8 +74,8 @@ class MultiQueueObject(
  * Multiple queues manager. Methods will not automatically (re)load queues into the player unless
  * otherwise explicitly stated.
  */
-class QueueBoard : Serializable {
-    private val masterQueues: ArrayList<MultiQueueObject> = ArrayList()
+class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializable {
+    private val masterQueues: MutableList<MultiQueueObject> = queues
     private var masterIndex = -1 // current queue index
     var detachedHead = false
 

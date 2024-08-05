@@ -26,6 +26,8 @@ import com.dd3boh.outertune.db.entities.PlayCountEntity
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.PlaylistSongMapPreview
+import com.dd3boh.outertune.db.entities.QueueEntity
+import com.dd3boh.outertune.db.entities.QueueSongMap
 import com.dd3boh.outertune.db.entities.RelatedSongMap
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.db.entities.SongAlbumMap
@@ -74,6 +76,8 @@ class MusicDatabase(
         AlbumArtistMap::class,
         PlaylistSongMap::class,
         GenreEntity::class,
+        QueueEntity::class,
+        QueueSongMap::class,
         SongGenreMap::class,
         SearchHistory::class,
         FormatEntity::class,
@@ -87,7 +91,7 @@ class MusicDatabase(
         SortedSongAlbumMap::class,
         PlaylistSongMapPreview::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
@@ -100,7 +104,8 @@ class MusicDatabase(
         AutoMigration(from = 9, to = 10, spec = Migration9To10::class),
         AutoMigration(from = 10, to = 11, spec = Migration10To11::class),
         AutoMigration(from = 11, to = 12, spec = Migration11To12::class),
-        AutoMigration(from = 12, to = 13, spec = Migration12To13::class) // Migration from InnerTune
+        AutoMigration(from = 12, to = 13, spec = Migration12To13::class), // Migration from InnerTune
+        AutoMigration(from = 13, to = 14), // Initial queue as database
     ]
 )
 @TypeConverters(Converters::class)

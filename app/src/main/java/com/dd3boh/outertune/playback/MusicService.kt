@@ -121,8 +121,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.io.File
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -380,22 +378,18 @@ class MusicService : MediaLibraryService(),
         }
 
         if (dataStore.get(PersistentQueueKey, true)) {
-            runCatching {
-                filesDir.resolve(PERSISTENT_QUEUE_FILE).inputStream().use { fis ->
-                    ObjectInputStream(fis).use { oos ->
-                        oos.readObject() as QueueBoard
-                    }
-                }
-            }.onSuccess { qb ->
-                queueBoard = qb
-                isShuffleEnabled.value = qb.getCurrentQueue()?.shuffled ?: false
-                if (qb.getAllQueues().isNotEmpty()) {
-                    val queue = queueBoard.getCurrentQueue()
-                    if (queue != null) {
+            queueBoard = QueueBoard(database.readQueue().toMutableList())
+            isShuffleEnabled.value = queueBoard.getCurrentQueue()?.shuffled ?: false
+            if (queueBoard.getAllQueues().isNotEmpty()) {
+                val queue = queueBoard.getCurrentQueue()
+                if (queue != null) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(1000) // this may finish before player service is ready
+
                         playQueue(
                             queue = ListQueue(
                                 title = queue.title,
-                                items = qb.getCurrentQueue()?.getCurrentQueueShuffled() ?: ArrayList(),
+                                items = queueBoard.getCurrentQueue()?.getCurrentQueueShuffled() ?: ArrayList(),
                                 startIndex = queue.queuePos,
                                 position = 0,
                                 playlistId = null
@@ -527,6 +521,7 @@ class MusicService : MediaLibraryService(),
                 replace = replace
             )
             queueBoard.setCurrQueue(player)
+            saveQueueToDisk()
 
             player.prepare()
             player.playWhenReady = playWhenReady
@@ -795,14 +790,9 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun saveQueueToDisk() {
-        runCatching {
-            filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(queueBoard)
-                }
-            }
-        }.onFailure {
-            reportException(it)
+        // TODO: get rid of this. Yeah I'd want to update individual queues instead of nuking the entire db and writing everything but ehhhhh that's for later
+        CoroutineScope(Dispatchers.IO).launch {
+            database.saveQueues(queueBoard.getAllQueues())
         }
     }
 
@@ -842,6 +832,5 @@ class MusicService : MediaLibraryService(),
         const val NOTIFICATION_ID = 888
         const val ERROR_CODE_NO_STREAM = 1000001
         const val CHUNK_LENGTH = 512 * 1024L
-        const val PERSISTENT_QUEUE_FILE = "persistent_queue.data"
     }
 }

@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
@@ -31,6 +32,8 @@ import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
+import com.dd3boh.outertune.db.entities.QueueEntity
+import com.dd3boh.outertune.db.entities.QueueSongMap
 import com.dd3boh.outertune.db.entities.RelatedSongMap
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.db.entities.Song
@@ -41,6 +44,7 @@ import com.dd3boh.outertune.db.entities.SongGenreMap
 import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.models.MultiQueueObject
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.resize
 import com.zionhuang.innertube.models.AlbumItem
@@ -83,6 +87,7 @@ interface DatabaseDao {
     fun songsByPlayTimeAsc(): Flow<List<Song>>
 
     @Transaction
+    @RewriteQueriesToDropUnusedColumns
     @Query("""
         SELECT song.*, (SELECT COUNT(playCount.song) 
             FROM playCount 
@@ -140,6 +145,7 @@ interface DatabaseDao {
     fun likedSongsByPlayTimeAsc(): Flow<List<Song>>
 
     @Transaction
+    @RewriteQueriesToDropUnusedColumns
     @Query("""
         SELECT song.*, (SELECT COUNT(playCount.song) 
             FROM playCount 
@@ -727,6 +733,12 @@ interface DatabaseDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(playCountEntity: PlayCountEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(queue: QueueEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(queueSong: QueueSongMap)
+
     @Transaction
     fun insert(mediaMetadata: MediaMetadata, block: (SongEntity) -> SongEntity = { it }) {
         if (insert(mediaMetadata.toSongEntity().let(block)) == -1L) return
@@ -851,6 +863,9 @@ interface DatabaseDao {
     @Update
     fun update(map: PlaylistSongMap)
 
+    @Update
+    fun update(queue: QueueEntity)
+
     fun update(artist: ArtistEntity, artistPage: ArtistPage) {
         update(
             artist.copy(
@@ -914,6 +929,17 @@ interface DatabaseDao {
             shuffleEndpointParams = playlistItem.shuffleEndpoint?.params,
             radioEndpointParams = playlistItem.radioEndpoint?.params
         ))
+    }
+
+    @Transaction
+    fun updateQueue(mq: MultiQueueObject) {
+        update(
+            QueueEntity(
+                id = mq.title,
+                shuffled = mq.shuffled,
+                queuePos = mq.queuePos
+            )
+        )
     }
 
     @Transaction
@@ -996,5 +1022,88 @@ interface DatabaseDao {
 
     fun checkpoint() {
         raw("PRAGMA wal_checkpoint(FULL)".toSQLiteQuery())
+    }
+
+    /**
+     * Queueboard
+     */
+
+    @Query("DELETE FROM queue")
+    fun clearQueues()
+
+    @Transaction
+    fun saveQueues(queues: List<MultiQueueObject>) {
+        clearQueues()
+
+        queues.forEach { mq ->
+            // ensure all are alread in the database
+            mq.unShuffled.forEach {
+                insert(it)
+            }
+
+            insert(
+                QueueEntity(
+                    id = mq.title,
+                    shuffled = mq.shuffled,
+                    queuePos = mq.queuePos
+                )
+            )
+
+            // insert songs
+            mq.unShuffled.forEach {
+                insert(
+                    QueueSongMap(
+                        queueId = mq.title,
+                        songId = it.id,
+                        shuffled = false
+                    )
+                )
+            }
+
+            mq.queue.forEach {
+                insert(
+                    QueueSongMap(
+                        queueId = mq.title,
+                        songId = it.id,
+                        shuffled = true
+                    )
+                )
+            }
+        }
+    }
+
+    @Query("SELECT * from queue")
+    fun getAllQueues(): Flow<List<QueueEntity>>
+
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * from queue_song_map JOIN song ON queue_song_map.songId = song.id WHERE queueId = :queue AND shuffled = 1")
+    fun getQueueSongs(queue: String): Flow<List<Song>>
+
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * from queue_song_map JOIN song ON queue_song_map.songId = song.id WHERE queueId = :queue AND shuffled = 0")
+    fun getQueueSongsUnshuffled(queue: String): Flow<List<Song>>
+
+    fun readQueue(): List<MultiQueueObject> {
+        val resultQueues = ArrayList<MultiQueueObject>()
+        val queues = runBlocking { getAllQueues().first() }
+
+        queues.forEach { queue ->
+            val shuffledSongs = runBlocking { getQueueSongs(queue.id).first() }
+            val unshuffledSongs = runBlocking { getQueueSongsUnshuffled(queue.id).first() }
+
+            resultQueues.add(
+                MultiQueueObject(
+                    title = queue.id,
+                    queue = shuffledSongs.map { it.toMediaMetadata() }.toMutableList(),
+                    unShuffled = unshuffledSongs.map { it.toMediaMetadata() }.toMutableList(),
+                    shuffled = queue.shuffled,
+                    queuePos = queue.queuePos
+                )
+            )
+        }
+
+        return resultQueues
     }
 }
