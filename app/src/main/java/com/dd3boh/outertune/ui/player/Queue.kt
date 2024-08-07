@@ -358,7 +358,9 @@ fun Queue(
                                     .padding(horizontal = 40.dp, vertical = 8.dp)
                                     .fillMaxWidth()
                             ) {
-                                Row {
+                                Row(
+                                    modifier = Modifier.weight(1f, false)
+                                ) {
                                     ResizableIconButton(
                                         icon = Icons.Rounded.Close,
                                         onClick = {
@@ -385,11 +387,10 @@ fun Queue(
                                     )
                                 }
 
-                                ResizableIconButton(
-                                    icon = Icons.Rounded.DragHandle,
-                                    onClick = { },
-                                    modifier = Modifier
-                                        .detectReorder(reorderableStateEx)
+                                Icon(
+                                    imageVector = Icons.Rounded.DragHandle,
+                                    contentDescription = null,
+                                    modifier = Modifier.detectReorder(reorderableStateEx)
                                 )
                             }
                         }
