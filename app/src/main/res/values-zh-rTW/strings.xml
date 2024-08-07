@@ -129,6 +129,12 @@
     <string name="artist_name">藝人名稱</string>
     <string name="error_artist_name_empty">藝人名稱不能為空</string>
 
+    <string name="duplicates">重複項目</string>
+    <string name="skip_duplicates">略過重複項目</string>
+    <string name="add_anyway">仍要新增</string>
+    <string name="duplicates_description_single">播放清單已有此曲目</string>
+    <string name="duplicates_description_multiple">播放清單已有 %d 首相同曲目</string>
+
     <!-- Noun -->
     <plurals name="n_song">
         <item quantity="other">%d 首歌曲</item>

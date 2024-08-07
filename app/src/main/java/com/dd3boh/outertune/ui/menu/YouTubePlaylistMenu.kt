@@ -106,37 +106,17 @@ fun YouTubePlaylistMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { targetPlaylist ->
-            coroutineScope.launch(Dispatchers.IO) {
-                var position = targetPlaylist.songCount
-                songs.ifEmpty {
-                    withContext(Dispatchers.IO) {
-                        YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
-                    }
-                }.let { songs ->
-                    targetPlaylist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) }
-
-                    database.transaction {
-                        songs
-                            .map { it.toMediaMetadata() }
-                            .onEach(::insert)
-                            .forEach { song ->
-                                insert(
-                                    PlaylistSongMap(
-                                        songId = song.id,
-                                        playlistId = targetPlaylist.id,
-                                        position = position++,
-                                        setVideoId = song.setVideoId
-                                    )
-                                )
-                            }
-                    }
+        onGetSong = {
+            val allSongs = songs
+                .ifEmpty {
+                    YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
+                }.map {
+                    it.toMediaMetadata()
                 }
-
-                targetPlaylist.playlist.browseId?.let { playlistId ->
-                    YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
-                }
+            database.transaction {
+                allSongs.forEach(::insert)
             }
+            allSongs.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )

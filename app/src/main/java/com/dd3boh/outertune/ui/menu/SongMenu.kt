@@ -136,23 +136,7 @@ fun SongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            database.query {
-                insert(
-                    PlaylistSongMap(
-                        songId = song.id,
-                        playlistId = playlist.id,
-                        position = playlist.songCount
-                    )
-                )
-
-                coroutineScope.launch(Dispatchers.IO) {
-                    playlist.playlist.browseId?.let { browseId ->
-                        YouTube.addToPlaylist(browseId, song.id)
-                    }
-                }
-            }
-        },
+        onGetSong = { listOf(song.id) },
         onDismiss = { showChoosePlaylistDialog = false }
     )
 

@@ -144,28 +144,7 @@ fun AlbumMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            coroutineScope.launch(Dispatchers.IO) {
-                playlist.playlist.browseId?.let { playlistId ->
-                    album.album.playlistId?.let { addPlaylistId ->
-                        YouTube.addPlaylistToPlaylist(playlistId, addPlaylistId)
-                    }
-                }
-            }
-            database.transaction {
-                var position = playlist.songCount
-                songs.map { it.id }
-                    .forEach {
-                        insert(
-                            PlaylistSongMap(
-                                songId = it,
-                                playlistId = playlist.id,
-                                position = position++
-                            )
-                        )
-                    }
-            }
-        },
+        onGetSong = { songs.map { it.id } },
         onDismiss = {
             showChoosePlaylistDialog = false
         }
