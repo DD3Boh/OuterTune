@@ -234,7 +234,7 @@ class MusicService : MediaLibraryService(),
                             return
                         }
 
-                        consecutivePlaybackErr ++
+                        consecutivePlaybackErr += 2
 
                         Toast.makeText(
                             this@MusicService,
@@ -261,19 +261,16 @@ class MusicService : MediaLibraryService(),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-
-                        // dismiss the errors after a cool down time
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(1000)
-                            if (consecutivePlaybackErr > 0) {
-                                consecutivePlaybackErr --
-                            }
-                        }
                     }
 
                     // start playback again on seek
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         super.onMediaItemTransition(mediaItem, reason)
+                        // +2 when and error happens, and -1 when transition. Thus when error, number increments by 1, else doesn't change
+                        if (consecutivePlaybackErr > 0) {
+                            consecutivePlaybackErr --
+                        }
+
                         if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
                             player.prepare()
                             player.play()
