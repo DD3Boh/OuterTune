@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -174,9 +178,10 @@ fun LibrarySongsFolderScreen(
                 contentType = CONTENT_TYPE_HEADER
             ) {
                 Column(
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
                 ) {
-                    Row(modifier = Modifier.padding(vertical = 8.dp)) { }
                     filterContent?.let {
                         it()
                     }
