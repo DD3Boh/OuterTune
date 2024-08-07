@@ -160,6 +160,7 @@ dependencies {
 
     implementation(projects.innertube)
     implementation(projects.kugou)
+    implementation(projects.lrclib)
 
     coreLibraryDesugaring(libs.desugaring)
 

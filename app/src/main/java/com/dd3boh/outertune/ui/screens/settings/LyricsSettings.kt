@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.EnableKugouKey
+import com.dd3boh.outertune.constants.EnableLrcLibKey
 import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
@@ -41,6 +42,7 @@ fun LyricsSettings(
 
     // state variables and such
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
+    val (enableLrcLib, onEnableLrcLibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
     val (lyricsPosition, onLyricsPositionChange) = rememberEnumPreference(LyricsTextPositionKey, defaultValue = LyricsPosition.CENTER)
     val (multilineLrc, onMultilineLrcChange) = rememberPreference(MultilineLrcKey, defaultValue = true)
     val (lyricTrim, onLyricTrimChange) = rememberPreference(LyricTrimKey, defaultValue = false)
@@ -51,7 +53,14 @@ fun LyricsSettings(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
     ) {
-        // KuGou
+        // providers
+        SwitchPreference(
+            title = { Text(stringResource(R.string.enable_lrclib)) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
+            checked = enableLrcLib,
+            onCheckedChange = onEnableLrcLibChange
+        )
+
         SwitchPreference(
             title = { Text(stringResource(R.string.enable_kugou)) },
             icon = { Icon(Icons.Rounded.Lyrics, null) },

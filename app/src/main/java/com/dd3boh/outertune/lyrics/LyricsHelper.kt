@@ -14,7 +14,7 @@ private const val PREFER_LOCAL_LYRIC = true
 class LyricsHelper @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    private val lyricsProviders = listOf(YouTubeSubtitleLyricsProvider, KuGouLyricsProvider, YouTubeLyricsProvider)
+    private val lyricsProviders = listOf(YouTubeSubtitleLyricsProvider, LrcLibLyricsProvider, KuGouLyricsProvider, YouTubeLyricsProvider)
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
 
     suspend fun getLyrics(mediaMetadata: MediaMetadata): String {
