@@ -12,10 +12,10 @@ import com.dd3boh.outertune.db.entities.SongGenreMap
 import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.SCANNER_DEBUG
+import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import com.dd3boh.outertune.ui.utils.SYNC_SCANNER
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.scannerSession
-import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -334,7 +334,7 @@ class LocalMediaScanner {
 
         // do not delete songs from database automatically, we just disable them
         if (!noDisable) {
-            disableSongs(finalSongs, database)
+            finalize(finalSongs, database)
         }
         Timber.tag(TAG).d("------------ SYNC: Finished Local Library Sync ------------")
     }
@@ -437,7 +437,7 @@ class LocalMediaScanner {
             }
 
             // we handle disabling songs here instead
-            disableSongs(newSongs, database)
+            finalize(newSongs, database)
         }
         Timber.tag(TAG).d("------------ SYNC: Finished Quick (additive delta) Library Sync ------------")
     }
@@ -506,11 +506,11 @@ class LocalMediaScanner {
 
 
     /**
-     * Remove inaccessible songs from the library
+     * Remove inaccessible, and duplicate songs from the library
      */
-    private fun disableSongs(newSongs: List<Song>, database: MusicDatabase) {
+    private fun finalize(newSongs: List<Song>, database: MusicDatabase) {
         if (SCANNER_DEBUG)
-            Timber.tag(TAG).d("Start disable songs job. Number of valid songs: ${newSongs.size}")
+            Timber.tag(TAG).d("Start finalize (disable songs) job. Number of valid songs: ${newSongs.size}")
         runBlocking(Dispatchers.IO) {
             // get list of all local songs in db
             database.disableInvalidLocalSongs() // make sure path is existing
@@ -530,6 +530,30 @@ class LocalMediaScanner {
                     database.transaction {
                         disableLocalSong(song.song.id)
                     }
+                }
+            }
+
+            // remove duplicates
+            val dupes = database.duplicatedLocalSongs().first().toMutableList()
+            var index = 0
+
+            if (SCANNER_DEBUG)
+                Timber.tag(TAG).d("Start finalize (duplicate removal) job. Number of candidates: ${dupes.size}")
+
+            while (index < dupes.size) {
+                // collect all the duplicates
+                val contenders = ArrayList<Pair<SongEntity, Int>>()
+                val localPath = dupes[index].localPath
+                while (index < dupes.size && dupes[index].localPath == localPath) {
+                    contenders.add(Pair(dupes[index], database.getLifetimePlayCount(dupes[index].id).first()))
+                    index++
+                }
+                // yeet the lower play count songs
+                contenders.remove(contenders.maxByOrNull { it.second })
+                contenders.forEach {
+                    if (SCANNER_DEBUG)
+                        Timber.tag(TAG).d("Deleting song ${it.first.id} (${it.first.title})")
+                    database.delete(it.first)
                 }
             }
         }

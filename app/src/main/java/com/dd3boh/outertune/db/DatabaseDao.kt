@@ -650,6 +650,18 @@ interface DatabaseDao {
     @Query("UPDATE song SET inLibrary = null, localPath = null WHERE id = :songId")
     fun disableLocalSong(songId: String)
 
+    @Query("""
+        SELECT * FROM song
+        WHERE localPath IN (
+            SELECT localPath
+            FROM song
+            GROUP BY localPath
+            HAVING COUNT(*) > 1
+        )
+        ORDER BY localPath
+    """)
+    fun duplicatedLocalSongs(): Flow<List<SongEntity>>
+
     fun updateLocalSongPath(songId: String, inLibrary: LocalDateTime?, localPath: String?) {
         if (localPath != null) {
             updateLSP(songId, inLibrary, localPath)
