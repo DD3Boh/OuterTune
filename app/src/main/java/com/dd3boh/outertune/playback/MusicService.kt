@@ -275,6 +275,19 @@ class MusicService : MediaLibraryService(),
                             player.prepare()
                             player.play()
                         }
+
+                        // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
+                        // no, when repeat mode is on, player does not "STATE_ENDED"
+                        if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
+                            (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
+                            isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
+                            queueBoard.shuffleCurrent(false) // reshuffle queue
+                            queueBoard.setCurrQueue(this@MusicService)
+                        }
+                        lastMediaItemIndex = player.currentMediaItemIndex
+
+                        updateNotification() // also updates when queue changes
+
                         queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex, this@MusicService)
                         queueTitle = queueBoard.getCurrentQueue()?.title
                         if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
@@ -596,20 +609,6 @@ class MusicService : MediaLibraryService(),
                 putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
             }
         )
-    }
-
-    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
-        // no, when repeat mode is on, player does not "STATE_ENDED"
-        if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
-            (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
-            isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
-            queueBoard.shuffleCurrent(false) // reshuffle queue
-            queueBoard.setCurrQueue(this@MusicService)
-        }
-        lastMediaItemIndex = player.currentMediaItemIndex
-
-        updateNotification() // also updates when queue changes
     }
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {
