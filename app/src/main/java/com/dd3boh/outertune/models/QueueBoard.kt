@@ -2,10 +2,10 @@ package com.dd3boh.outertune.models
 
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
+import com.dd3boh.outertune.playback.MusicService
 import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.playback.queues.EmptyQueue
 import com.dd3boh.outertune.playback.queues.Queue
@@ -474,33 +474,49 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializa
     }
 
     /**
-     * Load the current queue into the media player\
+     * Load the current queue into the media player
      *
-     * @param playerConnection link
+     * @param playerConnection PlayerConnection link
      * @param autoSeek true will automatically jump to a position in the queue after loading it
      * @return New current position tracker
      */
     fun setCurrQueue(playerConnection: PlayerConnection, autoSeek: Boolean = true) =
-        setCurrQueue(getCurrentQueue(), playerConnection.player, autoSeek)
+        setCurrQueue(getCurrentQueue(), playerConnection.service, autoSeek)
 
     /**
-     * Load the current queue into the media player\
+     * Load the current queue into the media player
      *
-     * @param player Player link
+     * @param player MusicService link
      * @param autoSeek true will automatically jump to a position in the queue after loading it
      * @return New current position tracker
      */
-    fun setCurrQueue(player: Player, autoSeek: Boolean = true) = setCurrQueue(getCurrentQueue(), player, autoSeek)
+    fun setCurrQueue(player: MusicService, autoSeek: Boolean = true) = setCurrQueue(getCurrentQueue(), player, autoSeek)
 
     /**
-     * Load a queue into the media player\
+     * Load a queue into the media player
      *
      * @param index Index of queue
-     * @param player Player link
+     * @param playerConnection PlayerConnection link
      * @param autoSeek true will automatically jump to a position in the queue after loading it
      * @return New current position tracker
      */
-    fun setCurrQueue(index: Int, player: Player, autoSeek: Boolean = true): Int? {
+    fun setCurrQueue(index: Int, playerConnection: PlayerConnection, autoSeek: Boolean = true): Int? {
+        return try {
+            setCurrQueue(masterQueues[index], playerConnection.service, autoSeek)
+        } catch (e: IndexOutOfBoundsException) {
+            -1
+        }
+    }
+
+    /**
+     * Load a queue into the media player
+     *
+     * @param index Index of queue
+     * @param player MusicService link
+     * @param autoSeek true will automatically jump to a position in the queue after loading it
+     * @return New current position tracker
+     */
+    fun setCurrQueue(index: Int, player: MusicService, autoSeek: Boolean = true): Int? {
         return try {
             setCurrQueue(masterQueues[index], player, autoSeek)
         } catch (e: IndexOutOfBoundsException) {
@@ -509,14 +525,14 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializa
     }
 
     /**
-     * Load a queue into the media player\
+     * Load a queue into the media player
      *
      * @param item Queue object
-     * @param player Player link
+     * @param player MusicService link
      * @param autoSeek true will automatically jump to a position in the queue after loading it
      * @return New current position tracker
      */
-    fun setCurrQueue(item: MultiQueueObject?, player: Player, autoSeek: Boolean = true): Int? {
+    fun setCurrQueue(item: MultiQueueObject?, player: MusicService, autoSeek: Boolean = true): Int? {
         if (QUEUE_DEBUG)
             Timber.tag(TAG).d(
                 "Loading queue ${item?.title ?: "null"} into player. " +
@@ -524,7 +540,7 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializa
             )
 
         if (item == null) {
-            player.setMediaItems(ArrayList())
+            player.player.setMediaItems(ArrayList())
             return null
         }
 
@@ -533,14 +549,14 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializa
 
         // if requested to get shuffled queue
         if (item.shuffled) {
-            player.setMediaItems(item.queue.map { it.toMediaItem() })
+            player.player.setMediaItems(item.queue.map { it.toMediaItem() })
         } else {
-            player.setMediaItems(item.unShuffled.map { it.toMediaItem() })
+            player.player.setMediaItems(item.unShuffled.map { it.toMediaItem() })
         }
         isShuffleEnabled.value = item.shuffled
 
         if (autoSeek) {
-            player.seekTo(queuePos, C.TIME_UNSET)
+            player.player.seekTo(queuePos, C.TIME_UNSET)
         }
 
         bubbleUp(item)
@@ -552,7 +568,7 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializa
      *
      * @param index
      */
-    fun setCurrQueuePosIndex(index: Int) {
+    fun setCurrQueuePosIndex(index: Int, player: MusicService) {
         getCurrentQueue()?.queuePos = index
     }
 

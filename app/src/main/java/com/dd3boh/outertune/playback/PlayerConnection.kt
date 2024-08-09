@@ -151,7 +151,7 @@ class PlayerConnection(
      */
     fun triggerShuffle() {
         val oldIndex = player.currentMediaItemIndex
-        queueBoard.setCurrQueuePosIndex(oldIndex)
+        queueBoard.setCurrQueuePosIndex(oldIndex, service)
 
         // shuffle and update player playlist
         if (!isShuffleEnabled.value) {

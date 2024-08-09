@@ -434,7 +434,7 @@ fun Queue(
                         onClick = {
                             coroutineScope.launch(Dispatchers.Main) {
                                 // change to this queue, seek to the item clicked on
-                                queueBoard.setCurrQueue(detachedQueueIndex, playerConnection.player, false)
+                                queueBoard.setCurrQueue(detachedQueueIndex, playerConnection, false)
                                 playerConnection.player.seekTo(detachedQueuePos, C.TIME_UNSET)
                                 playerConnection.player.playWhenReady = true
                                 detachedHead = false
@@ -473,11 +473,7 @@ fun Queue(
                                         onClick = {
                                             coroutineScope.launch(Dispatchers.Main) {
                                                 // change to this queue, seek to the item clicked on
-                                                queueBoard.setCurrQueue(
-                                                    detachedQueueIndex,
-                                                    playerConnection.player,
-                                                    false
-                                                )
+                                                queueBoard.setCurrQueue(detachedQueueIndex, playerConnection, false)
                                                 playerConnection.player.seekTo(index, C.TIME_UNSET)
                                                 detachedHead = false
                                                 updateQueues()

@@ -275,7 +275,7 @@ class MusicService : MediaLibraryService(),
                             player.prepare()
                             player.play()
                         }
-                        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex)
+                        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex, this@MusicService)
                         queueTitle = queueBoard.getCurrentQueue()?.title
                         if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
                             saveQueueToDisk() // save queue, but rate limited
@@ -517,7 +517,7 @@ class MusicService : MediaLibraryService(),
                 startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0,
                 replace = replace
             )
-            queueBoard.setCurrQueue(player)
+            queueBoard.setCurrQueue(this@MusicService)
             saveQueueToDisk()
 
             player.prepare()
@@ -549,7 +549,7 @@ class MusicService : MediaLibraryService(),
         queueBoard.add(currentQueue?.title?: "Queue", items.map { it.metadata }, forceInsert = true, delta = false)
 
         val pos = player.currentPosition
-        val newQueuePos = queueBoard.setCurrQueue(player, autoSeek = false)
+        val newQueuePos = queueBoard.setCurrQueue(this@MusicService, autoSeek = false)
         queueBoard.getCurrentQueue()?.let {
             if (newQueuePos != null) {
                 player.seekTo(newQueuePos, pos)
@@ -605,7 +605,7 @@ class MusicService : MediaLibraryService(),
             (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
             isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
             queueBoard.shuffleCurrent(false) // reshuffle queue
-            queueBoard.setCurrQueue(player)
+            queueBoard.setCurrQueue(this@MusicService)
         }
         lastMediaItemIndex = player.currentMediaItemIndex
 
