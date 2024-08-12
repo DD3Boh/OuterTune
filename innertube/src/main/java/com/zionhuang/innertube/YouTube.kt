@@ -723,7 +723,7 @@ object YouTube {
         playlistPanelRenderer.contents.lastOrNull()?.automixPreviewVideoRenderer?.content?.automixPlaylistVideoRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.let { watchPlaylistEndpoint ->
             return@runCatching next(watchPlaylistEndpoint).getOrThrow().let { result ->
                 result.copy(
-                    title = playlistPanelRenderer.title,
+                    title = title,
                     items = playlistPanelRenderer.contents.mapNotNull {
                         it.playlistPanelVideoRenderer?.let { renderer ->
                             NextPage.fromPlaylistPanelVideoRenderer(renderer)

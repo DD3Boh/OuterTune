@@ -177,7 +177,6 @@ fun OnlineSearchResult(
                                                 item.toMediaMetadata()
                                             ),
                                             replace = true,
-                                            title = "Search",
                                         )
                                     }
                                 }
