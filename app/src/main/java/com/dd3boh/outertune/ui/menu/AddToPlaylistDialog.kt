@@ -120,13 +120,15 @@ fun AddToPlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
             onDone = { playlistName ->
                 coroutineScope.launch(Dispatchers.IO) {
-                    val browseId = YouTube.createPlaylist(playlistName).getOrNull()
+                    val browseId = if (syncedPlaylist)
+                        YouTube.createPlaylist(playlistName).getOrNull()
+                    else null
 
                     database.query {
                         insert(
                             PlaylistEntity(
                                 name = playlistName,
-                                browseId = if (syncedPlaylist) browseId else null,
+                                browseId = browseId,
                                 bookmarkedAt = LocalDateTime.now(),
                                 isEditable = !syncedPlaylist,
                                 isLocal = !syncedPlaylist // && check that all songs are non-local
