@@ -19,3 +19,4 @@ include(":material-color-utilities")
 
 // you must enable self built in \app\build.gradle.kts should you choose to uncomment this
 //include(":ffMetadataEx")
+include(":kizzy")

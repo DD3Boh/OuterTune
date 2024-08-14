@@ -59,3 +59,9 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
 -dontwarn org.slf4j.impl.StaticLoggerBinder
+
+
+# Keep Data data classes
+-keep class com.my.kizzy.data.remote.** { <fields>; }
+# Keep Gateway data classes
+-keep class com.my.kizzy.gateway.entities.** { <fields>; }

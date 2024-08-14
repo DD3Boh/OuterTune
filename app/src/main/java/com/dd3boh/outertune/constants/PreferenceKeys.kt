@@ -41,6 +41,12 @@ val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
 
+val DiscordTokenKey = stringPreferencesKey("discordToken")
+val DiscordInfoDismissedKey = booleanPreferencesKey("discordInfoDismissed")
+val DiscordUsernameKey = stringPreferencesKey("discordUsername")
+val DiscordNameKey = stringPreferencesKey("discordName")
+val EnableDiscordRPCKey = booleanPreferencesKey("discordRPCEnable")
+
 val SongSortTypeKey = stringPreferencesKey("songSortType")
 val SongSortDescendingKey = booleanPreferencesKey("songSortDescending")
 val PlaylistSongSortTypeKey = stringPreferencesKey("playlistSongSortType")

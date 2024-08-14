@@ -97,6 +97,51 @@ import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.models.WatchEndpoint
 import com.zionhuang.innertube.models.response.PlayerResponse
+import com.zionhuang.music.MainActivity
+import com.zionhuang.music.R
+import com.zionhuang.music.constants.AudioNormalizationKey
+import com.zionhuang.music.constants.AudioQuality
+import com.zionhuang.music.constants.AudioQualityKey
+import com.zionhuang.music.constants.DiscordTokenKey
+import com.zionhuang.music.constants.EnableDiscordRPCKey
+import com.zionhuang.music.constants.MediaSessionConstants.CommandToggleLibrary
+import com.zionhuang.music.constants.MediaSessionConstants.CommandToggleLike
+import com.zionhuang.music.constants.MediaSessionConstants.CommandToggleRepeatMode
+import com.zionhuang.music.constants.MediaSessionConstants.CommandToggleShuffle
+import com.zionhuang.music.constants.PauseListenHistoryKey
+import com.zionhuang.music.constants.PersistentQueueKey
+import com.zionhuang.music.constants.PlayerVolumeKey
+import com.zionhuang.music.constants.RepeatModeKey
+import com.zionhuang.music.constants.ShowLyricsKey
+import com.zionhuang.music.constants.SkipSilenceKey
+import com.zionhuang.music.db.MusicDatabase
+import com.zionhuang.music.db.entities.Event
+import com.zionhuang.music.db.entities.FormatEntity
+import com.zionhuang.music.db.entities.LyricsEntity
+import com.zionhuang.music.db.entities.RelatedSongMap
+import com.zionhuang.music.di.DownloadCache
+import com.zionhuang.music.di.PlayerCache
+import com.zionhuang.music.extensions.SilentHandler
+import com.zionhuang.music.extensions.collect
+import com.zionhuang.music.extensions.collectLatest
+import com.zionhuang.music.extensions.currentMetadata
+import com.zionhuang.music.extensions.findNextMediaItemById
+import com.zionhuang.music.extensions.mediaItems
+import com.zionhuang.music.extensions.metadata
+import com.zionhuang.music.extensions.toMediaItem
+import com.zionhuang.music.lyrics.LyricsHelper
+import com.zionhuang.music.models.PersistQueue
+import com.zionhuang.music.models.toMediaMetadata
+import com.zionhuang.music.playback.queues.EmptyQueue
+import com.zionhuang.music.playback.queues.ListQueue
+import com.zionhuang.music.playback.queues.Queue
+import com.zionhuang.music.playback.queues.YouTubeQueue
+import com.zionhuang.music.utils.CoilBitmapLoader
+import com.zionhuang.music.utils.DiscordRPC
+import com.zionhuang.music.utils.dataStore
+import com.zionhuang.music.utils.enumPreference
+import com.zionhuang.music.utils.get
+import com.zionhuang.music.utils.reportException
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -181,6 +226,8 @@ class MusicService : MediaLibraryService(),
     private lateinit var mediaSession: MediaLibrarySession
 
     private var isAudioEffectSessionOpened = false
+
+    private var discordRpc: DiscordRPC? = null
 
     var consecutivePlaybackErr = 0
     var saveQueueCD = false
@@ -342,8 +389,13 @@ class MusicService : MediaLibraryService(),
             }
         }
 
-        currentSong.collect(scope) {
+        currentSong.debounce(1000).collect(scope) { song ->
             updateNotification()
+            if (song != null) {
+                discordRpc?.updateSong(song)
+            } else {
+                discordRpc?.closeRPC()
+            }
         }
 
         combine(
@@ -386,6 +438,23 @@ class MusicService : MediaLibraryService(),
                 1f
             }
         }
+
+        dataStore.data
+            .map { it[DiscordTokenKey] to (it[EnableDiscordRPCKey] ?: true) }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect(scope) { (key, enabled) ->
+                if (discordRpc?.isRpcRunning() == true) {
+                    discordRpc?.closeRPC()
+                }
+                discordRpc = null
+                if (key != null && enabled) {
+                    discordRpc = DiscordRPC(this, key)
+                    currentSong.value?.let {
+                        discordRpc?.updateSong(it)
+                    }
+                }
+            }
 
         if (dataStore.get(PersistentQueueKey, true)) {
             queueBoard = QueueBoard(database.readQueue().toMutableList())
@@ -795,6 +864,10 @@ class MusicService : MediaLibraryService(),
         if (dataStore.get(PersistentQueueKey, true)) {
             saveQueueToDisk()
         }
+        if (discordRpc?.isRpcRunning() == true) {
+            discordRpc?.closeRPC()
+        }
+        discordRpc = null
         mediaSession.release()
         player.removeListener(this)
         player.removeListener(sleepTimer)
