@@ -118,7 +118,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                 }
 
                 MusicService.ALBUM -> database.albumsByCreateDateAsc().first().map { album ->
-                    browsableMediaItem("${MusicService.ALBUM}/${album.id}", album.album.title, album.artists.joinToString(), album.album.thumbnailUrl?.toUri(), MediaMetadata.MEDIA_TYPE_ALBUM)
+                    browsableMediaItem("${MusicService.ALBUM}/${album.id}", album.album.title, album.artists.joinToString { it.name }, album.album.thumbnailUrl?.toUri(), MediaMetadata.MEDIA_TYPE_ALBUM)
                 }
 
                 MusicService.PLAYLIST -> {
