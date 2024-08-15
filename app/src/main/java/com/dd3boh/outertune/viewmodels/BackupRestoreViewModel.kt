@@ -11,8 +11,6 @@ import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.db.InternalDatabase
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.ArtistEntity
-import com.dd3boh.outertune.db.entities.Playlist
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.div
@@ -169,23 +167,6 @@ class BackupRestoreViewModel @Inject constructor(
         return this.bufferedReader().useLines { it.toList() }
     }
 
-    /**
-     * Import a playlist into the database
-     */
-    fun importPlaylist(songs: List<Song>, playlist: Playlist) {
-        database.query {
-            var position = playlist.songCount
-            songs.forEach {
-                insert(
-                    PlaylistSongMap(
-                        songId = it.song.id,
-                        playlistId = playlist.id,
-                        position = position++
-                    )
-                )
-            }
-        }
-    }
 
     companion object {
         const val SETTINGS_FILENAME = "settings.preferences_pb"

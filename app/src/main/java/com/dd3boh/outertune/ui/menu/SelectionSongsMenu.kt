@@ -99,19 +99,8 @@ fun SelectionSongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            database.query {
-                var position = playlist.songCount
-                songSelection.forEach { song ->
-                    insert(
-                        PlaylistSongMap(
-                            songId = song.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-            }
+        onGetSong = {
+            songSelection.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -321,19 +310,8 @@ fun SelectionMediaMetadataMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            database.query {
-                var position = playlist.songCount
-                songSelection.forEach { song ->
-                    insert(
-                        PlaylistSongMap(
-                            songId = song.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-            }
+        onGetSong = {
+            songSelection.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )

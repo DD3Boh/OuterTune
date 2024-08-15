@@ -21,7 +21,6 @@ import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.db.entities.Event
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -63,22 +62,7 @@ fun FolderMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            // shove all folder songs into the playlist
-            var position = playlist.songCount
-            database.query {
-                allFolderSongs.forEach {
-                    insert(
-                        PlaylistSongMap(
-                            songId = it.song.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-
-            }
-        },
+        onGetSong = { allFolderSongs.map { it.id } },
         onDismiss = { showChoosePlaylistDialog = false }
     )
 

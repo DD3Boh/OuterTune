@@ -61,7 +61,6 @@ import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.PlaylistSong
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -136,7 +135,14 @@ fun SongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = { listOf(song.id) },
+        onGetSong = { playlist ->
+            coroutineScope.launch(Dispatchers.IO) {
+                playlist.playlist.browseId?.let { browseId ->
+                    YouTube.addToPlaylist(browseId, song.id)
+                }
+            }
+            listOf(song.id)
+        },
         onDismiss = { showChoosePlaylistDialog = false }
     )
 

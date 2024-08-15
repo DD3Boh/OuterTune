@@ -69,7 +69,6 @@ import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.ui.component.BigSeekBar
@@ -113,10 +112,15 @@ fun PlayerMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = {
+        onGetSong = { playlist ->
             database.transaction {
                 insert(mediaMetadata)
             }
+
+            coroutineScope.launch(Dispatchers.IO) {
+                playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, mediaMetadata.id) }
+            }
+
             listOf(mediaMetadata.id)
         },
         onDismiss = {

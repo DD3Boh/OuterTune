@@ -51,7 +51,6 @@ import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
@@ -139,7 +138,15 @@ fun YouTubeAlbumMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = {
+        onGetSong = { playlist ->
+            coroutineScope.launch(Dispatchers.IO) {
+                playlist.playlist.browseId?.let { playlistId ->
+                    album?.album?.playlistId?.let { addPlaylistId ->
+                        YouTube.addPlaylistToPlaylist(playlistId, addPlaylistId)
+                    }
+                }
+            }
+
             album?.songs?.map { it.id }.orEmpty()
         },
         onDismiss = { showChoosePlaylistDialog = false }

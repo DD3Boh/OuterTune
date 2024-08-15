@@ -53,7 +53,7 @@ fun AddToPlaylistDialog(
     isVisible: Boolean,
     noSyncing: Boolean = false,
     initialTextFieldValue: String? = null,
-    onGetSong: suspend () -> List<String>, // list of song ids. Songs should be inserted to database in this function.
+    onGetSong: suspend (Playlist) -> List<String>, // list of song ids. Songs should be inserted to database in this function.
     onDismiss: () -> Unit,
 ) {
     val database = LocalDatabase.current
@@ -116,7 +116,7 @@ fun AddToPlaylistDialog(
                         selectedPlaylist = playlist
                         coroutineScope.launch(Dispatchers.IO) {
                             if (songIds == null) {
-                                songIds = onGetSong()
+                                songIds = onGetSong(playlist)
                             }
                             duplicates = database.playlistDuplicates(playlist.id, songIds!!)
                             if (duplicates.isNotEmpty()) {

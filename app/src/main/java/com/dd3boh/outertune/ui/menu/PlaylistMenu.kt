@@ -49,7 +49,6 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistSong
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -244,32 +243,16 @@ fun PlaylistMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { targetPlaylist ->
+        onGetSong = {
             coroutineScope.launch(Dispatchers.IO) {
-                var position = targetPlaylist.songCount
-                songs.let { songs ->
-                    targetPlaylist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) }
+                // add songs to playlist and push to ytm
+                songs.let { playlist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) } }
 
-                    database.transaction {
-                        songs
-                            .map { it.toMediaMetadata() }
-                            .onEach(::insert)
-                            .forEach { song ->
-                                insert(
-                                    PlaylistSongMap(
-                                        songId = song.id,
-                                        playlistId = targetPlaylist.id,
-                                        position = position++,
-                                    )
-                                )
-                            }
-                    }
-                }
-
-                targetPlaylist.playlist.browseId?.let { playlistId ->
+                playlist.playlist.browseId?.let { playlistId ->
                     YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
                 }
             }
+            songs.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )

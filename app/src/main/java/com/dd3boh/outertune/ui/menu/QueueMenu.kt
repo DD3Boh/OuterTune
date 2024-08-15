@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
@@ -49,22 +48,7 @@ fun QueueMenu(
     // dialogs
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            // shove all songs into the playlist
-            var position = playlist.songCount
-            database.query {
-                songs.forEach {
-                    insert(
-                        PlaylistSongMap(
-                            songId = it.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-
-            }
-        },
+        onGetSong = { songs.map { it.id } },
         onDismiss = {
             showChoosePlaylistDialog = false
         }

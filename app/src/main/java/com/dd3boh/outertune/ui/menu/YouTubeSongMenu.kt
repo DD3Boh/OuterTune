@@ -1,7 +1,6 @@
 package com.dd3boh.outertune.ui.menu
 
 import android.content.Intent
-import android.database.sqlite.SQLiteConstraintException
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,7 +56,6 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.MediaMetadata
@@ -119,10 +117,17 @@ fun YouTubeSongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = {
+        onGetSong = { playlist ->
             database.transaction {
                 insert(song.toMediaMetadata())
             }
+
+            coroutineScope.launch(Dispatchers.IO) {
+                playlist.playlist.browseId?.let { browseId ->
+                    YouTube.addToPlaylist(browseId, song.id)
+                }
+            }
+
             listOf(song.id)
         },
         onDismiss = { showChoosePlaylistDialog = false }
