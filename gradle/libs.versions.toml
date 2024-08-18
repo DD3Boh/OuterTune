@@ -1,6 +1,6 @@
 [versions]
-androidGradlePlugin = "8.5.1"
-kotlin = "2.0.0"
+androidGradlePlugin = "8.5.2"
+kotlin = "2.0.20"
 compose = "1.6.8"
 lifecycle = "2.8.4"
 material3 = "1.2.1"
@@ -8,7 +8,7 @@ media3 = "1.4.0"
 room = "2.6.1"
 hilt = "2.52"
 ktor = "2.3.11"
-ksp = "2.0.0-1.0.21"
+ksp = "2.0.20-1.0.24"
 
 [libraries]
 guava = { group = "com.google.guava", name = "guava", version = "33.3.0-android" }
@@ -64,7 +64,7 @@ ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlin
 
 brotli = { group = "org.brotli", name = "dec", version = "0.1.2" }
 
-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.0.4" }
+desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.1.0" }
 
 junit = { group = "junit", name = "junit", version = "4.13.2" }
 

@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.dd3boh.ffmpegex"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 24
