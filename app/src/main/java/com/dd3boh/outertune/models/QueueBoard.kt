@@ -12,7 +12,6 @@ import com.dd3boh.outertune.playback.queues.Queue
 import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.internal.toImmutableList
 import timber.log.Timber
-import java.io.Serializable
 import kotlin.math.max
 import kotlin.math.min
 
@@ -41,7 +40,7 @@ class MultiQueueObject(
     var shuffled: Boolean = false,
     var queuePos: Int = -1,
 //    val ytmQueue: Queue?
-) : Serializable {
+) {
 
     /**
      * Retrieve the current queue in list form, with shuffle state taken in account
@@ -74,7 +73,7 @@ class MultiQueueObject(
  * Multiple queues manager. Methods will not automatically (re)load queues into the player unless
  * otherwise explicitly stated.
  */
-class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()): Serializable {
+class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
     private val masterQueues: MutableList<MultiQueueObject> = queues
     private var masterIndex = -1 // current queue index
     var detachedHead = false
