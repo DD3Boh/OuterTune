@@ -117,7 +117,7 @@ enum class AlbumFilter {
 }
 
 enum class LibraryFilter {
-    ALL, ALBUMS, ARTISTS, PLAYLISTS, SONGS
+    ALL, ALBUMS, ARTISTS, PLAYLISTS, SONGS, FOLDERS
 }
 
 val ShowLyricsKey = booleanPreferencesKey("showLyrics")

@@ -21,14 +21,14 @@ sealed class Screens(
 ) {
     data object Home : Screens(R.string.home, Icons.Rounded.Home, "home")
     data object Songs : Screens(R.string.songs, Icons.Rounded.MusicNote, "songs")
-    data object SongFolders : Screens(R.string.songs, Icons.Rounded.Folder, "songs_folders_screen")
+    data object Folders : Screens(R.string.folders, Icons.Rounded.Folder, "folders")
     data object Artists : Screens(R.string.artists, Icons.Rounded.Person, "artists")
     data object Albums : Screens(R.string.albums, Icons.Rounded.Album, "albums")
     data object Playlists : Screens(R.string.playlists, Icons.AutoMirrored.Rounded.QueueMusic, "playlists")
     data object Library : Screens(R.string.library, Icons.Rounded.LibraryMusic, "library")
 
     companion object {
-        val MainScreens = listOf(Home, Songs, Artists, Albums, Playlists)
+        val MainScreens = listOf(Home, Songs, Folders, Artists, Albums, Playlists)
         val MainScreensNew = listOf(Home, Library)
     }
 }

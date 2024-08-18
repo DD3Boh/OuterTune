@@ -2,6 +2,7 @@
     <!-- Bottom navigation -->
     <string name="home">Home</string>
     <string name="songs">Songs</string>
+    <string name="folders">Folders</string>
     <string name="artists">Artists</string>
     <string name="albums">Albums</string>
     <string name="playlists">Playlists</string>

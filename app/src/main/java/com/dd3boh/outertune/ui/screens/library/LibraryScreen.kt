@@ -110,6 +110,7 @@ fun LibraryScreen(
         LibraryFilter.ARTISTS -> stringResource(R.string.artists)
         LibraryFilter.PLAYLISTS -> stringResource(R.string.playlists)
         LibraryFilter.SONGS -> stringResource(R.string.songs)
+        LibraryFilter.FOLDERS -> stringResource(R.string.folders)
         LibraryFilter.ALL -> ""
     }
 
@@ -118,6 +119,7 @@ fun LibraryScreen(
         LibraryFilter.ARTISTS to stringResource(R.string.artists),
         LibraryFilter.PLAYLISTS to stringResource(R.string.playlists),
         LibraryFilter.SONGS to stringResource(R.string.songs),
+        LibraryFilter.FOLDERS to stringResource(R.string.folders),
     )
 
     val chips = remember { SnapshotStateList<Pair<LibraryFilter, String>>() }
@@ -259,6 +261,12 @@ fun LibraryScreen(
                 LibrarySongsScreen(
                     navController,
                     libraryFilterContent = filterContent
+                )
+
+            LibraryFilter.FOLDERS ->
+                LibrarySongsFolderScreen(
+                    navController,
+                    filterContent = filterContent
                 )
 
             LibraryFilter.ALL ->

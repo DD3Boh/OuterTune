@@ -91,8 +91,6 @@ class LibrarySongsViewModel @Inject constructor(
     val localSongDirectoryTree =
         refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
 
-    val inLocal = mutableStateOf(false)
-
     fun syncLibrarySongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
     }

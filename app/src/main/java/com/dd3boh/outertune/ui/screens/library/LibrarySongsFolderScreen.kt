@@ -98,8 +98,6 @@ fun LibrarySongsFolderScreen(
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
-    var inLocal by viewModel.inLocal
-
     val lazyListState = rememberLazyListState()
 
     // destroy old structure when pref changes
@@ -159,11 +157,9 @@ fun LibrarySongsFolderScreen(
         wrappedSongs.addAll(tempList)
     }
 
-    BackHandler {
-        if (folderStack.size > 1) {
-            folderStack.pop()
-            currDir = folderStack.peek()
-        } else inLocal = false
+    BackHandler(folderStack.size > 1) {
+        folderStack.pop()
+        currDir = folderStack.peek()
     }
 
     Box(
@@ -228,22 +224,23 @@ fun LibrarySongsFolderScreen(
                 }
             }
 
-            item(
-                key = "previous",
-                contentType = CONTENT_TYPE_FOLDER
-            ) {
-                SongFolderItem(
-                    folderTitle = "..",
-                    subtitle = "Previous folder",
-                    modifier = Modifier
-                        .clickable {
-                            if (folderStack.size > 1) {
-                                folderStack.pop()
-                                currDir = folderStack.peek()
-                            } else inLocal = false
-                        }
-                )
-            }
+            if (folderStack.size > 1)
+                item(
+                    key = "previous",
+                    contentType = CONTENT_TYPE_FOLDER
+                ) {
+                    SongFolderItem(
+                        folderTitle = "..",
+                        subtitle = "Previous folder",
+                        modifier = Modifier
+                            .clickable {
+                                if (folderStack.size > 1) {
+                                    folderStack.pop()
+                                    currDir = folderStack.peek()
+                                }
+                            }
+                    )
+                }
 
             // all subdirectories listed here
             itemsIndexed(

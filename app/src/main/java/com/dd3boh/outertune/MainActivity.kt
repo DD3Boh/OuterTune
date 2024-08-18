@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
-import android.util.Base64
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -655,6 +654,7 @@ class MainActivity : ComponentActivity() {
                                 startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
                                     NavigationTab.HOME -> Screens.Home
                                     NavigationTab.SONG -> Screens.Songs
+                                    NavigationTab.FOLDERS -> Screens.Folders
                                     NavigationTab.ARTIST -> Screens.Artists
                                     NavigationTab.ALBUM -> Screens.Albums
                                     NavigationTab.PLAYLIST -> Screens.Playlists
@@ -694,6 +694,9 @@ class MainActivity : ComponentActivity() {
                                 composable(Screens.Songs.route) {
                                     LibrarySongsScreen(navController)
                                 }
+                                composable(Screens.Folders.route) {
+                                    LibrarySongsFolderScreen(navController)
+                                }
                                 composable(Screens.Artists.route) {
                                     LibraryArtistsScreen(navController)
                                 }
@@ -720,9 +723,6 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable("new_release") {
                                     NewReleaseScreen(navController, scrollBehavior)
-                                }
-                                composable(Screens.SongFolders.route) {
-                                    LibrarySongsFolderScreen(navController)
                                 }
 
                                 composable(
@@ -949,6 +949,7 @@ class MainActivity : ComponentActivity() {
                                     } else if (navBackStackEntry?.destination?.route in listOf(
                                             Screens.Home.route,
                                             Screens.Songs.route,
+                                            Screens.Folders.route,
                                             Screens.Artists.route,
                                             Screens.Albums.route,
                                             Screens.Playlists.route,

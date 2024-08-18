@@ -142,6 +142,7 @@ fun AppearanceSettings(
                     when (it) {
                         NavigationTab.HOME -> stringResource(R.string.home)
                         NavigationTab.SONG -> stringResource(R.string.songs)
+                        NavigationTab.FOLDERS -> stringResource(R.string.folders)
                         NavigationTab.ARTIST -> stringResource(R.string.artists)
                         NavigationTab.ALBUM -> stringResource(R.string.albums)
                         NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
@@ -186,7 +187,7 @@ enum class PlayerBackgroundStyle {
 }
 
 enum class NavigationTab {
-    HOME, SONG, ARTIST, ALBUM, PLAYLIST
+    HOME, SONG, FOLDERS, ARTIST, ALBUM, PLAYLIST
 }
 enum class NavigationTabNew {
     HOME, LIBRARY
