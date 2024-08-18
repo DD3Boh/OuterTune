@@ -109,6 +109,7 @@ import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
 import com.dd3boh.outertune.constants.DefaultOpenTabNewKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
+import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LibraryFilter
 import com.dd3boh.outertune.constants.LibraryFilterKey
@@ -155,9 +156,9 @@ import com.dd3boh.outertune.ui.screens.artist.ArtistScreen
 import com.dd3boh.outertune.ui.screens.artist.ArtistSongsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
+import com.dd3boh.outertune.ui.screens.library.LibraryFoldersScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryScreen
-import com.dd3boh.outertune.ui.screens.library.LibraryFoldersScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
@@ -169,6 +170,7 @@ import com.dd3boh.outertune.ui.screens.settings.AboutScreen
 import com.dd3boh.outertune.ui.screens.settings.AppearanceSettings
 import com.dd3boh.outertune.ui.screens.settings.BackupAndRestore
 import com.dd3boh.outertune.ui.screens.settings.ContentSettings
+import com.dd3boh.outertune.ui.screens.settings.DEFAULT_ENABLED_TABS
 import com.dd3boh.outertune.ui.screens.settings.DarkMode
 import com.dd3boh.outertune.ui.screens.settings.ExperimentalSettings
 import com.dd3boh.outertune.ui.screens.settings.LocalPlayerSettings
@@ -398,7 +400,8 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
-                    val navigationItems = if (!newInterfaceStyle) Screens.MainScreens else Screens.MainScreensNew
+                    val (enabledTabs) = rememberPreference(EnabledTabsKey, defaultValue = DEFAULT_ENABLED_TABS)
+                    val navigationItems = if (!newInterfaceStyle) Screens.getScreens(enabledTabs) else Screens.MainScreensNew
                     val defaultOpenTab = remember {
                         if (newInterfaceStyle) dataStore[DefaultOpenTabNewKey].toEnum(defaultValue = NavigationTabNew.HOME)
                         else dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)

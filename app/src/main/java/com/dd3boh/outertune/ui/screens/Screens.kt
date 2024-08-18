@@ -30,5 +30,24 @@ sealed class Screens(
     companion object {
         val MainScreens = listOf(Home, Songs, Folders, Artists, Albums, Playlists)
         val MainScreensNew = listOf(Home, Library)
+
+        fun getScreens(screens: String): List<Screens> {
+            val result = ArrayList<Screens>()
+
+            screens.toCharArray().forEach {
+                result.add(
+                when (it) {
+                    'H' -> Home
+                    'S' -> Songs
+                    'F' -> Folders
+                    'A' -> Artists
+                    'B' -> Albums
+                    'L' -> Playlists
+                    else -> Home
+                })
+            }
+
+            return result
+        }
     }
 }
