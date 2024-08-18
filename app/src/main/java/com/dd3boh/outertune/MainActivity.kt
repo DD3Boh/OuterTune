@@ -157,7 +157,7 @@ import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryScreen
-import com.dd3boh.outertune.ui.screens.library.LibrarySongsFolderScreen
+import com.dd3boh.outertune.ui.screens.library.LibraryFoldersScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
@@ -695,7 +695,7 @@ class MainActivity : ComponentActivity() {
                                     LibrarySongsScreen(navController)
                                 }
                                 composable(Screens.Folders.route) {
-                                    LibrarySongsFolderScreen(navController)
+                                    LibraryFoldersScreen(navController)
                                 }
                                 composable(Screens.Artists.route) {
                                     LibraryArtistsScreen(navController)

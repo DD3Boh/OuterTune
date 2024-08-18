@@ -264,7 +264,7 @@ fun LibraryScreen(
                 )
 
             LibraryFilter.FOLDERS ->
-                LibrarySongsFolderScreen(
+                LibraryFoldersScreen(
                     navController,
                     filterContent = filterContent
                 )

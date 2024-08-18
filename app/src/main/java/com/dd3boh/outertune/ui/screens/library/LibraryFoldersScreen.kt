@@ -81,7 +81,7 @@ import java.util.Stack
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LibrarySongsFolderScreen(
+fun LibraryFoldersScreen(
     navController: NavController,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
     filterContent: @Composable() (() -> Unit)? = null
