@@ -1,6 +1,8 @@
 package com.dd3boh.outertune.ui.menu
 
 import android.content.Intent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +88,7 @@ fun AlbumMenu(
     val database = LocalDatabase.current
     val downloadUtil = LocalDownloadUtil.current
     val playerConnection = LocalPlayerConnection.current ?: return
+    val scope = rememberCoroutineScope()
     val libraryAlbum by database.album(originalAlbum.id).collectAsState(initial = originalAlbum)
     val album = libraryAlbum ?: originalAlbum
     var songs by remember {
@@ -117,6 +123,14 @@ fun AlbumMenu(
                     STATE_STOPPED
         }
     }
+
+    var refetchIconDegree by remember { mutableFloatStateOf(0f) }
+
+    val rotationAnimation by animateFloatAsState(
+        targetValue = refetchIconDegree,
+        animationSpec = tween(durationMillis = 800),
+        label = ""
+    )
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -290,6 +304,25 @@ fun AlbumMenu(
                 onDismiss()
             } else {
                 showSelectArtistDialog = true
+            }
+        }
+        GridMenuItem(
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Sync,
+                    contentDescription = null,
+                    modifier = Modifier.graphicsLayer(rotationZ = rotationAnimation)
+                )
+            },
+            title = R.string.refetch
+        ) {
+            refetchIconDegree -= 360
+            scope.launch(Dispatchers.IO) {
+                YouTube.album(album.id).onSuccess {
+                    database.transaction {
+                        update(album.album, it)
+                    }
+                }
             }
         }
         GridMenuItem(
