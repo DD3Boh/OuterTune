@@ -120,6 +120,28 @@ fun PlayerSettings(
             .verticalScroll(rememberScrollState())
     ) {
         PreferenceGroupTitle(
+            title = "Interface"
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.persistent_queue)) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
+            checked = persistentQueue,
+            onCheckedChange = onPersistentQueueChange
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.swipe_to_dismiss_title)) },
+            description = stringResource(R.string.swipe_to_dismiss_description),
+            icon = { Icon(Icons.Rounded.PlaylistRemove, null) },
+            checked = swipeToDismiss,
+            onCheckedChange = onSwipeToDismissChange
+        )
+        // lyrics settings
+        PreferenceEntry(
+            title = { Text(stringResource(R.string.lyrics_settings_title)) },
+            icon = { Icon(Icons.Rounded.Lyrics, null) },
+            onClick = { navController.navigate("settings/player/lyrics") }
+        )
+        PreferenceGroupTitle(
             title = "Audio"
         )
         EnumListPreference(
@@ -148,35 +170,15 @@ fun PlayerSettings(
             onCheckedChange = onSkipSilenceChange
         )
         SwitchPreference(
-            title = { Text(stringResource(R.string.skip_silence)) },
+            title = { Text(stringResource(R.string.skip_on_error)) },
             icon = { Icon(Icons.Rounded.FastForward, null) },
             checked = skipOnErrorKey,
             onCheckedChange = onSkipOnErrorChange
         )
 
         PreferenceGroupTitle(
-            title = "Behaviour"
+            title = "Advanced"
         )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.persistent_queue)) },
-            icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
-            checked = persistentQueue,
-            onCheckedChange = onPersistentQueueChange
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.swipe_to_dismiss_title)) },
-            description = stringResource(R.string.swipe_to_dismiss_description),
-            icon = { Icon(Icons.Rounded.PlaylistRemove, null) },
-            checked = swipeToDismiss,
-            onCheckedChange = onSwipeToDismissChange
-        )
-        // lyrics settings
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.lyrics_settings_title)) },
-            icon = { Icon(Icons.Rounded.Lyrics, null) },
-            onClick = { navController.navigate("settings/player/lyrics") }
-        )
-
         SwitchPreference(
             title = { Text(stringResource(R.string.keep_alive_title)) },
             description = stringResource(R.string.keep_alive_description),

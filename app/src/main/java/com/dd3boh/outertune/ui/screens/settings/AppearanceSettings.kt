@@ -1,8 +1,6 @@
 package com.dd3boh.outertune.ui.screens.settings
 
 import android.os.Build
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,12 +23,10 @@ import androidx.compose.material.icons.rounded.FolderCopy
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material.icons.rounded.Tab
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -51,7 +47,6 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
 import com.dd3boh.outertune.constants.DefaultOpenTabNewKey
-import com.dd3boh.outertune.constants.DialogCornerRadius
 import com.dd3boh.outertune.constants.DynamicThemeKey
 import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.FlatSubfoldersKey
@@ -60,8 +55,10 @@ import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PureBlackKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.move
+import com.dd3boh.outertune.ui.component.ActionPromptDialog
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
+import com.dd3boh.outertune.ui.component.InfoLabel
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
@@ -196,138 +193,95 @@ fun AppearanceSettings(
             onCheckedChange = onNewInterfaceStyleChange
         )
 
-        AnimatedVisibility(visible = !newInterfaceStyle) {
-            PreferenceEntry(
-                title = { Text("Tab arrangement") },
-                icon = { Icon(Icons.Rounded.Reorder, null) },
-                onClick = {
-                    showTabArrangement = true
+        PreferenceEntry(
+            title = { Text("Tab arrangement") },
+            icon = { Icon(Icons.Rounded.Reorder, null) },
+            onClick = {
+                showTabArrangement = true
+            }
+        )
+
+        if (showTabArrangement)
+            ActionPromptDialog(
+                title = "Arrange tabs",
+                onDismiss = { showTabArrangement = false },
+                onConfirm = {
+                    var encoded = encodeTabString(mutableTabs)
+
+                    // reset defaultOpenTab if it got disabled
+                    if (!mutableTabs.contains(defaultOpenTab)) {
+                        onDefaultOpenTabChange(NavigationTab.HOME)
+                    }
+
+                    // home is required
+                    if (!encoded.contains('H')) {
+                        encoded += "H"
+                    }
+
+                    onEnabledTabsChange(encoded)
+                    showTabArrangement = false
+                },
+                onReset = {
+                    onEnabledTabsChange(DEFAULT_ENABLED_TABS)
+                    updateTabs()
+                },
+                onCancel = {
+                    showTabArrangement = false
                 }
-            )
-
-            if (showTabArrangement)
-                BasicAlertDialog(
-                    onDismissRequest = {
-                        showTabArrangement = false
-                    },
-                    content = {
-                        Column(
-                            modifier = Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.background,
-                                    RoundedCornerShape(DialogCornerRadius)
-                                )
-                                .padding(16.dp)
+            ) {
+                // tabs list
+                LazyColumn(
+                    state = reorderableState.listState,
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .border(
+                            2.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            RoundedCornerShape(ThumbnailCornerRadius)
+                        )
+                        .reorderable(reorderableState)
+                ) {
+                    itemsIndexed(
+                        items = mutableTabs,
+                        key = { _, item -> item.hashCode() }
+                    ) { index, tab ->
+                        ReorderableItem(
+                            reorderableState = reorderableState,
+                            key = tab.hashCode()
                         ) {
-                            // main content
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Arrange tabs",
-                                        style = MaterialTheme.typography.titleLarge,
-                                    )
-                                }
-                                // tabs list
-                                LazyColumn(
-                                    state = reorderableState.listState,
-                                    modifier = Modifier
-                                        .padding(vertical = 12.dp)
-                                        .border(
-                                            2.dp,
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                            RoundedCornerShape(ThumbnailCornerRadius)
-                                        )
-                                        .reorderable(reorderableState)
-                                ) {
-                                    itemsIndexed(
-                                        items = mutableTabs,
-                                        key = { _, item -> item.hashCode() }
-                                    ) { index, tab ->
-                                        ReorderableItem(
-                                            reorderableState = reorderableState,
-                                            key = tab.hashCode()
-                                        ) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier
-                                                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                                                    .fillMaxWidth()
-                                            ) {
-                                                Text(
-                                                    text = when (tab) {
-                                                        NavigationTab.HOME -> stringResource(R.string.home)
-                                                        NavigationTab.SONG -> stringResource(R.string.songs)
-                                                        NavigationTab.FOLDERS -> stringResource(R.string.folders)
-                                                        NavigationTab.ARTIST -> stringResource(R.string.artists)
-                                                        NavigationTab.ALBUM -> stringResource(R.string.albums)
-                                                        NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
-                                                        else -> { "--- Drag below here to disable ---" }
-                                                    }
-                                                )
-                                                Icon(
-                                                    imageVector = Icons.Rounded.DragHandle,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.detectReorder(reorderableState)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                                    .fillMaxWidth()
+                            ) {
                                 Text(
-                                    text = "The Home tab is required.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                    text = when (tab) {
+                                        NavigationTab.HOME -> stringResource(R.string.home)
+                                        NavigationTab.SONG -> stringResource(R.string.songs)
+                                        NavigationTab.FOLDERS -> stringResource(R.string.folders)
+                                        NavigationTab.ARTIST -> stringResource(R.string.artists)
+                                        NavigationTab.ALBUM -> stringResource(R.string.albums)
+                                        NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
+                                        else -> {
+                                            "--- Drag below here to disable ---"
+                                        }
+                                    }
                                 )
-                            }
-
-                            // bottom options
-                            Row {
-                                Row(modifier = Modifier.weight(1f)) {
-                                    TextButton(
-                                        onClick = {
-                                            onEnabledTabsChange(DEFAULT_ENABLED_TABS)
-                                            updateTabs()
-                                        },
-                                    ) {
-                                        Text(stringResource(R.string.reset))
-                                    }
-                                }
-
-                                TextButton(
-                                    onClick = {
-                                        var encoded = encodeTabString(mutableTabs)
-
-                                        // reset defaultOpenTab if it got disabled
-                                        if (!mutableTabs.contains(defaultOpenTab)) {
-                                            onDefaultOpenTabChange(NavigationTab.HOME)
-                                        }
-
-                                        // home is required
-                                        if (!encoded.contains('H')) {
-                                            encoded += "H"
-                                        }
-
-                                        onEnabledTabsChange(encoded)
-                                        showTabArrangement = false
-                                    }
-                                ) {
-                                    Text(stringResource(android.R.string.ok))
-                                }
-
-                                TextButton(
-                                    onClick = {
-                                        showTabArrangement = false
-                                    }
-                                ) {
-                                    Text(stringResource(android.R.string.cancel))
-                                }
+                                Icon(
+                                    imageVector = Icons.Rounded.DragHandle,
+                                    contentDescription = null,
+                                    modifier = Modifier.detectReorder(reorderableState)
+                                )
                             }
                         }
                     }
-                )
-        }
+                }
+
+                InfoLabel(text = "The Home tab is required.")
+            }
+
         if (newInterfaceStyle) {
             EnumListPreference(
                 title = { Text(stringResource(R.string.default_open_tab)) },
@@ -355,21 +309,23 @@ fun AppearanceSettings(
                         NavigationTab.ARTIST -> stringResource(R.string.artists)
                         NavigationTab.ALBUM -> stringResource(R.string.albums)
                         NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
-                        else -> { "" }
+                        else -> {
+                            ""
+                        }
                     }
                 }
             )
         }
-    }
 
-    // flatten subfolders
-    SwitchPreference(
-        title = { Text(stringResource(R.string.flat_subfolders_title)) },
-        description = stringResource(R.string.flat_subfolders_description),
-        icon = { Icon(Icons.Rounded.FolderCopy, null) },
-        checked = flatSubfolders,
-        onCheckedChange = onFlatSubfoldersChange
-    )
+        // flatten subfolders
+        SwitchPreference(
+            title = { Text(stringResource(R.string.flat_subfolders_title)) },
+            description = stringResource(R.string.flat_subfolders_description),
+            icon = { Icon(Icons.Rounded.FolderCopy, null) },
+            checked = flatSubfolders,
+            onCheckedChange = onFlatSubfoldersChange
+        )
+    }
 
     TopAppBar(
         title = { Text(stringResource(R.string.appearance)) },
