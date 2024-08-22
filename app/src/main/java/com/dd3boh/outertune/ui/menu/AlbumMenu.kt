@@ -147,7 +147,8 @@ fun AlbumMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {

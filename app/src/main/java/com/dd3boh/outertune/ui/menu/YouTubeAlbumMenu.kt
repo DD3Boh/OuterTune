@@ -123,7 +123,8 @@ fun YouTubeAlbumMenu(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
             album?.songs?.let { song ->
-                queueBoard.add(queueName, song.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+                queueBoard.add(queueName, song.map { it.toMediaMetadata() }, playerConnection,
+                    forceInsert = true, delta = false)
             }
             queueBoard.setCurrQueue(playerConnection)
         },

@@ -85,7 +85,8 @@ fun SelectionSongMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songSelection.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songSelection.map { it.toMediaMetadata() }, playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -296,7 +297,7 @@ fun SelectionMediaMetadataMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songSelection, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songSelection, playerConnection, forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -375,7 +376,7 @@ fun SelectionMediaMetadataMenu(
                 var i = 0
                 currentItems.forEach { cur ->
                     playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i)
-                    queueBoard.removeCurrentQueueSong(cur.firstPeriodIndex - i)
+                    queueBoard.removeCurrentQueueSong(cur.firstPeriodIndex - i, playerConnection.service)
                     i++
                 }
             }

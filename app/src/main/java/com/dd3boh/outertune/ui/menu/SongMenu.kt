@@ -121,7 +121,8 @@ fun SongMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, listOf(song.toMediaMetadata()), forceInsert = true, delta = false)
+            queueBoard.add(queueName, listOf(song.toMediaMetadata()), playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {

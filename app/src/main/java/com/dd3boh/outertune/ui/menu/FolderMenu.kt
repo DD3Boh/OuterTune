@@ -52,7 +52,8 @@ fun FolderMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, allFolderSongs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.add(queueName, allFolderSongs.map { it.toMediaMetadata() }, playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {

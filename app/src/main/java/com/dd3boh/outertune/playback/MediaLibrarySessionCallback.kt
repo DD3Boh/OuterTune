@@ -23,7 +23,7 @@ import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.toggleRepeatMode
-import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
+import com.dd3boh.outertune.extensions.toggleShuffleMode
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -69,7 +69,7 @@ class MediaLibrarySessionCallback @Inject constructor(
         when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
             MediaSessionConstants.ACTION_TOGGLE_LIBRARY -> toggleLibrary()
-            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> queueBoard.shuffleCurrent()
+            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> session.player.toggleShuffleMode()
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))

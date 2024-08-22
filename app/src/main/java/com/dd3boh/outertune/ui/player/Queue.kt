@@ -207,7 +207,12 @@ fun Queue(
                     return@rememberReorderableLazyListState
                 }
 
-                queueBoard.moveSong(fromIndex, toIndex, playerConnection.player.currentMediaItemIndex)
+                queueBoard.moveSong(
+                    fromIndex,
+                    toIndex,
+                    playerConnection.player.currentMediaItemIndex,
+                    playerConnection.service
+                )
                 playerConnection.player.moveMediaItem(fromIndex, toIndex)
             }
         )
@@ -242,7 +247,7 @@ fun Queue(
                 mutableQueues.move(from.index, to.index)
             },
             onDragEnd = { fromIndex, toIndex ->
-                queueBoard.move(fromIndex, toIndex)
+                queueBoard.move(fromIndex, toIndex, playerConnection.service)
                 coroutineScope.launch {
                     updateQueues()
                 }
@@ -364,7 +369,7 @@ fun Queue(
                                     ResizableIconButton(
                                         icon = Icons.Rounded.Close,
                                         onClick = {
-                                            val remainingQueues = queueBoard.deleteQueue(mq)
+                                            val remainingQueues = queueBoard.deleteQueue(mq, playerConnection.service)
                                             queueBoard.setCurrQueue(playerConnection)
                                             detachedHead = false
                                             updateQueues()

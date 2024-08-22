@@ -57,7 +57,7 @@ fun QueueMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songs, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songs, playerConnection, forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {

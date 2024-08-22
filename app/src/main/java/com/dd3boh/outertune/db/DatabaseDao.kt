@@ -964,17 +964,6 @@ interface DatabaseDao {
     }
 
     @Transaction
-    fun updateQueue(mq: MultiQueueObject) {
-        update(
-            QueueEntity(
-                id = mq.title,
-                shuffled = mq.shuffled,
-                queuePos = mq.queuePos
-            )
-        )
-    }
-
-    @Transaction
     @Query("UPDATE song_artist_map SET artistId = :newId WHERE artistId = :oldId")
     fun updateSongArtistMap(oldId: String, newId: String)
 
@@ -1014,6 +1003,9 @@ interface DatabaseDao {
 
     @Delete
     fun delete(event: Event)
+
+    @Delete
+    fun delete(mq: QueueEntity)
 
     @Transaction
     @Query("DELETE FROM song_artist_map WHERE songId = :songID")
@@ -1060,62 +1052,77 @@ interface DatabaseDao {
      * Queueboard
      */
 
-    @Query("DELETE FROM queue")
-    fun clearQueues()
-
     @Transaction
-    fun saveQueues(queues: List<MultiQueueObject>) {
-        clearQueues()
+    fun saveQueue(mq: MultiQueueObject) {
+        if (mq.queue.isEmpty() || mq.unShuffled.isEmpty()) {
+            return
+        }
 
-        queues.forEach { mq ->
-            // ensure all are alread in the database
-            mq.unShuffled.forEach {
-                insert(it)
-            }
+        insert(
+            QueueEntity(
+                id = mq.id,
+                title = mq.title,
+                shuffled = mq.shuffled,
+                queuePos = mq.queuePos,
+                index = mq.index
+            )
+        )
 
+        deleteAllQueueSongs(mq.id)
+        // insert songs
+        mq.unShuffled.forEach {
+            insert(it)
             insert(
-                QueueEntity(
-                    id = mq.title,
-                    shuffled = mq.shuffled,
-                    queuePos = mq.queuePos
+                QueueSongMap(
+                    queueId = mq.id,
+                    songId = it.id,
+                    shuffled = false
                 )
             )
+        }
 
-            // insert songs
-            mq.unShuffled.forEach {
-                insert(
-                    QueueSongMap(
-                        queueId = mq.title,
-                        songId = it.id,
-                        shuffled = false
-                    )
+        mq.queue.forEach {
+            insert(
+                QueueSongMap(
+                    queueId = mq.id,
+                    songId = it.id,
+                    shuffled = true
                 )
-            }
-
-            mq.queue.forEach {
-                insert(
-                    QueueSongMap(
-                        queueId = mq.title,
-                        songId = it.id,
-                        shuffled = true
-                    )
-                )
-            }
+            )
         }
     }
 
-    @Query("SELECT * from queue")
+    @Transaction
+    fun updateQueue(mq: MultiQueueObject) {
+        update(
+            QueueEntity(
+                id = mq.id,
+                title = mq.title,
+                shuffled = mq.shuffled,
+                queuePos = mq.queuePos,
+                index = mq.index,
+                playlistId = mq.playlistId
+            )
+        )
+    }
+
+    @Transaction
+    fun updateAllQueues(mqs: List<MultiQueueObject>) {
+        mqs.forEach { updateQueue(it) }
+    }
+
+    @Query("SELECT * from queue ORDER BY `index`")
     fun getAllQueues(): Flow<List<QueueEntity>>
 
     @Transaction
     @RewriteQueriesToDropUnusedColumns
-    @Query("SELECT * from queue_song_map JOIN song ON queue_song_map.songId = song.id WHERE queueId = :queue AND shuffled = 1")
-    fun getQueueSongs(queue: String): Flow<List<Song>>
+    @Query("SELECT * from queue_song_map JOIN song ON queue_song_map.songId = song.id WHERE queueId = :queueId AND shuffled = 1")
+    fun getQueueSongs(queueId: Long): Flow<List<Song>>
 
     @Transaction
     @RewriteQueriesToDropUnusedColumns
-    @Query("SELECT * from queue_song_map JOIN song ON queue_song_map.songId = song.id WHERE queueId = :queue AND shuffled = 0")
-    fun getQueueSongsUnshuffled(queue: String): Flow<List<Song>>
+    @Query("SELECT * from queue_song_map JOIN song ON queue_song_map.songId = song.id WHERE queueId = :queueId AND shuffled = 0")
+    fun getQueueSongsUnshuffled(queueId: Long): Flow<List<Song>>
 
     fun readQueue(): List<MultiQueueObject> {
         val resultQueues = ArrayList<MultiQueueObject>()
@@ -1127,15 +1134,57 @@ interface DatabaseDao {
 
             resultQueues.add(
                 MultiQueueObject(
-                    title = queue.id,
+                    id = queue.id,
+                    title = queue.title,
                     queue = shuffledSongs.map { it.toMediaMetadata() }.toMutableList(),
                     unShuffled = unshuffledSongs.map { it.toMediaMetadata() }.toMutableList(),
                     shuffled = queue.shuffled,
-                    queuePos = queue.queuePos
+                    queuePos = queue.queuePos,
+                    index = queue.index
                 )
             )
         }
 
         return resultQueues
+    }
+
+    @Query("DELETE FROM queue")
+    fun deleteAllQueues()
+
+    @Query("DELETE FROM queue_song_map WHERE queueId = :id")
+    fun deleteAllQueueSongs(id: Long)
+
+    @Query("DELETE FROM queue WHERE id = :id")
+    fun deleteQueue(id: Long)
+
+    /**
+     * WARNING: This removes all queue data and re-adds the queue. Did you mean to use updateQueue()?
+     */
+    @Transaction
+    fun rewriteQueue(mq: MultiQueueObject) {
+        delete(
+            QueueEntity(
+                id = mq.id,
+                title = mq.title,
+                shuffled = mq.shuffled,
+                queuePos = mq.queuePos,
+                index = mq.index,
+                playlistId = mq.playlistId
+            )
+        )
+
+        saveQueue(mq)
+    }
+
+    /**
+     * WARNING: This removes ALL queues and their data, and re-adds them. Did you mean to use rewriteQueue()?
+     */
+    @Transaction
+    fun rewriteAllQueues(queues: List<MultiQueueObject>) {
+        deleteAllQueues()
+
+        queues.forEach { mq ->
+            saveQueue(mq)
+        }
     }
 }

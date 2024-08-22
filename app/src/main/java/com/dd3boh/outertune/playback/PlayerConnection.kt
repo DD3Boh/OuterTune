@@ -15,9 +15,7 @@ import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
 import com.dd3boh.outertune.extensions.metadata
-import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.QueueBoard
-import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.playback.MusicService.MusicBinder
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.utils.reportException
@@ -150,33 +148,8 @@ class PlayerConnection(
      * Shuffles the queue
      */
     fun triggerShuffle() {
-        val oldIndex = player.currentMediaItemIndex
-        queueBoard.setCurrQueuePosIndex(oldIndex, service)
-
-        // shuffle and update player playlist
-        if (!isShuffleEnabled.value) {
-            queueBoard.shuffleCurrent()
-            queueBoard.getCurrentQueue()?.let { mq ->
-                player.moveMediaItem(oldIndex, 0)
-                val newItems = mq.getCurrentQueueShuffled()
-                player.replaceMediaItems(1, Int.MAX_VALUE,
-                    newItems.subList(1, newItems.size).map { it.toMediaItem() })
-            }
-        } else {
-            val unshuffledPos = queueBoard.unShuffleCurrent()
-            queueBoard.getCurrentQueue()?.let { mq ->
-                player.moveMediaItem(oldIndex, unshuffledPos)
-                val newItems = mq.getCurrentQueueShuffled()
-                // replace items up to current playing, then replace items after current
-                player.replaceMediaItems(0, unshuffledPos,
-                    newItems.subList(0, unshuffledPos).map { it.toMediaItem() })
-                player.replaceMediaItems(unshuffledPos + 1, Int.MAX_VALUE,
-                    newItems.subList(unshuffledPos + 1, newItems.size).map { it.toMediaItem() })
-            }
-        }
-
+        service.triggerShuffle()
         updateCanSkipPreviousAndNext()
-        service.updateNotification()
     }
 
     override fun onRepeatModeChanged(mode: Int) {

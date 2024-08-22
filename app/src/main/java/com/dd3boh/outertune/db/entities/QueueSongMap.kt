@@ -23,7 +23,7 @@ import androidx.room.PrimaryKey
 )
 data class QueueSongMap(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    @ColumnInfo(index = true) val queueId: String,
+    @ColumnInfo(index = true) val queueId: Long,
     @ColumnInfo(index = true) val songId: String,
     /**
      * yes, I am aware having separate entities for shuffled and unshuffled is not a good idea,

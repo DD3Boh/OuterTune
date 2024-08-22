@@ -94,7 +94,8 @@ fun YouTubePlaylistMenu(
                         YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
                     }
                 }.let { songs ->
-                    queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+                    queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, playerConnection,
+                        forceInsert = true, delta = false)
                     queueBoard.setCurrQueue(playerConnection)
                 }
             }

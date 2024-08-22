@@ -91,7 +91,7 @@ class MusicDatabase(
         SortedSongAlbumMap::class,
         PlaylistSongMapPreview::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
@@ -119,6 +119,7 @@ abstract class InternalDatabase : RoomDatabase() {
             MusicDatabase(
                 delegate = Room.databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
                     .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_14_15)
                     .build()
             )
     }
@@ -295,6 +296,20 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 )
             )
         }
+    }
+}
+/**
+ * Queue schema update
+ */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE queue_song_map")
+        db.execSQL("DROP TABLE queue")
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `queue` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL DEFAULT '', `shuffled` INTEGER NOT NULL, `queuePos` INTEGER NOT NULL, `index` INTEGER NOT NULL DEFAULT 0, `playlistId` TEXT, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `queue_song_map` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `queueId` INTEGER NOT NULL, `songId` TEXT NOT NULL, `shuffled` INTEGER NOT NULL, FOREIGN KEY(`queueId`) REFERENCES `queue`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`songId`) REFERENCES `song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_queue_song_map_queueId` ON `queue_song_map` (`queueId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_queue_song_map_songId` ON `queue_song_map` (`songId`)")
     }
 }
 

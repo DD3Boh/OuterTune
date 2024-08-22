@@ -85,7 +85,6 @@ import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
-import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.utils.CoilBitmapLoader
@@ -104,7 +103,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -129,7 +127,6 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.math.min
 import kotlin.math.pow
-import kotlin.time.Duration.Companion.seconds
 
 const val MAX_CONSECUTIVE_ERR = 3
 
@@ -183,7 +180,6 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
-    var saveQueueCD = false
 
     override fun onCreate() {
         super.onCreate()
@@ -282,7 +278,7 @@ class MusicService : MediaLibraryService(),
                             (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
                             isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
                             player.pause()
-                            queueBoard.shuffleCurrent(false) // reshuffle queue
+                            queueBoard.shuffleCurrent(this@MusicService, false) // reshuffle queue
                             queueBoard.setCurrQueue(this@MusicService)
                             player.play()
                         }
@@ -292,13 +288,6 @@ class MusicService : MediaLibraryService(),
 
                         queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex, this@MusicService)
                         queueTitle = queueBoard.getCurrentQueue()?.title
-                        if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
-                            saveQueueToDisk() // save queue, but rate limited
-                            scope.launch {
-                                delay(30.seconds)
-                                saveQueueCD = false
-                            }
-                        }
                     }
                 })
                 sleepTimer = SleepTimer(scope, this)
@@ -395,19 +384,9 @@ class MusicService : MediaLibraryService(),
             if (queueBoard.getAllQueues().isNotEmpty()) {
                 val queue = queueBoard.getCurrentQueue()
                 if (queue != null) {
+                    isShuffleEnabled.value = queue.shuffled
                     CoroutineScope(Dispatchers.Main).launch {
-                        delay(1000) // this may finish before player service is ready
-
-                        playQueue(
-                            queue = ListQueue(
-                                title = queue.title,
-                                items = queueBoard.getCurrentQueue()?.getCurrentQueueShuffled() ?: ArrayList(),
-                                startIndex = queue.queuePos,
-                                position = 0,
-                                playlistId = null
-                            ),
-                            playWhenReady = false
-                        )
+                        queueBoard.setCurrQueue(this@MusicService)
                     }
                 }
             }
@@ -527,12 +506,11 @@ class MusicService : MediaLibraryService(),
             queueBoard.add(
                 queueTitle?: "Queue",
                 initialStatus.items,
-                queue = queue,
+                player = this@MusicService,
                 startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0,
                 replace = replace
             )
             queueBoard.setCurrQueue(this@MusicService)
-            saveQueueToDisk()
 
             player.prepare()
             player.playWhenReady = playWhenReady
@@ -560,7 +538,13 @@ class MusicService : MediaLibraryService(),
 
     fun addToQueue(items: List<MediaItem>) {
         val currentQueue = queueBoard.getCurrentQueue()
-        queueBoard.add(currentQueue?.title?: "Queue", items.map { it.metadata }, forceInsert = true, delta = false)
+        queueBoard.add(
+            currentQueue?.title?: "Queue",
+            items.map { it.metadata },
+            player = this,
+            forceInsert = true,
+            delta = false
+        )
 
         val pos = player.currentPosition
         val newQueuePos = queueBoard.setCurrQueue(this@MusicService, autoSeek = false)
@@ -763,6 +747,42 @@ class MusicService : MediaLibraryService(),
         }
     }
 
+    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        if (player.shuffleModeEnabled) {
+            triggerShuffle()
+        player.shuffleModeEnabled = false
+        }
+    }
+
+    /**
+     * Shuffles the queue
+     */
+    fun triggerShuffle() {
+        val oldIndex = player.currentMediaItemIndex
+        queueBoard.setCurrQueuePosIndex(oldIndex, this)
+        val currentQueue = queueBoard.getCurrentQueue() ?: return
+
+        // shuffle and update player playlist
+        if (!currentQueue.shuffled) {
+            queueBoard.shuffleCurrent(this)
+            player.moveMediaItem(oldIndex, 0)
+            val newItems = currentQueue.getCurrentQueueShuffled()
+            player.replaceMediaItems(1, Int.MAX_VALUE,
+                newItems.subList(1, newItems.size).map { it.toMediaItem() })
+        } else {
+            val unshuffledPos = queueBoard.unShuffleCurrent(this)
+            player.moveMediaItem(oldIndex, unshuffledPos)
+            val newItems = currentQueue.getCurrentQueueShuffled()
+            // replace items up to current playing, then replace items after current
+            player.replaceMediaItems(0, unshuffledPos,
+                newItems.subList(0, unshuffledPos).map { it.toMediaItem() })
+            player.replaceMediaItems(unshuffledPos + 1, Int.MAX_VALUE,
+                newItems.subList(unshuffledPos + 1, newItems.size).map { it.toMediaItem() })
+        }
+
+        updateNotification()
+    }
+
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
         var minPlaybackDur = (dataStore.get(minPlaybackDurKey, 30) / 100)
@@ -793,10 +813,11 @@ class MusicService : MediaLibraryService(),
         }
     }
 
+    @Deprecated("This nukes the entire db and adds everything again. Saving queues is to be done inside QueueBoard, incrementally.")
     private fun saveQueueToDisk() {
         // TODO: get rid of this. Yeah I'd want to update individual queues instead of nuking the entire db and writing everything but ehhhhh that's for later
         CoroutineScope(Dispatchers.IO).launch {
-            database.saveQueues(queueBoard.getAllQueues())
+            database.rewriteAllQueues(queueBoard.getAllQueues())
         }
     }
 
