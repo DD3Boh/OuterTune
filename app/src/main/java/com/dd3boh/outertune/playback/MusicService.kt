@@ -131,7 +131,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
-const val MAX_CONSECUTIVE_ERR = 2
+const val MAX_CONSECUTIVE_ERR = 3
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @AndroidEntryPoint
@@ -249,7 +249,7 @@ class MusicService : MediaLibraryService(),
                          * too many errors come up too quickly. Pause to show player "stopped" state
                          */
                         val nextWindowIndex = player.nextMediaItemIndex
-                        if (consecutivePlaybackErr < MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
+                        if (consecutivePlaybackErr <= MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
                             player.seekTo(nextWindowIndex, C.TIME_UNSET)
                             player.prepare()
                             player.play()
