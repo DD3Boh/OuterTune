@@ -162,6 +162,7 @@ val ScanPathsKey = stringPreferencesKey("scanPaths")
 val ExcludedScanPathsKey = stringPreferencesKey("excludedScanPaths")
 
 val DevSettingsKey = booleanPreferencesKey("devSettings")
+val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
 
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",

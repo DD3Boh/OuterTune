@@ -66,6 +66,7 @@ import com.dd3boh.outertune.constants.RepeatModeKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
+import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.FormatEntity
@@ -131,7 +132,6 @@ import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
 const val MAX_CONSECUTIVE_ERR = 2
-const val MIN_PLAYBACK_THRESHOLD = 0.3 // 0 <= MIN_PLAYBACK_THRESHOLD <= 1
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @AndroidEntryPoint
@@ -765,10 +765,17 @@ class MusicService : MediaLibraryService(),
 
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
+        var minPlaybackDur = (dataStore.get(minPlaybackDurKey, 30) / 100)
+        // ensure within bounds. Ehhh 99 is good enough to avoid any rounding errors
+        if (minPlaybackDur >= 100) {
+            minPlaybackDur = 99
+        } else if (minPlaybackDur < 1) {
+            minPlaybackDur = 1
+        }
 
 //        println("Playback ratio: ${playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1)} Min threshold: $MIN_PLAYBACK_THRESHOLD")
-        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD &&
-            !dataStore.get(PauseListenHistoryKey, false)) {
+        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= minPlaybackDur
+            && !dataStore.get(PauseListenHistoryKey, false)) {
             database.query {
                 incrementPlayCount(mediaItem.mediaId)
                 incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)

@@ -7,6 +7,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,17 +22,27 @@ import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.NoCell
 import androidx.compose.material.icons.rounded.PlaylistRemove
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
@@ -42,7 +55,9 @@ import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.SwipeToDismissKey
+import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.playback.KeepAlive
+import com.dd3boh.outertune.ui.component.ActionPromptDialog
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.PreferenceEntry
@@ -67,7 +82,15 @@ fun PlayerSettings(
     val (skipSilence, onSkipSilenceChange) = rememberPreference(key = SkipSilenceKey, defaultValue = false)
     val (skipOnErrorKey, onSkipOnErrorChange) = rememberPreference(key = SkipOnErrorKey, defaultValue = true)
     val (audioNormalization, onAudioNormalizationChange) = rememberPreference(key = AudioNormalizationKey, defaultValue = true)
+    val (minPlaybackDur, onMinPlaybackDurChange) = rememberPreference(minPlaybackDurKey, defaultValue = 30)
     val (keepAlive, onKeepAliveChange) = rememberPreference(key = KeepAliveKey, defaultValue = false)
+
+    var showMinPlaybackDur by remember {
+        mutableStateOf(false)
+    }
+    var tempminPlaybackDur by remember {
+        mutableIntStateOf(minPlaybackDur)
+    }
 
     fun toggleKeepAlive(newValue: Boolean) {
         // disable and request if disabled
@@ -114,6 +137,43 @@ fun PlayerSettings(
         }
     }
 
+
+    if (showMinPlaybackDur) {
+        ActionPromptDialog(
+            title = "Minimum playback duration",
+            onDismiss = { showMinPlaybackDur = false },
+            onConfirm = {
+                showMinPlaybackDur = false
+                onMinPlaybackDurChange(tempminPlaybackDur)
+            },
+            onCancel = {
+                showMinPlaybackDur = false
+                tempminPlaybackDur = minPlaybackDur
+            }
+        ) {
+            Text(
+                text = "The minimum amount of a song that must be played before it is considered \"played\"",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "${tempminPlaybackDur}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                Slider(
+                    value = tempminPlaybackDur.toFloat(),
+                    onValueChange = { tempminPlaybackDur = it.toInt() },
+                    valueRange = 0f..100f
+                )
+            }
+        }
+    }
+
     Column(
         Modifier
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
@@ -141,6 +201,12 @@ fun PlayerSettings(
             icon = { Icon(Icons.Rounded.Lyrics, null) },
             onClick = { navController.navigate("settings/player/lyrics") }
         )
+        PreferenceEntry(
+            title = { Text("Minimum playback duration") },
+            icon = { Icon(Icons.Rounded.Sync, null) },
+            onClick = { showMinPlaybackDur = true }
+        )
+
         PreferenceGroupTitle(
             title = "Audio"
         )
