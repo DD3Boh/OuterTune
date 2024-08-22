@@ -428,7 +428,7 @@ fun SelectionMediaMetadataMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songSelection.forEach { song ->
+                songSelection.filterNot { it.isLocal }.forEach { song ->
                     val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
                         .setCustomCacheKey(song.id)
                         .setData(song.title.toByteArray())

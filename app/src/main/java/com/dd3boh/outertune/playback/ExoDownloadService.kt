@@ -31,15 +31,23 @@ class ExoDownloadService : DownloadService(
     override fun getScheduler(): Scheduler = PlatformScheduler(this, JOB_ID)
 
     override fun getForegroundNotification(downloads: MutableList<Download>, notMetRequirements: Int): Notification =
-        downloadUtil.downloadNotificationHelper.buildProgressNotification(
-            this,
-            R.drawable.download,
-            null,
-            if (downloads.size == 1) Util.fromUtf8Bytes(downloads[0].request.data)
-            else resources.getQuantityString(R.plurals.n_song, downloads.size, downloads.size),
-            downloads,
-            notMetRequirements
-        )
+        if (downloads.size == 0) {
+            downloadUtil.downloadNotificationHelper.buildDownloadCompletedNotification(this,
+                R.drawable.download,
+                null,
+                null
+            )
+        } else {
+            downloadUtil.downloadNotificationHelper.buildProgressNotification(
+                this,
+                R.drawable.download,
+                null,
+                if (downloads.size == 1) Util.fromUtf8Bytes(downloads[0].request.data)
+                else resources.getQuantityString(R.plurals.n_song, downloads.size, downloads.size),
+                downloads,
+                notMetRequirements
+            )
+        }
 
     /**
      * This helper will outlive the lifespan of a single instance of [ExoDownloadService]

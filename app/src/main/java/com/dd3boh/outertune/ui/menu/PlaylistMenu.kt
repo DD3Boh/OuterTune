@@ -354,7 +354,7 @@ fun PlaylistMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songs.forEach { song ->
+                songs.filterNot { it.song.isLocal }.forEach { song ->
                     val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
                         .setCustomCacheKey(song.id)
                         .setData(song.song.title.toByteArray())
