@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
@@ -74,8 +75,8 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
 import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
-import java.time.LocalDateTime
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -106,6 +107,8 @@ fun LibraryPlaylistsScreen(
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
     var showAddPlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -217,6 +220,16 @@ fun LibraryPlaylistsScreen(
             } else {
                 Spacer(Modifier.size(16.dp))
             }
+        }
+    }
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            when (viewType) {
+                LibraryViewType.LIST -> lazyListState.animateScrollToItem(0)
+                LibraryViewType.GRID -> lazyGridState.animateScrollToItem(0)
+            }
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
         }
     }
 

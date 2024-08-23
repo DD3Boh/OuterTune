@@ -47,6 +47,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
@@ -99,6 +100,8 @@ fun LibraryFoldersScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
     val lazyListState = rememberLazyListState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
     // destroy old structure when pref changes
     flatSubfolders.let {
@@ -129,6 +132,13 @@ fun LibraryFoldersScreen(
 
     var selection by remember {
         mutableStateOf(false)
+    }
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            lazyListState.animateScrollToItem(0)
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
     }
 
     LaunchedEffect(sortType, sortDescending, currDir) {
