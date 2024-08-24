@@ -2,7 +2,7 @@
 
 <img src="./assets/outertune.webp" height="72">
 
-A Material 3 YouTube Music client for Android
+A Material 3 YouTube Music client & local music player for Android
 
 > This is a fork of [InnerTune](https://github.com/z-huang/InnerTune)
 
@@ -15,20 +15,17 @@ A Material 3 YouTube Music client for Android
 ## Features
 
 - Play, search, and save all your songs, videos, albums, and playlists from YouTube Music
-- Background playback & AD free
-- Advanced account sync
+    - Song downloading for offline playback
+    - Background playback & AD free
+- New integrated library screen design & Multiple queues
+- Advanced account synchronization
     - YouTube Music account login support
-    - Fully fledged syncing of songs, playlists and albums — both to and from your account
-- Library management
-    - Download songs for offline playback
-    - Personalized quick picks
-- Local media playback
+    - Fully fledged syncing of songs, subscriptions, playlists and albums — both to and from your account
+- Local audio file playback
     - Play local and Youtube Music songs at the same time
     - We don't use MediaStore's broken metadata extractor!
 - Synchronized lyrics (LRC format, also includes multi-line support)
 - Audio normalization, tempo/pitch adjustment, and various other audio effects
-- Dynamic Material theme & localization
-    - New integrated library screen design
 - Android Auto support
 
 ## Screenshots
