@@ -33,6 +33,7 @@ val SkipOnErrorKey = booleanPreferencesKey("skipOnError")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
 val YtmSyncKey = booleanPreferencesKey("ytmSync")
 val KeepAliveKey = booleanPreferencesKey("keepAlive")
+val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 

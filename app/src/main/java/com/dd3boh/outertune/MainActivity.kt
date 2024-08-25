@@ -127,6 +127,7 @@ import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
 import com.dd3boh.outertune.constants.SearchSource
 import com.dd3boh.outertune.constants.SearchSourceKey
+import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.extensions.toEnum
@@ -265,7 +266,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (playerConnection?.isPlaying?.value == true) {
+        if (dataStore.get(StopMusicOnTaskClearKey, false) && playerConnection?.isPlaying?.value == true
+            && isFinishing) {
             stopService(Intent(this, MusicService::class.java))
             unbindService(serviceConnection)
             playerConnection = null

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.ClearAll
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Lyrics
@@ -53,6 +54,7 @@ import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
+import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.playback.KeepAlive
 import com.dd3boh.outertune.ui.component.ActionPromptDialog
@@ -79,6 +81,7 @@ fun PlayerSettings(
     val (skipSilence, onSkipSilenceChange) = rememberPreference(key = SkipSilenceKey, defaultValue = false)
     val (skipOnErrorKey, onSkipOnErrorChange) = rememberPreference(key = SkipOnErrorKey, defaultValue = true)
     val (audioNormalization, onAudioNormalizationChange) = rememberPreference(key = AudioNormalizationKey, defaultValue = true)
+    val (stopMusicOnTaskClear, onStopMusicOnTaskClearChange) = rememberPreference(key = StopMusicOnTaskClearKey, defaultValue = false)
     val (minPlaybackDur, onMinPlaybackDurChange) = rememberPreference(minPlaybackDurKey, defaultValue = 30)
     val (keepAlive, onKeepAliveChange) = rememberPreference(key = KeepAliveKey, defaultValue = false)
 
@@ -234,6 +237,12 @@ fun PlayerSettings(
 
         PreferenceGroupTitle(
             title = "Advanced"
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.stop_music_on_task_clear)) },
+            icon = { Icon(Icons.Rounded.ClearAll, null) },
+            checked = stopMusicOnTaskClear,
+            onCheckedChange = onStopMusicOnTaskClearChange
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.keep_alive_title)) },
