@@ -14,9 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
-import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.models.MultiQueueObject
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
@@ -24,19 +24,18 @@ import com.dd3boh.outertune.ui.component.QueueListItem
 
 @Composable
 fun QueueMenu(
+    mq: MultiQueueObject?,
     onDismiss: () -> Unit,
     refreshUi: () -> Unit,
 ) {
-    val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
 
-    val currQueue = queueBoard.getCurrentQueue()
-    if (currQueue == null) {
+    if (mq == null) {
         onDismiss()
         refreshUi()
         return
     }
-    val songs = currQueue.getCurrentQueueShuffled()
+    val songs = mq.getCurrentQueueShuffled()
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -68,7 +67,7 @@ fun QueueMenu(
     )
 
     // queue item
-    QueueListItem(queue = currQueue)
+    QueueListItem(queue = mq)
 
     HorizontalDivider()
 

@@ -188,9 +188,7 @@ fun SelectionSongMenu(
             icon = R.drawable.queue_music,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
-            clearAction()
         }
 
         GridMenuItem(
@@ -414,9 +412,7 @@ fun SelectionMediaMetadataMenu(
             icon = R.drawable.queue_music,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
-            clearAction()
         }
 
         GridMenuItem(

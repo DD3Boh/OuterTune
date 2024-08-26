@@ -366,6 +366,7 @@ fun Queue(
                                     onLongClick = {
                                         menuState.show {
                                             QueueMenu(
+                                                mq = mq,
                                                 onDismiss = menuState::dismiss,
                                                 refreshUi = { updateQueues() }
                                             )
