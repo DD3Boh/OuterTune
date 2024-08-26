@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.utils
 
+import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.ui.screens.settings.NavigationTab
 
 fun reportException(throwable: Throwable) {
@@ -47,4 +48,24 @@ fun encodeTabString(list: List<NavigationTab>): String {
     }
 
     return encoded
+}
+
+/**
+ * Find the matching string, if not found the closest super string
+ */
+fun closestMatch(query: String, stringList: List<Artist>): Artist? {
+    // Check for exact match first
+
+    val exactMatch = stringList.find { query.lowercase() == it.artist.name.lowercase() }
+    if (exactMatch != null) {
+        return exactMatch
+    }
+
+    // Check for query as substring in any of the strings
+    val substringMatches = stringList.filter { it.artist.name.contains(query) }
+    if (substringMatches.isNotEmpty()) {
+        return substringMatches.minByOrNull { it.artist.name.length }
+    }
+
+    return null
 }

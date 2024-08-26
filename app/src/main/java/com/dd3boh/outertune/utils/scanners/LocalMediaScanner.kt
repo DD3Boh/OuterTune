@@ -16,6 +16,7 @@ import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import com.dd3boh.outertune.ui.utils.SYNC_SCANNER
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.scannerSession
+import com.dd3boh.outertune.utils.closestMatch
 import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -288,7 +289,8 @@ class LocalMediaScanner {
                     // update artists
                     var artistPos = 0
                     song.artists.forEach {
-                        val dbArtist = database.searchArtists(it.name).firstOrNull()?.firstOrNull()
+                        val dbQuery = database.searchArtists(it.name).firstOrNull()?.sortedBy { item -> item.artist.name.length }
+                        val dbArtist = dbQuery?.let { item -> closestMatch(it.name, item) }
 
                         database.transaction {
                             if (dbArtist == null) {
