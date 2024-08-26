@@ -203,8 +203,6 @@ fun HomeScreen(
                                             val playlistDb = recentPlaylistsDb
                                                 ?.firstOrNull { it.playlist.browseId == item.id }
 
-                                            println(recentPlaylistsDb)
-
                                             if (playlistDb != null && playlistDb.songCount != 0)
                                                 navController.navigate("local_playlist/${playlistDb.id}")
                                             else

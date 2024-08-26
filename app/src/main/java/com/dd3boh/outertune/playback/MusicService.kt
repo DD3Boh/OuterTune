@@ -652,6 +652,9 @@ class MusicService : MediaLibraryService(),
                 val songPath = runBlocking(Dispatchers.IO) {
                     database.song(mediaId).firstOrNull()?.song?.localPath
                 }
+                if (songPath == null) {
+                    throw PlaybackException(getString(R.string.file_size), Throwable(), PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND)
+                }
 
                 return@Factory dataSpec.withUri(Uri.fromFile(File(songPath)))
             }

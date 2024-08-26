@@ -301,6 +301,7 @@ fun AppearanceSettings(
                 icon = { Icon(Icons.Rounded.Tab, null) },
                 selectedValue = defaultOpenTab,
                 onValueSelected = onDefaultOpenTabChange,
+                values = NavigationTab.entries.filter { it != NavigationTab.NULL },
                 valueText = {
                     when (it) {
                         NavigationTab.HOME -> stringResource(R.string.home)
@@ -309,9 +310,7 @@ fun AppearanceSettings(
                         NavigationTab.ARTIST -> stringResource(R.string.artists)
                         NavigationTab.ALBUM -> stringResource(R.string.albums)
                         NavigationTab.PLAYLIST -> stringResource(R.string.playlists)
-                        else -> {
-                            ""
-                        }
+                        else -> ""
                     }
                 }
             )

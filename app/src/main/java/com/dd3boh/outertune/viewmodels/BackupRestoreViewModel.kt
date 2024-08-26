@@ -26,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import javax.inject.Inject
 import kotlin.system.exitProcess
@@ -38,6 +39,7 @@ class BackupRestoreViewModel @Inject constructor(
         runCatching {
             context.applicationContext.contentResolver.openOutputStream(uri)?.use {
                 it.buffered().zipOutputStream().use { outputStream ->
+                    outputStream.setLevel(Deflater.BEST_COMPRESSION)
                     (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered().use { inputStream ->
                         outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
                         inputStream.copyTo(outputStream)

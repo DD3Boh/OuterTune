@@ -193,6 +193,7 @@
     </plurals>
     <string name="error_no_stream">No stream available</string>
     <string name="error_no_internet">No network connection</string>
+    <string name="error_file_not_found">File not found</string>
     <string name="error_timeout">Timeout</string>
     <string name="error_unknown">Unknown error</string>
 
