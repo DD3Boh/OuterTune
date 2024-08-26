@@ -251,8 +251,6 @@
     <string name="audio_quality_high">High</string>
     <string name="audio_quality_low">Low</string>
     <string name="persistent_queue">Persistent queue</string>
-    <string name="swipe_to_dismiss_title">Swipe to remove songs in queue</string>
-    <string name="swipe_to_dismiss_description">Disable to prevent unwanted deletions when scrolling</string>
     <string name="skip_silence">Skip silence</string>
     <string name="skip_on_error">Auto-skip broken songs</string>
     <string name="audio_normalization">Audio normalization</string>

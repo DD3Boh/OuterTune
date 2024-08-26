@@ -33,8 +33,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckBox
-import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
@@ -94,7 +92,6 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.LockQueueKey
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
-import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.togglePlayPause
@@ -130,7 +127,6 @@ fun Queue(
     modifier: Modifier = Modifier,
     onBackgroundColor: Color = Color.Unspecified,
 ) {
-    val (swipeToDismiss) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
     var lockQueue by rememberPreference(LockQueueKey, defaultValue = false)
 
     val menuState = LocalMenuState.current
@@ -539,9 +535,6 @@ fun Queue(
                                     totalDistance
                                 },
                                 confirmValueChange = { dismissValue ->
-                                    if (!swipeToDismiss) {
-                                        return@rememberSwipeToDismissBoxState false
-                                    }
                                     when (dismissValue) {
                                         SwipeToDismissBoxValue.StartToEnd -> {
                                             playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
@@ -560,15 +553,38 @@ fun Queue(
                                 }
                             )
                             val content = @Composable {
-                                    Row(
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        // selection checkbox. Standard multiselect doesn't work in queue...
-                                        if (selection) {
+                                MediaMetadataListItem(
+                                    mediaMetadata = window.mediaItem.metadata!!,
+                                    isActive = index == currentWindowIndex,
+                                    isPlaying = isPlaying,
+                                    trailingContent = {
+                                        if (!lockQueue) {
                                             IconButton(
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterVertically),
-                                                onClick = {
+                                                onClick = { },
+                                                modifier = Modifier.detectReorder(reorderableState)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.DragHandle,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                    },
+                                    isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (!selection) {
+                                                    coroutineScope.launch(Dispatchers.Main) {
+                                                        if (index == currentWindowIndex) {
+                                                            playerConnection.player.togglePlayPause()
+                                                        } else {
+                                                            playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                            playerConnection.player.playWhenReady = true
+                                                        }
+                                                    }
+                                                } else {
                                                     if (window.mediaItem.metadata!! in selectedSongs) {
                                                         selectedSongs.remove(window.mediaItem.metadata!!)
                                                         selectedItems.remove(currentItem)
@@ -577,73 +593,21 @@ fun Queue(
                                                         selectedItems.add(currentItem)
                                                     }
                                                 }
-                                            ) {
-                                                Icon(
-                                                    if (window.mediaItem.metadata!! in selectedSongs) Icons.Rounded.CheckBox
-                                                    else Icons.Rounded.CheckBoxOutlineBlank,
-                                                    contentDescription = null,
-                                                    tint = LocalContentColor.current,
-                                                )
-                                            }
-                                        }
-
-                                        MediaMetadataListItem(
-                                            mediaMetadata = window.mediaItem.metadata!!,
-                                            isActive = index == currentWindowIndex,
-                                            isPlaying = isPlaying,
-                                            trailingContent = {
-                                                if (!lockQueue) {
-                                                    IconButton(
-                                                        onClick = { },
-                                                        modifier = Modifier
-                                                            .detectReorder(reorderableState)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Rounded.DragHandle,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                }
                                             },
-                                            isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .combinedClickable(
-                                                    onClick = {
-                                                        if (!selection) {
-                                                            coroutineScope.launch(Dispatchers.Main) {
-                                                                if (index == currentWindowIndex) {
-                                                                    playerConnection.player.togglePlayPause()
-                                                                } else {
-                                                                    playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
-                                                                    playerConnection.player.playWhenReady = true
-                                                                }
-                                                            }
-                                                        } else {
-                                                            if (window.mediaItem.metadata!! in selectedSongs) {
-                                                                selectedSongs.remove(window.mediaItem.metadata!!)
-                                                                selectedItems.remove(currentItem)
-                                                            } else {
-                                                                selectedSongs.add(window.mediaItem.metadata!!)
-                                                                selectedItems.add(currentItem)
-                                                            }
-                                                        }
-                                                    },
-                                                    onLongClick = {
-                                                        selection = true
-                                                        if (window.mediaItem.metadata!! in selectedSongs) {
-                                                            selectedSongs.remove(window.mediaItem.metadata!!)
-                                                            selectedItems.remove(currentItem)
-                                                        } else {
-                                                            selectedSongs.add(window.mediaItem.metadata!!)
-                                                            selectedItems.add(currentItem)
-                                                        }
-                                                    }
-                                                )
-                                                .detectReorderAfterLongPress(reorderableState)
+                                            onLongClick = {
+                                                selection = true
+                                                if (window.mediaItem.metadata!! in selectedSongs) {
+                                                    selectedSongs.remove(window.mediaItem.metadata!!)
+                                                    selectedItems.remove(currentItem)
+                                                } else {
+                                                    selectedSongs.add(window.mediaItem.metadata!!)
+                                                    selectedItems.add(currentItem)
+                                                }
+                                            }
                                         )
-                                    }
-                                }
+                                        .detectReorderAfterLongPress(reorderableState)
+                                )
+                            }
 
                             if (!lockQueue) {
                                 SwipeToDismissBox(

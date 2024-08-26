@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.NoCell
-import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -54,7 +53,6 @@ import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
-import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.playback.KeepAlive
 import com.dd3boh.outertune.ui.component.ActionPromptDialog
@@ -78,7 +76,6 @@ fun PlayerSettings(
 
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(key = AudioQualityKey, defaultValue = AudioQuality.AUTO)
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(key = PersistentQueueKey, defaultValue = true)
-    val (swipeToDismiss, onSwipeToDismissChange) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
     val (skipSilence, onSkipSilenceChange) = rememberPreference(key = SkipSilenceKey, defaultValue = false)
     val (skipOnErrorKey, onSkipOnErrorChange) = rememberPreference(key = SkipOnErrorKey, defaultValue = true)
     val (audioNormalization, onAudioNormalizationChange) = rememberPreference(key = AudioNormalizationKey, defaultValue = true)
@@ -187,13 +184,6 @@ fun PlayerSettings(
             icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
             checked = persistentQueue,
             onCheckedChange = onPersistentQueueChange
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.swipe_to_dismiss_title)) },
-            description = stringResource(R.string.swipe_to_dismiss_description),
-            icon = { Icon(Icons.Rounded.PlaylistRemove, null) },
-            checked = swipeToDismiss,
-            onCheckedChange = onSwipeToDismissChange
         )
         // lyrics settings
         PreferenceEntry(
