@@ -144,9 +144,9 @@ class LibrarySongsViewModel @Inject constructor(
                                             SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
                                             SongSortType.MODIFIED_DATE -> songs.sortedBy { it.song.getDateModifiedLong() }
                                             SongSortType.RELEASE_DATE -> songs.sortedBy { it.song.getDateLong() }
-                                            SongSortType.NAME -> songs.sortedBy { it.song.title }
+                                            SongSortType.NAME -> songs.sortedBy { it.song.title.lowercase() }
                                             SongSortType.ARTIST -> songs.sortedBy { song ->
-                                                song.artists.joinToString(separator = "") { it.name }
+                                                song.artists.joinToString(separator = "") { it.name }.lowercase()
                                             }
 
                                             SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
@@ -302,9 +302,9 @@ class LibraryViewModel @Inject constructor(
                         }
 
                         else -> when (item) {
-                            is Album -> item.album.title
-                            is Artist -> item.artist.name
-                            is Playlist -> item.playlist.name
+                            is Album -> item.album.title.lowercase()
+                            is Artist -> item.artist.name.lowercase()
+                            is Playlist -> item.playlist.name.lowercase()
                             else -> ""
                         }
                     }.toString()

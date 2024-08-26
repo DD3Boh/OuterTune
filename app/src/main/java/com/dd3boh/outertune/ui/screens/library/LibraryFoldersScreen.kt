@@ -149,14 +149,14 @@ fun LibraryFoldersScreen(
                 SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
                 SongSortType.MODIFIED_DATE -> it.item.song.getDateModifiedLong().toString()
                 SongSortType.RELEASE_DATE -> it.item.song.getDateLong().toString()
-                SongSortType.NAME -> it.item.song.title
-                SongSortType.ARTIST -> it.item.artists.firstOrNull()?.name
+                SongSortType.NAME -> it.item.song.title.lowercase()
+                SongSortType.ARTIST -> it.item.artists.joinToString { artist -> artist.name }.lowercase()
                 SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
             }
         }
 
         // sort folders
-        currDir.subdirs.sortBy { it.currentDir } // only sort by name
+        currDir.subdirs.sortBy { it.currentDir.lowercase() } // only sort by name
 
         if (sortDescending) {
             currDir.subdirs.reverse()

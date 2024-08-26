@@ -79,7 +79,7 @@ interface DatabaseDao {
     fun songsByDateModifiedAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY title")
+    @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
     fun songsByNameAsc(): Flow<List<Song>>
 
     @Transaction
@@ -113,7 +113,7 @@ interface DatabaseDao {
             SongSortType.NAME -> songsByNameAsc()
             SongSortType.ARTIST -> songsByRowIdAsc().map { songs ->
                 songs.sortedBy { song ->
-                    song.artists.joinToString(separator = "") { it.name }
+                    song.artists.joinToString(separator = "") { it.name }.lowercase()
                 }
             }
 
@@ -137,7 +137,7 @@ interface DatabaseDao {
     fun likedSongsByDateModifiedAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE liked ORDER BY title")
+    @Query("SELECT * FROM song WHERE liked ORDER BY title COLLATE NOCASE ASC")
     fun likedSongsByNameAsc(): Flow<List<Song>>
 
     @Transaction
@@ -171,7 +171,7 @@ interface DatabaseDao {
             SongSortType.NAME -> likedSongsByNameAsc()
             SongSortType.ARTIST -> likedSongsByRowIdAsc().map { songs ->
                 songs.sortedBy { song ->
-                    song.artists.joinToString(separator = "") { it.name }
+                    song.artists.joinToString(separator = "") { it.name }.lowercase()
                 }
             }
 
@@ -194,7 +194,7 @@ interface DatabaseDao {
     fun artistSongsByCreateDateAsc(artistId: String): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = :artistId AND inLibrary IS NOT NULL ORDER BY title")
+    @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = :artistId AND inLibrary IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
     fun artistSongsByNameAsc(artistId: String): Flow<List<Song>>
 
     @Transaction
@@ -345,7 +345,7 @@ interface DatabaseDao {
     fun artistsByCreateDateAsc(): Flow<List<Artist>>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE songCount > 0 ORDER BY name")
+    @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE songCount > 0 ORDER BY name COLLATE NOCASE ASC")
     fun artistsByNameAsc(): Flow<List<Artist>>
 
     @Transaction
@@ -379,7 +379,7 @@ interface DatabaseDao {
     fun artistsBookmarkedByCreateDateAsc(): Flow<List<Artist>>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE bookmarkedAt IS NOT NULL ORDER BY name")
+    @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE bookmarkedAt IS NOT NULL ORDER BY name COLLATE NOCASE ASC")
     fun artistsBookmarkedByNameAsc(): Flow<List<Artist>>
 
     @Transaction
@@ -440,7 +440,7 @@ interface DatabaseDao {
     fun albumsByCreateDateAsc(): Flow<List<Album>>
 
     @Transaction
-    @Query("SELECT * FROM album WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL) ORDER BY title")
+    @Query("SELECT * FROM album WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL) ORDER BY title COLLATE NOCASE ASC")
     fun albumsByNameAsc(): Flow<List<Album>>
 
     @Transaction
@@ -474,7 +474,7 @@ interface DatabaseDao {
     fun albumsLikedByCreateDateAsc(): Flow<List<Album>>
 
     @Transaction
-    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY title")
+    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
     fun albumsLikedByNameAsc(): Flow<List<Album>>
 
     @Transaction
@@ -509,7 +509,7 @@ interface DatabaseDao {
             AlbumSortType.NAME -> albumsByNameAsc()
             AlbumSortType.ARTIST -> albumsByCreateDateAsc().map { albums ->
                 albums.sortedBy { album ->
-                    album.artists.joinToString(separator = "") { it.name }
+                    album.artists.joinToString(separator = "") { it.name }.lowercase()
                 }
             }
 
@@ -525,7 +525,7 @@ interface DatabaseDao {
             AlbumSortType.NAME -> albumsLikedByNameAsc()
             AlbumSortType.ARTIST -> albumsLikedByCreateDateAsc().map { albums ->
                 albums.sortedBy { album ->
-                    album.artists.joinToString(separator = "") { it.name }
+                    album.artists.joinToString(separator = "") { it.name }.lowercase()
                 }
             }
 
@@ -548,7 +548,7 @@ interface DatabaseDao {
     fun playlistsByCreateDateAsc(): Flow<List<Playlist>>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = true ORDER BY name")
+    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = true ORDER BY name COLLATE NOCASE ASC")
     fun playlistsByNameAsc(): Flow<List<Playlist>>
 
     @Transaction
