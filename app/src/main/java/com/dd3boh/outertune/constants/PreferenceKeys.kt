@@ -126,6 +126,7 @@ val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
 
 val PlayerVolumeKey = floatPreferencesKey("playerVolume")
 val RepeatModeKey = intPreferencesKey("repeatMode")
+val LockQueueKey = booleanPreferencesKey("lockQueue")
 
 val SearchSourceKey = stringPreferencesKey("searchSource")
 

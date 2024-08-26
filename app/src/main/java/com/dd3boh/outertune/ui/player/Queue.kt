@@ -40,6 +40,8 @@ import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -90,6 +92,7 @@ import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.constants.ListItemHeight
+import com.dd3boh.outertune.constants.LockQueueKey
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.SwipeToDismissKey
 import com.dd3boh.outertune.extensions.metadata
@@ -128,6 +131,7 @@ fun Queue(
     onBackgroundColor: Color = Color.Unspecified,
 ) {
     val (swipeToDismiss) = rememberPreference(key = SwipeToDismissKey, defaultValue = true)
+    var lockQueue by rememberPreference(LockQueueKey, defaultValue = false)
 
     val menuState = LocalMenuState.current
 
@@ -291,14 +295,31 @@ fun Queue(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (!landscape)
-                    ResizableIconButton(
-                        icon = Icons.Rounded.Close,
+
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
                         onClick = {
-                            multiqueueExpand = false
-                        },
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
+                            lockQueue = !lockQueue
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (lockQueue) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                            contentDescription = null,
+                        )
+                    }
+                    if (!landscape) {
+                        ResizableIconButton(
+                            icon = Icons.Rounded.Close,
+                            onClick = {
+                                multiqueueExpand = false
+                            },
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                    }
+                }
             }
 
             if (mutableQueues.isEmpty()) {
@@ -366,24 +387,27 @@ fun Queue(
                                 Row(
                                     modifier = Modifier.weight(1f, false)
                                 ) {
-                                    ResizableIconButton(
-                                        icon = Icons.Rounded.Close,
-                                        onClick = {
-                                            val remainingQueues = queueBoard.deleteQueue(mq, playerConnection.service)
-                                            queueBoard.setCurrQueue(playerConnection)
-                                            detachedHead = false
-                                            updateQueues()
-                                            if (remainingQueues < 1) {
-                                                onTerminate.invoke()
-                                            } else {
-                                                coroutineScope.launch {
-                                                    reorderableState.listState.animateScrollToItem(
-                                                        playerConnection.player.currentMediaItemIndex
-                                                    )
+                                    if (!lockQueue) {
+                                        ResizableIconButton(
+                                            icon = Icons.Rounded.Close,
+                                            onClick = {
+                                                val remainingQueues =
+                                                    queueBoard.deleteQueue(mq, playerConnection.service)
+                                                queueBoard.setCurrQueue(playerConnection)
+                                                detachedHead = false
+                                                updateQueues()
+                                                if (remainingQueues < 1) {
+                                                    onTerminate.invoke()
+                                                } else {
+                                                    coroutineScope.launch {
+                                                        reorderableState.listState.animateScrollToItem(
+                                                            playerConnection.player.currentMediaItemIndex
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                        },
-                                    )
+                                            },
+                                        )
+                                    }
                                     Text(
                                         text = "${index + 1}. ${mq.title}",
                                         maxLines = 1,
@@ -392,11 +416,13 @@ fun Queue(
                                     )
                                 }
 
-                                Icon(
-                                    imageVector = Icons.Rounded.DragHandle,
-                                    contentDescription = null,
-                                    modifier = Modifier.detectReorder(reorderableStateEx)
-                                )
+                                if (!lockQueue) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.DragHandle,
+                                        contentDescription = null,
+                                        modifier = Modifier.detectReorder(reorderableStateEx)
+                                    )
+                                }
                             }
                         }
                     } // ReorderableItem
@@ -533,10 +559,7 @@ fun Queue(
                                     }
                                 }
                             )
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                backgroundContent = {},
-                                content = {
+                            val content = @Composable {
                                     Row(
                                         horizontalArrangement = Arrangement.Center
                                     ) {
@@ -569,15 +592,17 @@ fun Queue(
                                             isActive = index == currentWindowIndex,
                                             isPlaying = isPlaying,
                                             trailingContent = {
-                                                IconButton(
-                                                    onClick = { },
-                                                    modifier = Modifier
-                                                        .detectReorder(reorderableState)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.DragHandle,
-                                                        contentDescription = null
-                                                    )
+                                                if (!lockQueue) {
+                                                    IconButton(
+                                                        onClick = { },
+                                                        modifier = Modifier
+                                                            .detectReorder(reorderableState)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.DragHandle,
+                                                            contentDescription = null
+                                                        )
+                                                    }
                                                 }
                                             },
                                             isSelected = selection && selectedSongs.find { it == window.mediaItem.metadata!! } != null,
@@ -619,7 +644,16 @@ fun Queue(
                                         )
                                     }
                                 }
-                            )
+
+                            if (!lockQueue) {
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    backgroundContent = {},
+                                    content = { content() }
+                                )
+                            } else {
+                                content()
+                            }
                         }
                     }
                 }
