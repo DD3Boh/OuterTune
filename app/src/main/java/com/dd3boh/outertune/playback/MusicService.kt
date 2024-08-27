@@ -256,6 +256,7 @@ class MusicService : MediaLibraryService(),
                                 "Playback stopped due to too many errors",
                                 Toast.LENGTH_SHORT
                             ).show()
+                            consecutivePlaybackErr = 0
                         }
                     }
 

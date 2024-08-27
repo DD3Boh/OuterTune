@@ -582,6 +582,7 @@ fun Queue(
                                                             playerConnection.player.togglePlayPause()
                                                         } else {
                                                             playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                            playerConnection.player.prepare()
                                                             playerConnection.player.playWhenReady = true
                                                         }
                                                     }
