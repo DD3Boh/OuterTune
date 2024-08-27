@@ -16,27 +16,30 @@ data class PlaylistPage(
 ) {
     companion object {
         fun fromMusicResponsiveListItemRenderer(renderer: MusicResponsiveListItemRenderer): SongItem? {
+            val artists = renderer.flexColumns.getOrNull(1)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.oddElements()?.map {
+                Artist(
+                    name = it.text,
+                    id = it.navigationEndpoint?.browseEndpoint?.browseId,
+                )
+            }
+            val collaborators = renderer.flexColumns.getOrNull(2)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.oddElements()?.map {
+                Artist(
+                    name = it.text,
+                    id = it.navigationEndpoint?.browseEndpoint?.browseId,
+                )
+            }
+
             return SongItem(
                 id = renderer.playlistItemData?.videoId ?: return null,
                 title = renderer.flexColumns.firstOrNull()
                     ?.musicResponsiveListItemFlexColumnRenderer?.text
                     ?.runs?.firstOrNull()?.text ?: return null,
-                artists = renderer.flexColumns.getOrNull(1)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.oddElements()?.map {
-                    Artist(
-                        name = it.text,
-                        id = it.navigationEndpoint?.browseEndpoint?.browseId
-                    )
-                } ?: return null,
+                artists = (artists.orEmpty() + collaborators.orEmpty()).ifEmpty { return null },
                 album = renderer.flexColumns.getOrNull(2)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()?.let {
-                    val browseId = it.navigationEndpoint?.browseEndpoint?.browseId
-                    if (browseId != null) {
-                        Album(
-                            name = it.text,
-                            id = browseId
-                        )
-                    } else {
-                        null
-                    }
+                    Album(
+                        name = it.text,
+                        id = it.navigationEndpoint?.browseEndpoint?.browseId ?: return@let null
+                    )
                 },
                 duration = renderer.fixedColumns?.firstOrNull()?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()?.text?.parseTime(),
                 thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
