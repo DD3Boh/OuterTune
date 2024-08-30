@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -237,8 +237,8 @@ fun SelectionSongMenu(
 
         if (songPosition != null) {
             GridMenuItem(
-                icon = Icons.Rounded.Delete,
-                title = R.string.delete
+                icon = Icons.Rounded.PlaylistRemove,
+                title = R.string.remove_from_playlist
             ) {
                 onDismiss()
                 var i = 0
@@ -367,8 +367,8 @@ fun SelectionMediaMetadataMenu(
     ){
         if (currentItems.isNotEmpty()) {
             GridMenuItem(
-                icon = Icons.Rounded.Delete,
-                title = R.string.delete
+                icon = Icons.Rounded.PlaylistRemove,
+                title = R.string.remove_from_playlist
             ) {
                 onDismiss()
                 var i = 0
