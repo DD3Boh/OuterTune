@@ -1,7 +1,7 @@
-package com.malopieds.lrclib
+package com.dd3boh.lrclib
 
-import com.malopieds.lrclib.models.Track
-import com.malopieds.lrclib.models.bestMatchingFor
+import com.dd3boh.lrclib.models.Track
+import com.dd3boh.lrclib.models.bestMatchingFor
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
