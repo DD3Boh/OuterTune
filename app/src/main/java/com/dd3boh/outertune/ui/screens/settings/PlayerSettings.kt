@@ -184,6 +184,7 @@ fun PlayerSettings(
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.persistent_queue)) },
+            description = stringResource(R.string.persistent_queue_desc),
             icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
             checked = persistentQueue,
             onCheckedChange = onPersistentQueueChange
@@ -229,7 +230,8 @@ fun PlayerSettings(
             onCheckedChange = onSkipSilenceChange
         )
         SwitchPreference(
-            title = { Text(stringResource(R.string.skip_on_error)) },
+            title = { Text(stringResource(R.string.auto_skip_next_on_error)) },
+            description = stringResource(R.string.auto_skip_next_on_error_desc),
             icon = { Icon(Icons.Rounded.FastForward, null) },
             checked = skipOnErrorKey,
             onCheckedChange = onSkipOnErrorChange
