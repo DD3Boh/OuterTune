@@ -390,7 +390,9 @@ fun Queue(
                                             onClick = {
                                                 val remainingQueues =
                                                     queueBoard.deleteQueue(mq, playerConnection.service)
-                                                queueBoard.setCurrQueue(playerConnection)
+                                                if (playingQueue == index) {
+                                                    queueBoard.setCurrQueue(playerConnection)
+                                                }
                                                 detachedHead = false
                                                 updateQueues()
                                                 if (remainingQueues < 1) {
