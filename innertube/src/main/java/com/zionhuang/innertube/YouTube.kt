@@ -357,29 +357,14 @@ object YouTube {
             ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
             ?.musicEditablePlaylistDetailHeaderRenderer != null
 
-        val artists = header?.straplineTextOne?.runs
-
         return PlaylistPage(
             playlist = PlaylistItem(
                 id = playlistId,
                 title = header?.title?.runs?.firstOrNull()?.text!!,
-                author = artists?.let {
-                    // For multiple artists, YouTube gives us: "by <artist 1> and <number> others"
-                    // Only the first artist has the browseid
-                    var name = ""
-                    var browseId: String? = null
-
-                    artists.forEach { artist ->
-                        name += artist.text
-                        // take 1st artist browseid should the api ever change
-                        if (browseId == null && artist.navigationEndpoint != null) {
-                            browseId = artist.navigationEndpoint.browseEndpoint?.browseId
-                        }
-                    }
-
+                author = header.straplineTextOne?.runs?.firstOrNull()?.let {
                     Artist(
-                        name = name,
-                        id = browseId
+                        name = it.text,
+                        id = it.navigationEndpoint?.browseEndpoint?.browseId
                     )
                 },
                 songCountText = header.secondSubtitle?.runs?.firstOrNull()?.text,

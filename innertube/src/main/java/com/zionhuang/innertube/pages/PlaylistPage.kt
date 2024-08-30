@@ -16,29 +16,18 @@ data class PlaylistPage(
 ) {
     companion object {
         fun fromMusicResponsiveListItemRenderer(renderer: MusicResponsiveListItemRenderer): SongItem? {
-            /**
-             * 0: Title
-             * 1: User who added song to playlist (optional field)
-             * 2: Artists
-             * 3: Albums
-             */
-            val offset = if (renderer.flexColumns.size > 3) {
-                1
-            } else {
-                0
-            }
             return SongItem(
                 id = renderer.playlistItemData?.videoId ?: return null,
                 title = renderer.flexColumns.firstOrNull()
                     ?.musicResponsiveListItemFlexColumnRenderer?.text
                     ?.runs?.firstOrNull()?.text ?: return null,
-                artists = renderer.flexColumns.getOrNull(1 + offset)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.oddElements()?.map {
+                artists = renderer.flexColumns.getOrNull(1)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.oddElements()?.map {
                     Artist(
                         name = it.text,
                         id = it.navigationEndpoint?.browseEndpoint?.browseId
                     )
                 } ?: return null,
-                album = renderer.flexColumns.getOrNull(2 + offset)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()?.let {
+                album = renderer.flexColumns.getOrNull(2)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()?.let {
                     val browseId = it.navigationEndpoint?.browseEndpoint?.browseId
                     if (browseId != null) {
                         Album(
