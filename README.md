@@ -4,8 +4,6 @@
 
 A Material 3 YouTube Music client & local music player for Android
 
-> This is a fork of [InnerTune](https://github.com/z-huang/InnerTune)
-
 [![Latest release](https://img.shields.io/github/v/release/DD3Boh/OuterTune?include_prereleases)](https://github.com/DD3Boh/OuterTune/releases)
 [![License](https://img.shields.io/github/license/DD3Boh/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
 [![Downloads](https://img.shields.io/github/downloads/DD3Boh/OuterTune/total)](https://github.com/DD3Boh/OuterTune/releases)
@@ -13,6 +11,8 @@ A Material 3 YouTube Music client & local music player for Android
 [<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="80">](https://github.com/DD3Boh/OuterTune/releases/latest)
 
 ## Features
+
+OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/InnerTune), with advanced account synchronization, local media playback, multiple queues, and a new take on UI design.
 
 - Play, search, and save all your songs, videos, albums, and playlists from YouTube Music
     - Song downloading for offline playback
@@ -23,7 +23,7 @@ A Material 3 YouTube Music client & local music player for Android
     - Fully fledged syncing of songs, subscriptions, playlists and albums — both to and from your account
 - Local audio file playback
     - Play local and Youtube Music songs at the same time
-    - We don't use MediaStore's broken metadata extractor!
+    - We don't use MediaStore's broken metadata extractor! (e.g tags delimited with `\\` now show up properly)
 - Synchronized lyrics (LRC format, also includes multi-line support)
 - Audio normalization, tempo/pitch adjustment, and various other audio effects
 - Android Auto support
@@ -66,7 +66,9 @@ including bug fixes and new features.
 
 <a href="https://paypal.me/DD3Boh"><img src="./assets/paypal.png" alt="PayPal" height="60" ></a>
 
-## Credit
+## Attribution
 
-I want to give credit to [z-huang/InnerTune](https://github.com/z-huang/InnerTune) for providing
+[z-huang/InnerTune](https://github.com/z-huang/InnerTune) for providing
 an awesome base for this fork, none of this would have been possible without it.
+
+[Musicolet](https://play.google.com/store/apps/details?id=in.krosbits.musicolet) for inspiration of a local music player experience done right.
