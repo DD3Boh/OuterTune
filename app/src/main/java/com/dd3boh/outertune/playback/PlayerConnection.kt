@@ -47,19 +47,17 @@ class PlayerConnection(
         database.song(it?.id)
     }
     val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
-        // local songs will always look at lrc files first
-        if (mediaMetadata?.isLocal == true) {
-            val lyrics = service.lyricsHelper.getLocalLyrics(mediaMetadata)
-            if (lyrics != null) {
-                return@flatMapLatest flowOf(
-                    LyricsEntity(
-                        id = mediaMetadata.id,
-                        lyrics = lyrics
-                    )
+        if (mediaMetadata != null) {
+            val lyrics = service.lyricsHelper.getLyrics(mediaMetadata, database)
+            return@flatMapLatest flowOf(
+                LyricsEntity(
+                    id = mediaMetadata.id,
+                    lyrics = lyrics
                 )
-            }
+            )
+        } else {
+            return@flatMapLatest flowOf()
         }
-        database.lyrics(mediaMetadata?.id)
     }
     val currentFormat = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.format(mediaMetadata?.id)

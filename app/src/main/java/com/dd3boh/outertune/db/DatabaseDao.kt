@@ -544,15 +544,15 @@ interface DatabaseDao {
     fun albumWithSongs(albumId: String): Flow<AlbumWithSongs?>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = true ORDER BY rowId")
+    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = 1 ORDER BY rowId")
     fun playlistsByCreateDateAsc(): Flow<List<Playlist>>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = true ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = 1 ORDER BY name COLLATE NOCASE ASC")
     fun playlistsByNameAsc(): Flow<List<Playlist>>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = true ORDER BY songCount")
+    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = 1 ORDER BY songCount")
     fun playlistsBySongCountAsc(): Flow<List<Playlist>>
 
     @Transaction
@@ -595,7 +595,7 @@ interface DatabaseDao {
     fun playlistByBrowseId(browseId: String): Flow<Playlist?>
 
     @Transaction
-    @Query("UPDATE playlist SET isLocal = true WHERE id = :playlistId")
+    @Query("UPDATE playlist SET isLocal = 1 WHERE id = :playlistId")
     fun playlistDesync(playlistId: String): Unit
 
     @Transaction

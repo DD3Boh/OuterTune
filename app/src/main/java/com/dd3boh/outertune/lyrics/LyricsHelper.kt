@@ -3,10 +3,13 @@ package com.dd3boh.outertune.lyrics
 import android.content.Context
 import android.os.Build
 import android.util.LruCache
+import androidx.annotation.RequiresApi
+import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 // true will prioritize local lyric files over all cloud providers, true is vice versa
@@ -17,14 +20,30 @@ class LyricsHelper @Inject constructor(
     private val lyricsProviders = listOf(YouTubeSubtitleLyricsProvider, LrcLibLyricsProvider, KuGouLyricsProvider, YouTubeLyricsProvider)
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
 
-    suspend fun getLyrics(mediaMetadata: MediaMetadata): String {
+    /**
+     * Retrieve lyrics from all sources
+     *
+     * @param mediaMetadata Song to fetch lyrics for
+     * @param database MusicDatabase connection. Database lyrics are prioritized over all sources.
+     * If no database is provided, the database source is disabled
+     */
+    suspend fun getLyrics(mediaMetadata: MediaMetadata, database: MusicDatabase? = null): String {
         val cached = cache.get(mediaMetadata.id)?.firstOrNull()
         if (cached != null) {
             return cached.lyrics
         }
+        val dbLyrics = database?.lyrics(mediaMetadata.id)?.let { it.first()?.lyrics }
+        if (dbLyrics != null) {
+            return dbLyrics
+        }
+
+        // Nougat support is likely going to be dropped soon
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return getRemoteLyrics(mediaMetadata) ?: LYRICS_NOT_FOUND
+        }
 
         val localLyrics = getLocalLyrics(mediaMetadata)
-        var remoteLyrics: String?
+        val remoteLyrics: String?
 
         // fallback to secondary provider when primary is unavailable
         if (PREFER_LOCAL_LYRIC) {
@@ -74,10 +93,8 @@ class LyricsHelper @Inject constructor(
     /**
      * Lookup lyrics from local disk (.lrc) file
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getLocalLyrics(mediaMetadata: MediaMetadata): String? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            throw Exception("Local lyrics are not supported below SDK 26 (Oreo)")
-        }
         if (LocalLyricsProvider.isEnabled(context)) {
             LocalLyricsProvider.getLyrics(
                 mediaMetadata.id,
@@ -86,8 +103,6 @@ class LyricsHelper @Inject constructor(
                 mediaMetadata.duration
             ).onSuccess { lyrics ->
                 return lyrics
-            }.onFailure {
-                reportException(it)
             }
         }
 
