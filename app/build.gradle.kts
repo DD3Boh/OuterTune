@@ -99,6 +99,14 @@ android {
         jvmTarget = "17"
     }
 
+    // for IzzyOnDroid
+    dependenciesInfo {
+        // Disables dependency metadata when building APKs.
+        includeInApk = false
+        // Disables dependency metadata when building Android App Bundles.
+        includeInBundle = false
+    }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.isReturnDefaultValues = true

@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.utils.scanners
 
+import com.dd3boh.ffMetadataEx.FFMpegWrapper
 import com.dd3boh.outertune.db.entities.AlbumEntity
 import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.FormatEntity
@@ -9,7 +10,6 @@ import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.models.SongTempData
 import com.dd3boh.outertune.ui.utils.ARTIST_SEPARATORS
 import timber.log.Timber
-import wah.mikooomich.ffMetadataEx.FFprobeWrapper
 import java.io.File
 import java.lang.Integer.parseInt
 import java.lang.Long.parseLong
@@ -21,15 +21,15 @@ import kotlin.math.roundToLong
 
 const val EXTRACTOR_DEBUG = false
 const val DEBUG_SAVE_OUTPUT = false // ignored (will be false) when EXTRACTOR_DEBUG IS false
-const val EXTRACTOR_TAG = "FFProbeExtractor"
+const val EXTRACTOR_TAG = "FFMpegExtractor"
 const val toSeconds = 1000 * 60 * 16.7 // convert FFmpeg duration to seconds
 
-class FFProbeScanner : MetadataScanner {
+class FFMpegScanner : MetadataScanner {
     // load advanced scanner libs
     init {
         System.loadLibrary("avcodec")
         System.loadLibrary("avdevice")
-        System.loadLibrary("ffprobejni")
+        System.loadLibrary("ffmetaexjni")
         System.loadLibrary("avfilter")
         System.loadLibrary("avformat")
         System.loadLibrary("avutil")
@@ -45,8 +45,8 @@ class FFProbeScanner : MetadataScanner {
     override fun getMediaStoreSupplement(path: String): ExtraMetadataWrapper {
         if (EXTRACTOR_DEBUG)
             Timber.tag(EXTRACTOR_TAG).d("Starting MediaStoreSupplement session on: $path")
-        val ffprobe = FFprobeWrapper()
-        val data = ffprobe.getAudioMetadata(path)
+        val ffmpeg = FFMpegWrapper()
+        val data = ffmpeg.getAudioMetadata(path)
 
         if (EXTRACTOR_DEBUG && DEBUG_SAVE_OUTPUT) {
             Timber.tag(EXTRACTOR_TAG).d("Full output for: $path \n $data")
@@ -77,8 +77,8 @@ class FFProbeScanner : MetadataScanner {
     override fun getAllMetadata(path: String): SongTempData {
         if (EXTRACTOR_DEBUG)
             Timber.tag(EXTRACTOR_TAG).d("Starting Full Extractor session on: $path")
-        val ffprobe = FFprobeWrapper()
-        val data = ffprobe.getFullAudioMetadata(path)
+        val ffmpeg = FFMpegWrapper()
+        val data = ffmpeg.getFullAudioMetadata(path)
 
         if (EXTRACTOR_DEBUG && DEBUG_SAVE_OUTPUT) {
             Timber.tag(EXTRACTOR_TAG).d("Full output for: $path \n $data")

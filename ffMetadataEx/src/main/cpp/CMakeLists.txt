@@ -38,14 +38,14 @@ set_target_properties( # Specifies the target library.
 # Include FFmpeg headers
 include_directories(${CMAKE_SOURCE_DIR}/ffmpeg-android-maker/output/include/${ANDROID_ABI})
 
-add_library(ffprobejni SHARED ffprobejni.c)
+add_library(ffmetaexjni SHARED ffMetaExJni.c)
 
 # Link FFmpeg libraries
-target_link_libraries(ffprobejni
+target_link_libraries(ffmetaexjni
         avformat
         avutil
         avcodec
 )
 
 # Set the output directory for the .so file
-set_target_properties(ffprobejni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI})
+set_target_properties(ffmetaexjni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI})

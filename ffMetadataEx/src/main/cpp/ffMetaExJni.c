@@ -4,7 +4,7 @@
 #include <libavcodec/avcodec.h>
 
 JNIEXPORT jstring JNICALL
-Java_wah_mikooomich_ffMetadataEx_FFprobeWrapper_getAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
+Java_com_dd3boh_ffMetadataEx_FFMpegWrapper_getAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
     const char* file_path = (*env)->GetStringUTFChars(env, filePath, NULL);
     if (!file_path) {
         return (*env)->NewStringUTF(env, "Error getting file path");
@@ -63,7 +63,7 @@ Java_wah_mikooomich_ffMetadataEx_FFprobeWrapper_getAudioMetadata(JNIEnv* env, jo
 
 
 JNIEXPORT jstring JNICALL
-Java_wah_mikooomich_ffMetadataEx_FFprobeWrapper_getFullAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
+Java_com_dd3boh_ffMetadataEx_FFMpegWrapper_getFullAudioMetadata(JNIEnv* env, jobject obj, jstring filePath) {
     const char* file_path = (*env)->GetStringUTFChars(env, filePath, NULL);
     if (!file_path) {
         return (*env)->NewStringUTF(env, "Error getting file path");

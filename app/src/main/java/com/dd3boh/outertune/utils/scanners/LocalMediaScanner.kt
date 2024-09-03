@@ -613,7 +613,7 @@ class LocalMediaScanner {
          */
         fun getAdvancedScanner(): MetadataScanner? {
             // kotlin won't let me return MetadataScanner even if it cant possibly be null broooo
-            return if (advancedScannerImpl is FFProbeScanner) advancedScannerImpl else FFProbeScanner()
+            return if (advancedScannerImpl is FFMpegScanner) advancedScannerImpl else FFMpegScanner()
         }
 
         fun unloadAdvancedScanner() {
