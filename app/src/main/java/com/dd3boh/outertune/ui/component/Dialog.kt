@@ -1,12 +1,40 @@
 package com.dd3boh.outertune.ui.component
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -14,9 +42,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.DialogCornerRadius
 import kotlinx.coroutines.delay
 
 @Composable
@@ -186,4 +217,107 @@ fun TextFieldDialog(
 
         extraContent?.invoke()
     }
+}
+
+/**
+ * Dialog for user interaction
+ *
+ * @param title Title of prompt
+ * @param titleBar Title of prompt. Specifying this will override title
+ * @param onDismiss
+ * @param onConfirm
+ * @param onReset
+ * @param onCancel
+ * @param content
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ActionPromptDialog(
+    title: String? = null,
+    titleBar: @Composable (RowScope.() -> Unit)? = null,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    onReset: (() -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit = {}
+) = BasicAlertDialog(
+    onDismissRequest = { onDismiss() },
+    content = {
+        Column(
+            modifier = Modifier
+                .background(
+                    MaterialTheme.colorScheme.background,
+                    RoundedCornerShape(DialogCornerRadius)
+                )
+                .fillMaxWidth(0.8f)
+                .padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                // title
+                if (titleBar != null) {
+                    Row {
+                        titleBar()
+                    }
+                } else if (title != null) {
+                    Text(
+                        text = title,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                }
+
+                content() // body
+            }
+
+            // bottom options
+            // always have an ok, but explicit cancel/reset is optional
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (onReset != null)
+                    Row(modifier = Modifier.weight(1f)) {
+                        TextButton(
+                            onClick = { onReset() },
+                        ) {
+                            Text(stringResource(R.string.reset))
+                        }
+                    }
+
+                TextButton(
+                    onClick = { onConfirm() }
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
+
+                if (onCancel != null)
+                    TextButton(
+                        onClick = { onCancel() }
+                    ) {
+                        Text(stringResource(android.R.string.cancel))
+                    }
+            }
+        }
+    }
+)
+
+@Composable
+fun InfoLabel(
+    text: String
+) = Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier.padding(horizontal = 8.dp)
+) {
+    Icon(
+        Icons.Outlined.Info,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.secondary,
+        modifier = Modifier.padding(4.dp)
+    )
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(horizontal = 4.dp)
+    )
 }

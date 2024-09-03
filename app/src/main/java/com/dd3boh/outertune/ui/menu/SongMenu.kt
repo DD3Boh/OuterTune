@@ -61,7 +61,6 @@ import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.PlaylistSong
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -122,7 +121,8 @@ fun SongMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, listOf(song.toMediaMetadata()), forceInsert = true, delta = false)
+            queueBoard.add(queueName, listOf(song.toMediaMetadata()), playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -136,22 +136,13 @@ fun SongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            database.query {
-                insert(
-                    PlaylistSongMap(
-                        songId = song.id,
-                        playlistId = playlist.id,
-                        position = playlist.songCount
-                    )
-                )
-
-                coroutineScope.launch(Dispatchers.IO) {
-                    playlist.playlist.browseId?.let { browseId ->
-                        YouTube.addToPlaylist(browseId, song.id)
-                    }
+        onGetSong = { playlist ->
+            coroutineScope.launch(Dispatchers.IO) {
+                playlist.playlist.browseId?.let { browseId ->
+                    YouTube.addToPlaylist(browseId, song.id)
                 }
             }
+            listOf(song.id)
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -261,7 +252,6 @@ fun SongMenu(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
         }
         GridMenuItem(

@@ -2,9 +2,16 @@ package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,10 +39,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.*
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
+import com.dd3boh.outertune.constants.CONTENT_TYPE_SONG
+import com.dd3boh.outertune.constants.SongFilter
+import com.dd3boh.outertune.constants.SongFilterKey
+import com.dd3boh.outertune.constants.SongSortDescendingKey
+import com.dd3boh.outertune.constants.SongSortType
+import com.dd3boh.outertune.constants.SongSortTypeKey
+import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -44,15 +59,14 @@ import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SelectHeader
-import com.dd3boh.outertune.ui.component.SongFolderItem
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
-import com.dd3boh.outertune.ui.utils.ItemWrapper
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -81,8 +95,6 @@ fun LibrarySongsScreen(
     var selection by remember {
         mutableStateOf(false)
     }
-
-    var inLocal by viewModel.inLocal
 
     LaunchedEffect(Unit) {
         if (ytmSync) {
@@ -132,6 +144,8 @@ fun LibrarySongsScreen(
                     sortTypeText = { sortType ->
                         when (sortType) {
                             SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                            SongSortType.MODIFIED_DATE -> R.string.sort_by_date_modified
+                            SongSortType.RELEASE_DATE -> R.string.sort_by_date_released
                             SongSortType.NAME -> R.string.sort_by_name
                             SongSortType.ARTIST -> R.string.sort_by_artist
                             SongSortType.PLAY_TIME -> R.string.sort_by_play_time
@@ -151,128 +165,113 @@ fun LibrarySongsScreen(
     }
 
     val lazyListState = rememberLazyListState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            lazyListState.animateScrollToItem(0)
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        if (inLocal) {
-            LibrarySongsFolderScreen(
-                navController = navController,
-                filterContent = libraryFilterContent ?: filterContent
-            )
-        } else {
-            LazyColumn(
-                state = lazyListState,
-                contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+        LazyColumn(
+            state = lazyListState,
+            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+        ) {
+            item(
+                key = "header",
+                contentType = CONTENT_TYPE_HEADER
             ) {
-                stickyHeader(
-                    key = "header",
-                    contentType = CONTENT_TYPE_HEADER
+                Column(
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
                 ) {
-                    Column(
-                        modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                    ) {
-                        Row(modifier = Modifier.padding(vertical = 8.dp)) { }
-                        libraryFilterContent?.let { it() } ?: filterContent()
-                        if (!inLocal) headerContent()
-                    }
-                }
-
-                // Only show under library filter, subject to change
-                if (filter == SongFilter.LIBRARY)
-                    item(
-                        key = "song_folders"
-                    ) {
-                        // enter folders page
-                        SongFolderItem(
-                            folderTitle = "Internal Storage",
-                            modifier = Modifier
-                                .clickable {
-                                    inLocal = true
-                                    viewModel.getLocalSongs(database = viewModel.databaseLink)
-                                }
-                                .animateItemPlacement()
-                        )
-                    }
-
-                itemsIndexed(
-                    items = wrappedSongs,
-                    key = { _, item -> item.item.id },
-                    contentType = { _, _ -> CONTENT_TYPE_SONG }
-                ) { index, songWrapper ->
-                    SwipeToQueueBox(
-                        item = songWrapper.item.toMediaItem(),
-                        content = {
-                            SongListItem(
-                                song = songWrapper.item,
-                                isActive = songWrapper.item.id == mediaMetadata?.id,
-                                isPlaying = isPlaying,
-                                trailingContent = {
-                                    IconButton(
-                                        onClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.MoreVert,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                isSelected = songWrapper.isSelected && selection,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .combinedClickable(
-                                        onClick = {
-                                            if (!selection) {
-                                                if (songWrapper.item.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
-                                                } else {
-                                                    playerConnection.playQueue(
-                                                        ListQueue(
-                                                            title = context.getString(R.string.queue_all_songs),
-                                                            items = songs.map { it.toMediaMetadata() },
-                                                            startIndex = index
-                                                        )
-                                                    )
-                                                }
-                                            } else {
-                                                songWrapper.isSelected = !songWrapper.isSelected
-                                            }
-                                        },
-                                        onLongClick = {
-                                            selection = true
-                                            songWrapper.isSelected = !songWrapper.isSelected
-                                        }
-                                    )
-                                    .animateItemPlacement()
-                            )
-                        },
-                        snackbarHostState = snackbarHostState
-                    )
+                    libraryFilterContent?.let { it() } ?: filterContent()
+                    headerContent()
                 }
             }
 
-            HideOnScrollFAB(
-                visible = songs.isNotEmpty(),
-                lazyListState = lazyListState,
-                icon = Icons.Rounded.Shuffle,
-                onClick = {
-                    playerConnection.playQueue(
-                        ListQueue(
-                            title = context.getString(R.string.queue_all_songs),
-                            items = songs.shuffled().map { it.toMediaMetadata()}
+            itemsIndexed(
+                items = wrappedSongs,
+                key = { _, item -> item.item.id },
+                contentType = { _, _ -> CONTENT_TYPE_SONG }
+            ) { index, songWrapper ->
+                SwipeToQueueBox(
+                    item = songWrapper.item.toMediaItem(),
+                    content = {
+                        SongListItem(
+                            song = songWrapper.item,
+                            isActive = songWrapper.item.id == mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                            trailingContent = {
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            SongMenu(
+                                                originalSong = songWrapper.item,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            isSelected = songWrapper.isSelected && selection,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {
+                                        if (!selection) {
+                                            if (songWrapper.item.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = context.getString(R.string.queue_all_songs),
+                                                        items = songs.map { it.toMediaMetadata() },
+                                                        startIndex = index
+                                                    )
+                                                )
+                                            }
+                                        } else {
+                                            songWrapper.isSelected = !songWrapper.isSelected
+                                        }
+                                    },
+                                    onLongClick = {
+                                        selection = true
+                                        songWrapper.isSelected = !songWrapper.isSelected
+                                    }
+                                )
+                                .animateItemPlacement()
                         )
-                    )
-                }
-            )
+                    },
+                    snackbarHostState = snackbarHostState
+                )
+            }
         }
+
+        HideOnScrollFAB(
+            visible = songs.isNotEmpty(),
+            lazyListState = lazyListState,
+            icon = Icons.Rounded.Shuffle,
+            onClick = {
+                playerConnection.playQueue(
+                    ListQueue(
+                        title = context.getString(R.string.queue_all_songs),
+                        items = songs.shuffled().map { it.toMediaMetadata()}
+                    )
+                )
+            }
+        )
+
 
         SnackbarHost(
             hostState = snackbarHostState,

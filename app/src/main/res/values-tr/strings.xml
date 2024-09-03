@@ -82,9 +82,9 @@
     <string name="share">Paylaş</string>
     <string name="delete">Sil</string>
     <string name="remove_from_history">Geçmişten kaldır</string>
-    <string name="search_online">Çevrimiçi arama</string>
+    <string name="search_online">Çevrim içi arama</string>
     <string name="sync">Eşitle</string>
-    <string name="advanced">Advanced</string>
+    <string name="advanced">Gelişmiş</string>
 
     <!-- Sort menu -->
     <string name="sort_by_create_date">Eklendiği tarih</string>
@@ -180,11 +180,11 @@
     <!-- Player action -->
     <string name="action_like">Beğen</string>
     <string name="action_remove_like">Beğeniyi kaldır</string>
-    <string name="action_shuffle_on">Shuffle on</string>
-    <string name="action_shuffle_off">Shuffle off</string>
-    <string name="repeat_mode_off">Repeat mode off</string>
-    <string name="repeat_mode_one">Repeat current song</string>
-    <string name="repeat_mode_all">Repeat queue</string>
+    <string name="action_shuffle_on">Karıştırma açık</string>
+    <string name="action_shuffle_off">Karıştırma kapalı</string>
+    <string name="repeat_mode_off">Tekrarlama modu kapalı</string>
+    <string name="repeat_mode_one">Şu anki şarkıyı tekrarla</string>
+    <string name="repeat_mode_all">Kuyruğu tekrarla</string>
 
     <!-- Queue Title -->
     <string name="queue_all_songs">Tüm şarkılar</string>
@@ -249,7 +249,8 @@
     <string name="pause_search_history">Arama geçmişini duraklat</string>
     <string name="clear_search_history">Arama geçmişini temizle</string>
     <string name="clear_search_history_confirm">Tüm arama geçmişini temizlemekten emin misiniz?</string>
-    <string name="enable_kugou">KuGou şarkı sözleri sağlayıcısını etkinleştir</string>
+    <string name="enable_lrclib">LrcLib şarkı sözü sağlayıcısını etkinleştir</string>
+    <string name="enable_kugou">KuGou şarkı sözü sağlayıcısını etkinleştir</string>
 
     <string name="backup_restore">Yedekleme ve geri yükleme</string>
     <string name="backup">Yedekle</string>
@@ -262,4 +263,5 @@
     <string name="about">Hakkında</string>
     <string name="app_version">Uygulama sürümü</string>
 
+    <string name="new_version_available">Yeni sürüm mevcut</string>
 </resources>

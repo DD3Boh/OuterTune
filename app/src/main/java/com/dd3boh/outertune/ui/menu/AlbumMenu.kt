@@ -1,6 +1,8 @@
 package com.dd3boh.outertune.ui.menu
 
 import android.content.Intent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,7 +64,6 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Album
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -84,6 +88,7 @@ fun AlbumMenu(
     val database = LocalDatabase.current
     val downloadUtil = LocalDownloadUtil.current
     val playerConnection = LocalPlayerConnection.current ?: return
+    val scope = rememberCoroutineScope()
     val libraryAlbum by database.album(originalAlbum.id).collectAsState(initial = originalAlbum)
     val album = libraryAlbum ?: originalAlbum
     var songs by remember {
@@ -119,6 +124,14 @@ fun AlbumMenu(
         }
     }
 
+    var refetchIconDegree by remember { mutableFloatStateOf(0f) }
+
+    val rotationAnimation by animateFloatAsState(
+        targetValue = refetchIconDegree,
+        animationSpec = tween(durationMillis = 800),
+        label = ""
+    )
+
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
@@ -134,7 +147,8 @@ fun AlbumMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -144,7 +158,7 @@ fun AlbumMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
+        onGetSong = { playlist ->
             coroutineScope.launch(Dispatchers.IO) {
                 playlist.playlist.browseId?.let { playlistId ->
                     album.album.playlistId?.let { addPlaylistId ->
@@ -152,19 +166,7 @@ fun AlbumMenu(
                     }
                 }
             }
-            database.transaction {
-                var position = playlist.songCount
-                songs.map { it.id }
-                    .forEach {
-                        insert(
-                            PlaylistSongMap(
-                                songId = it,
-                                playlistId = playlist.id,
-                                position = position++
-                            )
-                        )
-                    }
-            }
+            songs.map { it.id }
         },
         onDismiss = {
             showChoosePlaylistDialog = false
@@ -259,7 +261,6 @@ fun AlbumMenu(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
         }
         GridMenuItem(
@@ -271,7 +272,7 @@ fun AlbumMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songs.forEach { song ->
+                songs.filterNot { it.song.isLocal }.forEach { song ->
                     val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
                         .setCustomCacheKey(song.id)
                         .setData(song.song.title.toByteArray())
@@ -304,6 +305,25 @@ fun AlbumMenu(
                 onDismiss()
             } else {
                 showSelectArtistDialog = true
+            }
+        }
+        GridMenuItem(
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Sync,
+                    contentDescription = null,
+                    modifier = Modifier.graphicsLayer(rotationZ = rotationAnimation)
+                )
+            },
+            title = R.string.refetch
+        ) {
+            refetchIconDegree -= 360
+            scope.launch(Dispatchers.IO) {
+                YouTube.album(album.id).onSuccess {
+                    database.transaction {
+                        update(album.album, it)
+                    }
+                }
             }
         }
         GridMenuItem(

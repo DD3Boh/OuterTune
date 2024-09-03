@@ -43,6 +43,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
@@ -77,7 +78,7 @@ import java.util.Stack
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LibrarySongsFolderScreen(
+fun LibraryFoldersScreen(
     navController: NavController,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
     filterContent: @Composable() (() -> Unit)? = null
@@ -94,9 +95,9 @@ fun LibrarySongsFolderScreen(
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
-    var inLocal by viewModel.inLocal
-
     val lazyListState = rememberLazyListState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
     // destroy old structure when pref changes
     flatSubfolders.let {
@@ -129,20 +130,29 @@ fun LibrarySongsFolderScreen(
         mutableStateOf(false)
     }
 
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            lazyListState.animateScrollToItem(0)
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
+    }
+
     LaunchedEffect(sortType, sortDescending, currDir) {
         val tempList = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
         // sort songs
         tempList.sortBy {
             when (sortType) {
                 SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
-                SongSortType.NAME -> it.item.song.title
-                SongSortType.ARTIST -> it.item.artists.firstOrNull()?.name
+                SongSortType.MODIFIED_DATE -> it.item.song.getDateModifiedLong().toString()
+                SongSortType.RELEASE_DATE -> it.item.song.getDateLong().toString()
+                SongSortType.NAME -> it.item.song.title.lowercase()
+                SongSortType.ARTIST -> it.item.artists.joinToString { artist -> artist.name }.lowercase()
                 SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
             }
         }
 
         // sort folders
-        currDir.subdirs.sortBy { it.currentDir } // only sort by name
+        currDir.subdirs.sortBy { it.currentDir.lowercase() } // only sort by name
 
         if (sortDescending) {
             currDir.subdirs.reverse()
@@ -153,11 +163,9 @@ fun LibrarySongsFolderScreen(
         wrappedSongs.addAll(tempList)
     }
 
-    BackHandler {
-        if (folderStack.size > 1) {
-            folderStack.pop()
-            currDir = folderStack.peek()
-        } else inLocal = false
+    BackHandler(folderStack.size > 1) {
+        folderStack.pop()
+        currDir = folderStack.peek()
     }
 
     Box(
@@ -167,14 +175,13 @@ fun LibrarySongsFolderScreen(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
-            stickyHeader(
+            item(
                 key = "header",
                 contentType = CONTENT_TYPE_HEADER
             ) {
                 Column(
                     modifier = Modifier.background(MaterialTheme.colorScheme.background)
                 ) {
-                    Row(modifier = Modifier.padding(vertical = 8.dp)) { }
                     filterContent?.let {
                         it()
                     }
@@ -198,6 +205,8 @@ fun LibrarySongsFolderScreen(
                                 sortTypeText = { sortType ->
                                     when (sortType) {
                                         SongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                        SongSortType.MODIFIED_DATE -> R.string.sort_by_date_modified
+                                        SongSortType.RELEASE_DATE -> R.string.sort_by_date_released
                                         SongSortType.NAME -> R.string.sort_by_name
                                         SongSortType.ARTIST -> R.string.sort_by_artist
                                         SongSortType.PLAY_TIME -> R.string.sort_by_play_time
@@ -219,22 +228,23 @@ fun LibrarySongsFolderScreen(
                 }
             }
 
-            item(
-                key = "previous",
-                contentType = CONTENT_TYPE_FOLDER
-            ) {
-                SongFolderItem(
-                    folderTitle = "..",
-                    subtitle = "Previous folder",
-                    modifier = Modifier
-                        .clickable {
-                            if (folderStack.size > 1) {
-                                folderStack.pop()
-                                currDir = folderStack.peek()
-                            } else inLocal = false
-                        }
-                )
-            }
+            if (folderStack.size > 1)
+                item(
+                    key = "previous",
+                    contentType = CONTENT_TYPE_FOLDER
+                ) {
+                    SongFolderItem(
+                        folderTitle = "..",
+                        subtitle = "Previous folder",
+                        modifier = Modifier
+                            .clickable {
+                                if (folderStack.size > 1) {
+                                    folderStack.pop()
+                                    currDir = folderStack.peek()
+                                }
+                            }
+                    )
+                }
 
             // all subdirectories listed here
             itemsIndexed(
@@ -312,10 +322,8 @@ fun LibrarySongsFolderScreen(
                                                     ListQueue(
                                                         title = currDir.currentDir,
                                                         // I surely hope this applies to all in this folder...
-                                                        items = currDir
-                                                            .toList()
-                                                            .map { it.toMediaMetadata() },
-                                                            startIndex = currDir.toList().indexOf(songWrapper.item)
+                                                        items = wrappedSongs.map { it.item.toMediaMetadata() },
+                                                            startIndex = currDir.toSortedList(sortType, sortDescending).indexOf(songWrapper.item)
                                                     )
                                                 )
                                             }
@@ -344,7 +352,7 @@ fun LibrarySongsFolderScreen(
                 playerConnection.playQueue(
                     ListQueue(
                         title = currDir.currentDir,
-                        items = currDir.toList().shuffled().map { it.toMediaMetadata() }
+                        items = currDir.toSortedList(sortType, sortDescending).shuffled().map { it.toMediaMetadata() }
                     )
                 )
             }

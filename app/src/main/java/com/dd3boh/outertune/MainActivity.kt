@@ -109,6 +109,7 @@ import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
 import com.dd3boh.outertune.constants.DefaultOpenTabNewKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
+import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LibraryFilter
 import com.dd3boh.outertune.constants.LibraryFilterKey
@@ -126,6 +127,7 @@ import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
 import com.dd3boh.outertune.constants.SearchSource
 import com.dd3boh.outertune.constants.SearchSourceKey
+import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.extensions.toEnum
@@ -155,9 +157,9 @@ import com.dd3boh.outertune.ui.screens.artist.ArtistScreen
 import com.dd3boh.outertune.ui.screens.artist.ArtistSongsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryAlbumsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryArtistsScreen
+import com.dd3boh.outertune.ui.screens.library.LibraryFoldersScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryPlaylistsScreen
 import com.dd3boh.outertune.ui.screens.library.LibraryScreen
-import com.dd3boh.outertune.ui.screens.library.LibrarySongsFolderScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
@@ -169,6 +171,7 @@ import com.dd3boh.outertune.ui.screens.settings.AboutScreen
 import com.dd3boh.outertune.ui.screens.settings.AppearanceSettings
 import com.dd3boh.outertune.ui.screens.settings.BackupAndRestore
 import com.dd3boh.outertune.ui.screens.settings.ContentSettings
+import com.dd3boh.outertune.ui.screens.settings.DEFAULT_ENABLED_TABS
 import com.dd3boh.outertune.ui.screens.settings.DarkMode
 import com.dd3boh.outertune.ui.screens.settings.ExperimentalSettings
 import com.dd3boh.outertune.ui.screens.settings.LocalPlayerSettings
@@ -199,6 +202,7 @@ import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
 import com.dd3boh.outertune.utils.scanners.ScannerAbortException
+import com.dd3boh.outertune.utils.urlEncode
 import com.valentinilk.shimmer.LocalShimmerTheme
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.SongItem
@@ -208,7 +212,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.URLEncoder
+import java.net.URLDecoder
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -259,6 +263,17 @@ class MainActivity : ComponentActivity() {
         unbindService(serviceConnection)
         super.onStop()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (dataStore.get(StopMusicOnTaskClearKey, false) && playerConnection?.isPlaying?.value == true
+            && isFinishing) {
+            stopService(Intent(this, MusicService::class.java))
+            unbindService(serviceConnection)
+            playerConnection = null
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition",
         "StateFlowValueCalledInComposition"
@@ -386,7 +401,7 @@ class MainActivity : ComponentActivity() {
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
                     val focusManager = LocalFocusManager.current
                     val density = LocalDensity.current
@@ -397,7 +412,8 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
-                    val navigationItems = if (!newInterfaceStyle) Screens.MainScreens else Screens.MainScreensNew
+                    val (enabledTabs) = rememberPreference(EnabledTabsKey, defaultValue = DEFAULT_ENABLED_TABS)
+                    val navigationItems = if (!newInterfaceStyle) Screens.getScreens(enabledTabs) else Screens.MainScreensNew
                     val defaultOpenTab = remember {
                         if (newInterfaceStyle) dataStore[DefaultOpenTabNewKey].toEnum(defaultValue = NavigationTabNew.HOME)
                         else dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
@@ -445,7 +461,7 @@ class MainActivity : ComponentActivity() {
                     val onSearch: (String) -> Unit = {
                         if (it.isNotEmpty()) {
                             onActiveChange(false)
-                            navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                            navController.navigate("search/${it.urlEncode()}")
                             if (dataStore[PauseSearchHistoryKey] != true) {
                                 database.query {
                                     insert(SearchHistory(query = it))
@@ -505,7 +521,7 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(navBackStackEntry) {
                         if (navBackStackEntry?.destination?.route?.startsWith("search/") == true) {
                             val searchQuery = withContext(Dispatchers.IO) {
-                                navBackStackEntry?.arguments?.getString("query")!!
+                                URLDecoder.decode(navBackStackEntry?.arguments?.getString("query")!!, "UTF-8")
                             }
                             onQueryChange(TextFieldValue(searchQuery, TextRange(searchQuery.length)))
                         } else if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
@@ -614,7 +630,7 @@ class MainActivity : ComponentActivity() {
 
                     CompositionLocalProvider(
                         LocalDatabase provides database,
-                        LocalContentColor provides contentColorFor(MaterialTheme.colorScheme.background),
+                        LocalContentColor provides contentColorFor(MaterialTheme.colorScheme.surface),
                         LocalPlayerConnection provides playerConnection,
                         LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
                         LocalDownloadUtil provides downloadUtil,
@@ -653,6 +669,7 @@ class MainActivity : ComponentActivity() {
                                 startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
                                     NavigationTab.HOME -> Screens.Home
                                     NavigationTab.SONG -> Screens.Songs
+                                    NavigationTab.FOLDERS -> Screens.Folders
                                     NavigationTab.ARTIST -> Screens.Artists
                                     NavigationTab.ALBUM -> Screens.Albums
                                     NavigationTab.PLAYLIST -> Screens.Playlists
@@ -692,6 +709,9 @@ class MainActivity : ComponentActivity() {
                                 composable(Screens.Songs.route) {
                                     LibrarySongsScreen(navController)
                                 }
+                                composable(Screens.Folders.route) {
+                                    LibraryFoldersScreen(navController)
+                                }
                                 composable(Screens.Artists.route) {
                                     LibraryArtistsScreen(navController)
                                 }
@@ -718,9 +738,6 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable("new_release") {
                                     NewReleaseScreen(navController, scrollBehavior)
-                                }
-                                composable(Screens.SongFolders.route) {
-                                    LibrarySongsFolderScreen(navController)
                                 }
 
                                 composable(
@@ -947,6 +964,7 @@ class MainActivity : ComponentActivity() {
                                     } else if (navBackStackEntry?.destination?.route in listOf(
                                             Screens.Home.route,
                                             Screens.Songs.route,
+                                            Screens.Folders.route,
                                             Screens.Artists.route,
                                             Screens.Albums.route,
                                             Screens.Playlists.route,
@@ -988,7 +1006,7 @@ class MainActivity : ComponentActivity() {
                                             onQueryChange = onQueryChange,
                                             navController = navController,
                                             onSearch = {
-                                                navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                                                navController.navigate("search/${it.urlEncode()}")
                                                 if (dataStore[PauseSearchHistoryKey] != true) {
                                                     database.query {
                                                         insert(SearchHistory(query = it))
@@ -1053,12 +1071,19 @@ class MainActivity : ComponentActivity() {
                                         )
                                     },
                                     onClick = {
-                                        navController.navigate(screen.route) {
-                                            popUpTo(navController.graph.startDestinationId) {
-                                                saveState = true
+                                        if (navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true) {
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
+                                            coroutineScope.launch {
+                                                searchBarScrollBehavior.state.resetHeightOffset()
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
+                                        } else {
+                                            navController.navigate(screen.route) {
+                                                popUpTo(navController.graph.startDestinationId) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
                                         }
                                     }
                                 )

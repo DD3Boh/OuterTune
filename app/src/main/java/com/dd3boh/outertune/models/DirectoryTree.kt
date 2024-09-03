@@ -1,9 +1,11 @@
 package com.dd3boh.outertune.models
 
+import com.dd3boh.outertune.constants.SongSortType
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.ui.utils.SCANNER_DEBUG
 import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import timber.log.Timber
+import java.time.ZoneOffset
 
 /**
  * A tree representation of local audio files
@@ -157,6 +159,37 @@ class DirectoryTree(path: String) {
         }
 
         traverseTree(this, songs)
+        return songs
+    }
+
+    /**
+     * Retrieve a list of all the songs, adhering to sort preferences. Subfolder structure will be completely ignored.
+     */
+    fun toSortedList(sortType: SongSortType, sortDescending: Boolean): List<Song> {
+        val songs = ArrayList<Song>()
+
+        fun traverseTree(tree: DirectoryTree, result: ArrayList<Song>) {
+            result.addAll(tree.files)
+            tree.subdirs.forEach { traverseTree(it, result) }
+        }
+
+        traverseTree(this, songs)
+
+        // sort songs. Ignore any subfolder structure
+        songs.sortBy {
+            when (sortType) {
+                SongSortType.CREATE_DATE -> it.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
+                SongSortType.MODIFIED_DATE -> it.song.getDateModifiedLong().toString()
+                SongSortType.RELEASE_DATE -> it.song.getDateLong().toString()
+                SongSortType.NAME -> it.song.title
+                SongSortType.ARTIST -> it.artists.firstOrNull()?.name
+                SongSortType.PLAY_TIME -> it.song.totalPlayTime.toString()
+            }
+        }
+
+        if (sortDescending) {
+            songs.reverse()
+        }
         return songs
     }
 

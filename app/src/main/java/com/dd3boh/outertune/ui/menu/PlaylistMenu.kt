@@ -10,9 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shuffle
@@ -49,7 +49,6 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistSong
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -230,7 +229,8 @@ fun PlaylistMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -244,32 +244,16 @@ fun PlaylistMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { targetPlaylist ->
+        onGetSong = {
             coroutineScope.launch(Dispatchers.IO) {
-                var position = targetPlaylist.songCount
-                songs.let { songs ->
-                    targetPlaylist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) }
+                // add songs to playlist and push to ytm
+                songs.let { playlist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) } }
 
-                    database.transaction {
-                        songs
-                            .map { it.toMediaMetadata() }
-                            .onEach(::insert)
-                            .forEach { song ->
-                                insert(
-                                    PlaylistSongMap(
-                                        songId = song.id,
-                                        playlistId = targetPlaylist.id,
-                                        position = position++,
-                                    )
-                                )
-                            }
-                    }
-                }
-
-                targetPlaylist.playlist.browseId?.let { playlistId ->
+                playlist.playlist.browseId?.let { playlistId ->
                     YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
                 }
             }
+            songs.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -358,7 +342,6 @@ fun PlaylistMenu(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
         }
 
@@ -372,7 +355,7 @@ fun PlaylistMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songs.forEach { song ->
+                songs.filterNot { it.song.isLocal }.forEach { song ->
                     val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
                         .setCustomCacheKey(song.id)
                         .setData(song.song.title.toByteArray())
@@ -399,7 +382,7 @@ fun PlaylistMenu(
             }
 
             GridMenuItem(
-                icon = Icons.Rounded.Delete,
+                icon = Icons.Rounded.PlaylistRemove,
                 title = R.string.delete
             ) {
                 showDeletePlaylistDialog = true

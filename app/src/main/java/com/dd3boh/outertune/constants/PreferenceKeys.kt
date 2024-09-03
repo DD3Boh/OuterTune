@@ -9,6 +9,7 @@ val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
 val PlayerBackgroundStyleKey = stringPreferencesKey("playerBackgroundStyle")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
+val EnabledTabsKey = stringPreferencesKey("enabledTabs")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
 val DefaultOpenTabNewKey = stringPreferencesKey("defaultOpenTabNew")
 val NewInterfaceKey = booleanPreferencesKey("newInterface")
@@ -27,17 +28,19 @@ enum class AudioQuality {
 }
 
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
-val SwipeToDismissKey = booleanPreferencesKey("swipeToDismiss")
 val SkipSilenceKey = booleanPreferencesKey("skipSilence")
+val SkipOnErrorKey = booleanPreferencesKey("skipOnError")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
 val YtmSyncKey = booleanPreferencesKey("ytmSync")
+val KeepAliveKey = booleanPreferencesKey("keepAlive")
+val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
-val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
 
 val PauseListenHistoryKey = booleanPreferencesKey("pauseListenHistory")
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
+val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
 
 val SongSortTypeKey = stringPreferencesKey("songSortType")
 val SongSortDescendingKey = booleanPreferencesKey("songSortDescending")
@@ -75,7 +78,7 @@ enum class LibraryViewType {
 }
 
 enum class SongSortType {
-    CREATE_DATE, NAME, ARTIST, PLAY_TIME
+    CREATE_DATE, MODIFIED_DATE, RELEASE_DATE, NAME, ARTIST, PLAY_TIME
 }
 
 enum class PlaylistSongSortType {
@@ -115,7 +118,7 @@ enum class AlbumFilter {
 }
 
 enum class LibraryFilter {
-    ALL, ALBUMS, ARTISTS, PLAYLISTS, SONGS
+    ALL, ALBUMS, ARTISTS, PLAYLISTS, SONGS, FOLDERS
 }
 
 val ShowLyricsKey = booleanPreferencesKey("showLyrics")
@@ -123,6 +126,7 @@ val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
 
 val PlayerVolumeKey = floatPreferencesKey("playerVolume")
 val RepeatModeKey = intPreferencesKey("repeatMode")
+val LockQueueKey = booleanPreferencesKey("lockQueue")
 
 val SearchSourceKey = stringPreferencesKey("searchSource")
 
@@ -159,6 +163,7 @@ val ScanPathsKey = stringPreferencesKey("scanPaths")
 val ExcludedScanPathsKey = stringPreferencesKey("excludedScanPaths")
 
 val DevSettingsKey = booleanPreferencesKey("devSettings")
+val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
 
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",

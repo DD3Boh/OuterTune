@@ -94,7 +94,8 @@ fun YouTubePlaylistMenu(
                         YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
                     }
                 }.let { songs ->
-                    queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+                    queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, playerConnection,
+                        forceInsert = true, delta = false)
                     queueBoard.setCurrQueue(playerConnection)
                 }
             }
@@ -106,37 +107,24 @@ fun YouTubePlaylistMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { targetPlaylist ->
-            coroutineScope.launch(Dispatchers.IO) {
-                var position = targetPlaylist.songCount
-                songs.ifEmpty {
-                    withContext(Dispatchers.IO) {
-                        YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
-                    }
-                }.let { songs ->
-                    targetPlaylist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) }
-
-                    database.transaction {
-                        songs
-                            .map { it.toMediaMetadata() }
-                            .onEach(::insert)
-                            .forEach { song ->
-                                insert(
-                                    PlaylistSongMap(
-                                        songId = song.id,
-                                        playlistId = targetPlaylist.id,
-                                        position = position++,
-                                        setVideoId = song.setVideoId
-                                    )
-                                )
-                            }
-                    }
+        onGetSong = { targetPlaylist ->
+            val allSongs = songs
+                .ifEmpty {
+                    YouTube.playlist(targetPlaylist.id).completed().getOrNull()?.songs.orEmpty()
+                }.map {
+                    it.toMediaMetadata()
                 }
+            database.transaction {
+                allSongs.forEach(::insert)
+            }
 
+            coroutineScope.launch(Dispatchers.IO) {
                 targetPlaylist.playlist.browseId?.let { playlistId ->
-                    YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
+                    YouTube.addPlaylistToPlaylist(playlistId, targetPlaylist.id)
                 }
             }
+
+            allSongs.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -321,7 +309,6 @@ fun YouTubePlaylistMenu(
             title = R.string.add_to_queue
         ) {
             showChooseQueueDialog = true
-            onDismiss()
         }
 
         GridMenuItem(

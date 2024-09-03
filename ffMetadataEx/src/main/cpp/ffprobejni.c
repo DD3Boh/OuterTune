@@ -105,7 +105,7 @@ Java_wah_mikooomich_ffMetadataEx_FFprobeWrapper_getFullAudioMetadata(JNIEnv* env
     // bitrate
     strcat(string, "\nbitrate: ");
     char bitrate[20];
-    sprintf(bitrate, "%lld", format_context->bit_rate);
+    sprintf(bitrate, "%lld", format_context->bit_rate); // compiler complains it wants the other long regardless ld or lld
     strcat(string, bitrate);
 
     // audio stream tags (mixed containers e.g. ogg)
@@ -131,7 +131,7 @@ Java_wah_mikooomich_ffMetadataEx_FFprobeWrapper_getFullAudioMetadata(JNIEnv* env
         // other stream data
         strcat(string, "\nduration: ");
         char duration[20];
-        sprintf(duration, "%lld", format_context->duration);
+        sprintf(duration, "%lld", format_context->duration); // compiler complains it wants the other long regardless ld or lld
         strcat(string, duration);
 
         strcat(string, "\nsampleRate: ");

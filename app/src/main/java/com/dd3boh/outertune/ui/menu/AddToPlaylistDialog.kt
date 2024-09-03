@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,10 +24,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -35,6 +38,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
+import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.ListDialog
 import com.dd3boh.outertune.ui.component.ListItem
 import com.dd3boh.outertune.ui.component.PlaylistListItem
@@ -49,7 +53,7 @@ fun AddToPlaylistDialog(
     isVisible: Boolean,
     noSyncing: Boolean = false,
     initialTextFieldValue: String? = null,
-    onAdd: (Playlist) -> Unit,
+    onGetSong: suspend (Playlist) -> List<String>, // list of song ids. Songs should be inserted to database in this function.
     onDismiss: () -> Unit,
 ) {
     val database = LocalDatabase.current
@@ -63,6 +67,19 @@ fun AddToPlaylistDialog(
 
     var syncedPlaylist: Boolean by remember {
         mutableStateOf(false)
+    }
+
+    var showDuplicateDialog by remember {
+        mutableStateOf(false)
+    }
+    var selectedPlaylist by remember {
+        mutableStateOf<Playlist?>(null)
+    }
+    var songIds by remember {
+        mutableStateOf<List<String>?>(null) // list is not saveable
+    }
+    var duplicates by remember {
+        mutableStateOf(emptyList<String>())
     }
 
     LaunchedEffect(Unit) {
@@ -96,8 +113,19 @@ fun AddToPlaylistDialog(
                 PlaylistListItem(
                     playlist = playlist,
                     modifier = Modifier.clickable {
-                        onAdd(playlist)
-                        onDismiss()
+                        selectedPlaylist = playlist
+                        coroutineScope.launch(Dispatchers.IO) {
+                            if (songIds == null) {
+                                songIds = onGetSong(playlist)
+                            }
+                            duplicates = database.playlistDuplicates(playlist.id, songIds!!)
+                            if (duplicates.isNotEmpty()) {
+                                showDuplicateDialog = true
+                            } else {
+                                onDismiss()
+                                database.addSongToPlaylist(playlist, songIds!!)
+                            }
+                        }
                     }
                 )
             }
@@ -120,13 +148,15 @@ fun AddToPlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
             onDone = { playlistName ->
                 coroutineScope.launch(Dispatchers.IO) {
-                    val browseId = YouTube.createPlaylist(playlistName).getOrNull()
+                    val browseId = if (syncedPlaylist)
+                        YouTube.createPlaylist(playlistName).getOrNull()
+                    else null
 
                     database.query {
                         insert(
                             PlaylistEntity(
                                 name = playlistName,
-                                browseId = if (syncedPlaylist) browseId else null,
+                                browseId = browseId,
                                 bookmarkedAt = LocalDateTime.now(),
                                 isEditable = !syncedPlaylist,
                                 isLocal = !syncedPlaylist // && check that all songs are non-local
@@ -168,7 +198,63 @@ fun AddToPlaylistDialog(
 
             }
         )
+    }
 
+    // duplicate songs warning
+    if (showDuplicateDialog) {
+        DefaultDialog(
+            title = { Text(stringResource(R.string.duplicates)) },
+            buttons = {
+                TextButton(
+                    onClick = {
+                        showDuplicateDialog = false
+                        onDismiss()
+                        database.transaction {
+                            addSongToPlaylist(
+                                selectedPlaylist!!,
+                                songIds!!.filter {
+                                    !duplicates.contains(it)
+                                }
+                            )
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.skip_duplicates))
+                }
 
+                TextButton(
+                    onClick = {
+                        showDuplicateDialog = false
+                        onDismiss()
+                        database.transaction {
+                            addSongToPlaylist(selectedPlaylist!!, songIds!!)
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.add_anyway))
+                }
+
+                TextButton(
+                    onClick = {
+                        showDuplicateDialog = false
+                    }
+                ) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+            onDismiss = {
+                showDuplicateDialog = false
+            }
+        ) {
+            Text(
+                text = if (duplicates.size == 1) {
+                    stringResource(R.string.duplicates_description_single)
+                } else {
+                    stringResource(R.string.duplicates_description_multiple, duplicates.size)
+                },
+                textAlign = TextAlign.Start,
+                modifier = Modifier.align(Alignment.Start)
+            )
+        }
     }
 }

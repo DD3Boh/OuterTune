@@ -1,11 +1,13 @@
 <resources>
+<!--InnerTune strings-->
+    <!--!!! If you are modifying OuterTune strings, they are at the bottom with the same headings !!!-->
+
     <!-- Bottom navigation -->
     <string name="home">Home</string>
     <string name="songs">Songs</string>
     <string name="artists">Artists</string>
     <string name="albums">Albums</string>
     <string name="playlists">Playlists</string>
-    <string name="library">Library</string>
 
     <!-- Top bar -->
     <plurals name="n_selected">
@@ -19,8 +21,10 @@
     <string name="account">Account</string>
     <string name="quick_picks">Quick picks</string>
     <string name="quick_picks_empty">Listen to songs to generate your quick picks</string>
+    <string name="forgotten_favorites">Forgotten favorites</string>
+    <string name="keep_listening">Keep listening</string>
+    <string name="similar_to">Similar to</string>
     <string name="new_release_albums">New release albums</string>
-    <string name="recent_activity">Recent activity</string>
 
     <!-- History -->
     <string name="today">Today</string>
@@ -51,8 +55,17 @@
     <string name="filter_bookmarked">Bookmarked</string>
     <string name="no_results_found">No results found</string>
 
+    <!-- Library -->
+    <string name="library_song_empty">Library songs will show up here</string>
+    <string name="library_artist_empty">Library artists will show up here</string>
+    <string name="library_album_empty">Library albums will show up here</string>
+    <string name="library_playlist_empty">Your playlists will show up here</string>
+
     <!-- Artist screen -->
     <string name="from_your_library">From your library</string>
+
+    <!-- Album screen -->
+    <string name="other_versions">Other versions</string>
 
     <!-- Playlist -->
     <string name="liked_songs">Liked songs</string>
@@ -60,7 +73,6 @@
     <string name="playlist_is_empty">The playlist is empty</string>
     <string name="remove_download_playlist_confirm">Do you really want to remove all \"%s\" playlist songs from the Downloaded Songs storage?</string>
     <string name="delete_playlist_confirm">Do you really want to delete the playlist \"%s\"?</string>
-    <string name="auto_playlist">Auto playlist</string>
 
     <!-- Button -->
     <string name="retry">Retry</string>
@@ -80,18 +92,18 @@
     <string name="remove_download">Remove download</string>
     <string name="import_playlist">Import playlist</string>
     <string name="add_to_playlist">Add to playlist</string>
-    <string name="remove_from_playlist">Remove from playlist</string>
     <string name="view_artist">View artist</string>
     <string name="view_album">View album</string>
     <string name="refetch">Refetch</string>
     <string name="share">Share</string>
     <string name="delete">Delete</string>
     <string name="remove_from_history">Remove from history</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="remove_from_queue">Remove from queue</string>
     <string name="search_online">Search online</string>
     <string name="sync">Sync</string>
     <string name="advanced">Advanced</string>
-    <string name="select">Selection mode</string>
-    <string name="like_all">Like all</string>
+    <string name="tempo_and_pitch">Tempo and Pitch</string>
 
     <!-- Sort menu -->
     <string name="sort_by_create_date">Date added</string>
@@ -104,7 +116,6 @@
     <string name="sort_by_custom">Custom order</string>
 
     <!-- Dialog -->
-    <string name="play_count">Play count</string>
     <string name="media_id">Media id</string>
     <string name="mime_type">MIME type</string>
     <string name="codecs">Codecs</string>
@@ -136,7 +147,11 @@
     <string name="artist_name">Artist name</string>
     <string name="error_artist_name_empty">Artist name cannot be empty.</string>
 
-    <string name="create_queue">New queue</string>
+    <string name="duplicates">Duplicates</string>
+    <string name="skip_duplicates">Skip duplicates</string>
+    <string name="add_anyway">Add anyway</string>
+    <string name="duplicates_description_single">The song is already in your playlist</string>
+    <string name="duplicates_description_multiple">%d songs are already in your playlist</string>
 
     <!-- Noun -->
     <plurals name="n_song">
@@ -173,7 +188,6 @@
     <string name="removed_song_from_playlist">Removed \"%s\" from playlist</string>
     <string name="playlist_synced">Playlist synced</string>
     <string name="undo">Undo</string>
-    <string name="song_added_to_queue">\"%s\" added to queue</string>
 
     <!-- Player -->
     <string name="lyrics_not_found">Lyrics not found</string>
@@ -190,7 +204,9 @@
 
     <!-- Player action -->
     <string name="action_like">Like</string>
+    <string name="action_like_all">Like all</string>
     <string name="action_remove_like">Remove like</string>
+    <string name="action_remove_like_all">Remove all likes</string>
     <string name="action_shuffle_on">Shuffle on</string>
     <string name="action_shuffle_off">Shuffle off</string>
     <string name="repeat_mode_off">Repeat mode off</string>
@@ -206,29 +222,25 @@
 
     <!-- Settings -->
     <string name="settings">Settings</string>
-    <string name="settings_debug">Debug</string>
     <string name="appearance">Appearance</string>
+    <string name="theme">Theme</string>
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
-    <string name="player_background_style">Player background style</string>
-    <string name="player_background_default">Follow theme</string>
-    <string name="player_background_gradient">Gradient</string>
-    <string name="player_background_blur">Blur</string>
     <string name="dark_theme">Dark theme</string>
     <string name="dark_theme_on">On</string>
     <string name="dark_theme_off">Off</string>
     <string name="dark_theme_follow_system">Follow system</string>
     <string name="pure_black">Pure black</string>
-    <string name="new_interface">New interface layout</string>
-    <string name="default_open_tab">Default open tab</string>
     <string name="customize_navigation_tabs">Customize navigation tabs</string>
     <string name="lyrics_text_position">Lyrics text position</string>
     <string name="left">Left</string>
     <string name="center">Center</string>
     <string name="right">Right</string>
+    <string name="misc">Misc</string>
+    <string name="default_open_tab">Default open tab</string>
 
     <string name="content">Content</string>
     <string name="login">Login</string>
-    <string name="ytm_sync">Automatically sync with your YouTube Music account</string>
+    <string name="not_logged_in">Not logged in</string>
     <string name="content_language">Default content language</string>
     <string name="content_country">Default content country</string>
     <string name="system_default">System default</string>
@@ -242,13 +254,15 @@
     <string name="audio_quality_auto">Auto</string>
     <string name="audio_quality_high">High</string>
     <string name="audio_quality_low">Low</string>
+    <string name="queue">Queue</string>
     <string name="persistent_queue">Persistent queue</string>
-    <string name="swipe_to_dismiss_title">Swipe to remove songs in queue</string>
-    <string name="swipe_to_dismiss_description">Disable to prevent unwanted deletions when scrolling</string>
+    <string name="persistent_queue_desc">Restore previous open queue(s) when the app starts</string>
     <string name="skip_silence">Skip silence</string>
     <string name="audio_normalization">Audio normalization</string>
+    <string name="auto_skip_next_on_error">Auto skip to next song when error occurs</string>
+    <string name="auto_skip_next_on_error_desc">Ensure your continuous playback experience</string>
+    <string name="stop_music_on_task_clear">Stop music on task clear</string>
     <string name="equalizer">Equalizer</string>
-    <string name="lyrics_settings_title">Lyrics</string>
 
     <string name="storage">Storage</string>
     <string name="cache">Cache</string>
@@ -264,38 +278,93 @@
     <string name="size_used">%s used</string>
 
     <string name="privacy">Privacy</string>
+    <string name="listen_history">Listen history</string>
     <string name="pause_listen_history">Pause listen history</string>
     <string name="clear_listen_history">Clear listen history</string>
-    <string name="clear_listen_history_confirm">Are you sure to clear all listen history?</string>
+    <string name="clear_listen_history_confirm">Are you sure you want to clear all listen history?</string>
+    <string name="search_history">Search history</string>
     <string name="pause_search_history">Pause search history</string>
     <string name="clear_search_history">Clear search history</string>
-    <string name="clear_search_history_confirm">Are you sure to clear all search history?</string>
+    <string name="clear_search_history_confirm">Are you sure you want to clear all search history?</string>
+    <string name="enable_lrclib">Enable LrcLib lyrics provider</string>
     <string name="enable_kugou">Enable KuGou lyrics provider</string>
 
     <string name="backup_restore">Backup and restore</string>
     <string name="backup">Backup</string>
     <string name="restore">Restore</string>
-    <string name="import_innertune_tooltip">Restoring InnerTune backups are supported, albeit a possibility of anomalies due to technical limitations</string>
-    <string name="import_m3u">Import a playlist (m3u)</string>
     <string name="imported_playlist">Imported playlist</string>
     <string name="backup_create_success">Backup created successfully</string>
     <string name="backup_create_failed">Couldn\'t create backup</string>
     <string name="restore_failed">Failed to restore backup</string>
-    <string name="m3u_import_failed">Failed to import playlist</string>
 
     <string name="about">About</string>
     <string name="app_version">App version</string>
 
-<!--experimental settings-->
-    <string name="experimental_settings_title">Experimental</string>
-    <string name="dev_settings_title">Enable developer settings</string>
-    <string name="dev_settings_description">Reveals additional advanced settings intended for development use</string>
+    <string name="new_version_available">New version available</string>
 
-<!--local player-->
+
+
+
+<!--OuterTune strings below-->
+
+<!-- Bottom navigation -->
+    <string name="folders">Folders</string>
+    <string name="library">Library</string>
+
+<!-- Home -->
+    <string name="recent_activity">Recent activity</string>
+<!-- Queue -->
+    <string name="song_added_to_queue">\"%s\" added to queue</string>
+    <string name="create_queue">New queue</string>
+
+<!-- Playlist -->
+    <string name="auto_playlist">Auto playlist</string>
+
+<!-- Menu -->
+    <string name="select">Selection mode</string>
+    <string name="like_all">Like all</string>
+
+<!-- Sort menu -->
+    <string name="sort_by_date_modified">Date modified</string>
+    <string name="sort_by_date_released">Date released</string>
+
+<!-- Dialog -->
+    <string name="play_count">Play count</string>
+
+<!-- Settings -->
+    <string name="settings_debug">Debug</string>
+
+<!-- Appearance settings -->
+    <string name="player_background_style">Player background style</string>
+    <string name="player_background_default">Follow theme</string>
+    <string name="player_background_gradient">Gradient</string>
+    <string name="player_background_blur">Blur</string>
+    <string name="new_interface">New interface layout</string>
+
+    <!-- Content settings -->
+    <string name="ytm_sync">Automatically sync with your YouTube Music account</string>
+
+    <!-- Player settings -->
+    <string name="keep_alive_title">Prevent system killing app</string>
+    <string name="keep_alive_description">Use a foreground notification to prevent OuterTune from being randomly closed by the system.</string>
+
+<!--Lyrics settings -->
+    <string name="lyrics_settings_title">Lyrics</string>
+    <string name="lyrics_multiline_title">Read multiline lyrics</string>
+    <string name="lyrics_multiline_description">Treat all the lines between sync points as one lyric text</string>
+    <string name="lyrics_trim_title">Remove spaces around lyrics</string>
+
+<!-- Local player settings -->
     <string name="local_player_settings_title">Local Media</string>
-<!--scanner page settings-->
-    <string name="local_scanner_title">Local scanner</string>
+    <string name="flat_subfolders_title">Flatten subfolders</string>
+    <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
 
+    <string name="import_innertune_tooltip">Restoring InnerTune backups are supported, albeit a possibility of anomalies due to technical limitations</string>
+    <string name="import_m3u">Import a playlist (m3u)</string>
+    <string name="m3u_import_failed">Failed to import playlist</string>
+
+<!-- Scanner settings -->
+    <string name="local_scanner_title">Local scanner</string>
     <string name="auto_scanner_title">Scan automatically</string>
     <string name="auto_scanner_description">Automatically scan for songs when opening the app. This does not reload metadata of existing songs.</string>
 
@@ -305,11 +374,10 @@
     <string name="scan_paths_incl">Scan paths</string>
     <string name="scan_paths_excl">Excluded scan paths</string>
 
-
     <string name="manual_scanner_title">Manual scanner</string>
-    <string name="scanner_warning">By default, the scanner will NOT reload any metadata of existing songs unless you specify otherwise above. Depending on the size of your library, it make take a while. It is highly recommend to wait until the scanner to finish before proceeding.</string>
+    <string name="scanner_warning">By default, the scanner will NOT reload any metadata of existing songs unless you specify otherwise above. Depending on the size of your library, it make take a while.</string>
 
-<!--scanner additional settings-->
+<!-- Scanner parameter settings-->
     <string name="scanner_settings_title">Additional scanner settings</string>
     <string name="scanner_strict_file_name_title">Strict file names</string>
     <string name="scanner_strict_file_name_description">When enabled, file names will NOT be ignored. Ex. "Song.ogg" will be a different song from "Song.flac". Scanner sensitivity preference will still apply</string>
@@ -318,20 +386,11 @@
     <string name="scanner_sensitivity_L2">Match title and artists</string>
     <string name="scanner_sensitivity_L3">Match title, artists, albums</string>
 
-    <string name="scanner_type_title">Metadata extractor</string>
-    <string name="scanner_type_mediastore">MediaStore (Android\'s system scanner, possibly inaccurate)</string>
-    <string name="scanner_type_mediastore_ffprobe">Hybrid (MediaStore extractor, but FFProbe for artist extraction)</string>
-    <string name="scanner_type_ffprobe">FFProbe (Prioritize FFmpeg extraction over MediaStore)</string>
-
     <string name="scanner_variant_rescan">Rescan the entire library and reload all songs\' metadata</string>
     <string name="scanner_online_artist_linking">Try to link local files\' artists with ones on YouTube Music</string>
 
-<!--Folders-->
-    <string name="flat_subfolders_title">Flatten subfolders</string>
-    <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
-
-<!--Lyrics-->
-    <string name="lyrics_multiline_title">Read multiline lyrics</string>
-    <string name="lyrics_multiline_description">Treat all the lines between sync points as one lyric text</string>
-    <string name="lyrics_trim_title">Remove spaces around lyrics</string>
+    <!--experimental settings-->
+    <string name="experimental_settings_title">Experimental</string>
+    <string name="dev_settings_title">Enable developer settings</string>
+    <string name="dev_settings_description">Reveals additional advanced settings intended for development use</string>
 </resources>

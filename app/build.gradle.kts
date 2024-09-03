@@ -13,20 +13,21 @@ plugins {
 
 android {
     namespace = "com.dd3boh.outertune"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 34
-        versionCode = 20
-        versionName = "0.6.0-beta1"
+        versionCode = 21
+        versionName = "0.6.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isCrunchPngs = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
@@ -160,6 +161,7 @@ dependencies {
 
     implementation(projects.innertube)
     implementation(projects.kugou)
+    implementation(projects.lrclib)
 
     coreLibraryDesugaring(libs.desugaring)
 

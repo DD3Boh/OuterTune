@@ -21,6 +21,9 @@
     <string name="account">Акаунт</string>
     <string name="quick_picks">Швидкий вибір</string>
     <string name="quick_picks_empty">Послухайте кілька пісень, щоб створити ваш швидкий вибір</string>
+    <string name="forgotten_favorites">Забуті улюблені</string>
+    <string name="keep_listening">Продовжуйте слухати</string>
+    <string name="similar_to">Схожі на</string>
     <string name="new_release_albums">Нові релізи альбомів</string>
 
     <!-- History -->
@@ -59,6 +62,8 @@
     <string name="liked_songs">Улюблені треки</string>
     <string name="downloaded_songs">Завантажена музика</string>
     <string name="playlist_is_empty">Плейлист порожній</string>
+    <string name="remove_download_playlist_confirm">Ви впевнені, що хочете видалити всі пісні з плейлиста «%s» зі сховища завантаженої музики?</string>
+    <string name="delete_playlist_confirm">Ви впевнені, що хочете видалити плейлист «%s»?</string>
 
     <!-- Button -->
     <string name="retry">Повторювати</string>
@@ -84,9 +89,12 @@
     <string name="share">Поділитися</string>
     <string name="delete">Видалити</string>
     <string name="remove_from_history">Видалити з історії</string>
+    <string name="remove_from_playlist">Видалити з плейлиста</string>
+    <string name="remove_from_queue">Видалити з черги</string>
     <string name="search_online">Пошук в Інтернеті</string>
-    <string name="sync">Синхронізація</string>
+    <string name="sync">Синхронізувати</string>
     <string name="advanced">Контроль аудіо</string>
+    <string name="tempo_and_pitch">Темп і висота тону</string>
 
     <!-- Sort menu -->
     <string name="sort_by_create_date">Нещодавно додані</string>
@@ -129,6 +137,12 @@
     <string name="edit_artist">Редагувати виконавця</string>
     <string name="artist_name">Ім\'я виконавця</string>
     <string name="error_artist_name_empty">Вкажіть ім\'я виконавця</string>
+
+    <string name="duplicates">Дублікати</string>
+    <string name="skip_duplicates">Пропустити дублікати</string>
+    <string name="add_anyway">Додати в будь-якому разі</string>
+    <string name="duplicates_description_single">Ця пісня вже у вашому плейлисті</string>
+    <string name="duplicates_description_multiple">%d пісень вже у вашому плейлисті</string>
 
     <!-- Noun -->
     <plurals name="n_song">
@@ -176,7 +190,7 @@
 
     <!-- Snackbar -->
     <string name="playlist_imported">Плейлист імпортовано</string>
-    <string name="removed_song_from_playlist">«%s» видалено зі списку відтворення</string>
+    <string name="removed_song_from_playlist">«%s» видалена з плейлиста</string>
     <string name="playlist_synced">Плейлист синхронізовано</string>
     <string name="undo">Скасувати</string>
 
@@ -197,7 +211,9 @@
 
     <!-- Player action -->
     <string name="action_like">Поставити «Подобається»</string>
+    <string name="action_like_all">Відзначити все як «Подобається»</string>
     <string name="action_remove_like">Прибрати «Подобається»</string>
+    <string name="action_remove_like_all">Прибрати всі позначки «Подобається»</string>
     <string name="action_shuffle_on">Увімкнути перемішування</string>
     <string name="action_shuffle_off">Вимкнути перемішування</string>
     <string name="repeat_mode_off">Вимкнути повторення</string>
@@ -214,21 +230,23 @@
     <!-- Settings -->
     <string name="settings">Параметри</string>
     <string name="appearance">Зовнішній вигляд</string>
+    <string name="theme">Тема</string>
     <string name="enable_dynamic_theme">Увімкнути динамічну тему</string>
     <string name="dark_theme">Темна тема</string>
     <string name="dark_theme_on">Увімк.</string>
     <string name="dark_theme_off">Вимк.</string>
     <string name="dark_theme_follow_system">Використовувати налаштування системи</string>
     <string name="pure_black">Режим чистого чорного кольору</string>
-    <string name="default_open_tab">Вкладка навігації за замовчуванням</string>
     <string name="customize_navigation_tabs">Налаштування вкладок навігації</string>
     <string name="lyrics_text_position">Розташування тексту пісні</string>
     <string name="left">Ліворуч</string>
     <string name="center">По центру</string>
     <string name="right">Праворуч</string>
-
+    <string name="misc">Різне</string>
+    <string name="default_open_tab">Основна вкладка навігації</string>
     <string name="content">Контент</string>
     <string name="login">Логін</string>
+    <string name="not_logged_in">Не авторизовано</string>
     <string name="content_language">Мова контенту</string>
     <string name="content_country">Країна контенту</string>
     <string name="system_default">Використовувати налаштування системи</string>
@@ -242,9 +260,14 @@
     <string name="audio_quality_auto">Авто</string>
     <string name="audio_quality_high">Висока</string>
     <string name="audio_quality_low">Низька</string>
+    <string name="queue">Черга</string>
     <string name="persistent_queue">Постійна черга</string>
+    <string name="persistent_queue_desc">Відновлювати останню чергу після запуску програми</string>
     <string name="skip_silence">Пропуск тиші в композиціях</string>
     <string name="audio_normalization">Нормалізація аудіо</string>
+    <string name="auto_skip_next_on_error">Автоперехід до наступної пісні при помилці</string>
+    <string name="auto_skip_next_on_error_desc">Забезпечити безперервне відтворення</string>
+    <string name="stop_music_on_task_clear">Зупиняти музику при очищенні завдань</string>
     <string name="equalizer">Еквалайзер</string>
 
     <string name="storage">Сховище</string>
@@ -267,8 +290,8 @@
     <string name="pause_search_history">Призупинити історію пошуку</string>
     <string name="clear_search_history">Очистити історію пошуку</string>
     <string name="clear_search_history_confirm">Ви впевнені, що хочете очистити всю історію пошуку?</string>
+    <string name="enable_lrclib">Увімкнути провайдера текстів LrcLib</string>
     <string name="enable_kugou">Увімкнути провайдера текстів KuGou</string>
-
     <string name="backup_restore">Резервне копіювання</string>
     <string name="backup">Створити резервну копію</string>
     <string name="restore">Відновити з резервної копії</string>
@@ -280,4 +303,5 @@
     <string name="about">Про програму</string>
     <string name="app_version">Версія застосунку</string>
 
+    <string name="new_version_available">Доступна нова версія</string>
 </resources>

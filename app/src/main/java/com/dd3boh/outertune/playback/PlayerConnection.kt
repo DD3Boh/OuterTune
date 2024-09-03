@@ -10,13 +10,12 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.db.entities.LyricsEntity
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
 import com.dd3boh.outertune.extensions.metadata
-import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.QueueBoard
-import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.playback.MusicService.MusicBinder
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.utils.reportException
@@ -26,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -47,6 +47,18 @@ class PlayerConnection(
         database.song(it?.id)
     }
     val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
+        // local songs will always look at lrc files first
+        if (mediaMetadata?.isLocal == true) {
+            val lyrics = service.lyricsHelper.getLocalLyrics(mediaMetadata)
+            if (lyrics != null) {
+                return@flatMapLatest flowOf(
+                    LyricsEntity(
+                        id = mediaMetadata.id,
+                        lyrics = lyrics
+                    )
+                )
+            }
+        }
         database.lyrics(mediaMetadata?.id)
     }
     val currentFormat = mediaMetadata.flatMapLatest { mediaMetadata ->
@@ -136,33 +148,8 @@ class PlayerConnection(
      * Shuffles the queue
      */
     fun triggerShuffle() {
-        val oldIndex = player.currentMediaItemIndex
-        queueBoard.setCurrQueuePosIndex(oldIndex)
-
-        // shuffle and update player playlist
-        if (!isShuffleEnabled.value) {
-            queueBoard.shuffleCurrent()
-            queueBoard.getCurrentQueue()?.let { mq ->
-                player.moveMediaItem(oldIndex, 0)
-                val newItems = mq.getCurrentQueueShuffled()
-                player.replaceMediaItems(1, Int.MAX_VALUE,
-                    newItems.subList(1, newItems.size).map { it.toMediaItem() })
-            }
-        } else {
-            val unshuffledPos = queueBoard.unShuffleCurrent()
-            queueBoard.getCurrentQueue()?.let { mq ->
-                player.moveMediaItem(oldIndex, unshuffledPos)
-                val newItems = mq.getCurrentQueueShuffled()
-                // replace items up to current playing, then replace items after current
-                player.replaceMediaItems(0, unshuffledPos,
-                    newItems.subList(0, unshuffledPos).map { it.toMediaItem() })
-                player.replaceMediaItems(unshuffledPos + 1, Int.MAX_VALUE,
-                    newItems.subList(unshuffledPos + 1, newItems.size).map { it.toMediaItem() })
-            }
-        }
-
+        service.triggerShuffle()
         updateCanSkipPreviousAndNext()
-        service.updateNotification()
     }
 
     override fun onRepeatModeChanged(mode: Int) {

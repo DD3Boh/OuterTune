@@ -26,6 +26,8 @@ import com.dd3boh.outertune.db.entities.PlayCountEntity
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.PlaylistSongMapPreview
+import com.dd3boh.outertune.db.entities.QueueEntity
+import com.dd3boh.outertune.db.entities.QueueSongMap
 import com.dd3boh.outertune.db.entities.RelatedSongMap
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.db.entities.SongAlbumMap
@@ -74,6 +76,8 @@ class MusicDatabase(
         AlbumArtistMap::class,
         PlaylistSongMap::class,
         GenreEntity::class,
+        QueueEntity::class,
+        QueueSongMap::class,
         SongGenreMap::class,
         SearchHistory::class,
         FormatEntity::class,
@@ -87,7 +91,7 @@ class MusicDatabase(
         SortedSongAlbumMap::class,
         PlaylistSongMapPreview::class
     ],
-    version = 13,
+    version = 15,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
@@ -100,7 +104,8 @@ class MusicDatabase(
         AutoMigration(from = 9, to = 10, spec = Migration9To10::class),
         AutoMigration(from = 10, to = 11, spec = Migration10To11::class),
         AutoMigration(from = 11, to = 12, spec = Migration11To12::class),
-        AutoMigration(from = 12, to = 13, spec = Migration12To13::class) // Migration from InnerTune
+        AutoMigration(from = 12, to = 13, spec = Migration12To13::class), // Migration from InnerTune
+        AutoMigration(from = 13, to = 14), // Initial queue as database
     ]
 )
 @TypeConverters(Converters::class)
@@ -114,6 +119,7 @@ abstract class InternalDatabase : RoomDatabase() {
             MusicDatabase(
                 delegate = Room.databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
                     .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_14_15)
                     .build()
             )
     }
@@ -290,6 +296,20 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 )
             )
         }
+    }
+}
+/**
+ * Queue schema update
+ */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS queue_song_map")
+        db.execSQL("DROP TABLE IF EXISTS queue")
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `queue` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL DEFAULT '', `shuffled` INTEGER NOT NULL, `queuePos` INTEGER NOT NULL, `index` INTEGER NOT NULL DEFAULT 0, `playlistId` TEXT, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `queue_song_map` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `queueId` INTEGER NOT NULL, `songId` TEXT NOT NULL, `shuffled` INTEGER NOT NULL, FOREIGN KEY(`queueId`) REFERENCES `queue`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`songId`) REFERENCES `song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_queue_song_map_queueId` ON `queue_song_map` (`queueId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_queue_song_map_songId` ON `queue_song_map` (`songId`)")
     }
 }
 

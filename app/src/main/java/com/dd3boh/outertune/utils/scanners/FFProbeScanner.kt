@@ -133,7 +133,7 @@ class FFProbeScanner : MetadataScanner {
         val duration: Long = try {
             (parseLong(rawDuration?.trim()) / toSeconds).roundToLong() // just let it crash
         } catch (e: Exception) {
-            e.printStackTrace()
+//            e.printStackTrace()
             -1L
         }
 

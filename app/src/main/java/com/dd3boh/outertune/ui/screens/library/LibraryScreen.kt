@@ -41,12 +41,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.CONTENT_TYPE_LIST
 import com.dd3boh.outertune.constants.CONTENT_TYPE_PLAYLIST
+import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryFilter
 import com.dd3boh.outertune.constants.LibraryFilterKey
@@ -71,6 +73,9 @@ import com.dd3boh.outertune.ui.component.LibraryPlaylistGridItem
 import com.dd3boh.outertune.ui.component.LibraryPlaylistListItem
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.SortHeader
+import com.dd3boh.outertune.ui.screens.settings.DEFAULT_ENABLED_TABS
+import com.dd3boh.outertune.ui.screens.settings.NavigationTab
+import com.dd3boh.outertune.utils.decodeTabString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryViewModel
@@ -92,6 +97,7 @@ fun LibraryScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var viewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+    val enabledTabs by rememberPreference(EnabledTabsKey, defaultValue = DEFAULT_ENABLED_TABS)
     var filter by rememberEnumPreference(LibraryFilterKey, LibraryFilter.ALL)
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(LibrarySortTypeKey, LibrarySortType.CREATE_DATE)
@@ -104,21 +110,28 @@ fun LibraryScreen(
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
     val filterString = when (filter) {
         LibraryFilter.ALBUMS -> stringResource(R.string.albums)
         LibraryFilter.ARTISTS -> stringResource(R.string.artists)
         LibraryFilter.PLAYLISTS -> stringResource(R.string.playlists)
         LibraryFilter.SONGS -> stringResource(R.string.songs)
+        LibraryFilter.FOLDERS -> stringResource(R.string.folders)
         LibraryFilter.ALL -> ""
     }
 
-    val defaultFilter = listOf(
-        LibraryFilter.ALBUMS to stringResource(R.string.albums),
-        LibraryFilter.ARTISTS to stringResource(R.string.artists),
-        LibraryFilter.PLAYLISTS to stringResource(R.string.playlists),
-        LibraryFilter.SONGS to stringResource(R.string.songs),
-    )
+    val defaultFilter: Collection<Pair<LibraryFilter, String>> = decodeTabString(enabledTabs).map {
+        when(it) {
+            NavigationTab.ALBUM -> LibraryFilter.ALBUMS to stringResource(R.string.albums)
+            NavigationTab.ARTIST -> LibraryFilter.ARTISTS to stringResource(R.string.artists)
+            NavigationTab.PLAYLIST -> LibraryFilter.PLAYLISTS to stringResource(R.string.playlists)
+            NavigationTab.SONG -> LibraryFilter.SONGS to stringResource(R.string.songs)
+            NavigationTab.FOLDERS -> LibraryFilter.FOLDERS to stringResource(R.string.folders)
+            else -> LibraryFilter.ALL to stringResource(R.string.home) // there is no all filter, use as null value
+        }
+    }.filterNot { it.first == LibraryFilter.ALL }
 
     val chips = remember { SnapshotStateList<Pair<LibraryFilter, String>>() }
 
@@ -233,6 +246,17 @@ fun LibraryScreen(
         }
     }
 
+    // scroll to top
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            when (viewType) {
+                LibraryViewType.LIST -> lazyListState.animateScrollToItem(0)
+                LibraryViewType.GRID -> lazyGridState.animateScrollToItem(0)
+            }
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -259,6 +283,12 @@ fun LibraryScreen(
                 LibrarySongsScreen(
                     navController,
                     libraryFilterContent = filterContent
+                )
+
+            LibraryFilter.FOLDERS ->
+                LibraryFoldersScreen(
+                    navController,
+                    filterContent = filterContent
                 )
 
             LibraryFilter.ALL ->

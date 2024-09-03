@@ -1,9 +1,8 @@
 package com.dd3boh.outertune.playback.queues
 
 import com.dd3boh.outertune.models.MediaMetadata
-import java.io.Serializable
 
-interface Queue: Serializable {
+interface Queue {
     val preloadItem: MediaMetadata?
     val playlistId: String?
     suspend fun getInitialStatus(): Status
@@ -15,5 +14,5 @@ interface Queue: Serializable {
         val items: List<MediaMetadata>,
         val mediaItemIndex: Int,
         val position: Long = 0L,
-    ): Serializable
+    )
 }

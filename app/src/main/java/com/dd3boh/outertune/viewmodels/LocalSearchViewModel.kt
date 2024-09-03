@@ -3,10 +3,20 @@ package com.dd3boh.outertune.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.db.MusicDatabase
-import com.dd3boh.outertune.db.entities.*
+import com.dd3boh.outertune.db.entities.Album
+import com.dd3boh.outertune.db.entities.Artist
+import com.dd3boh.outertune.db.entities.LocalItem
+import com.dd3boh.outertune.db.entities.Playlist
+import com.dd3boh.outertune.db.entities.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -28,11 +38,19 @@ class LocalSearchViewModel @Inject constructor(
                     database.searchSongs(query, PREVIEW_SIZE),
                     database.searchAlbums(query, PREVIEW_SIZE),
                     database.searchArtists(query, PREVIEW_SIZE),
+                    database.searchArtistSongs(query, PREVIEW_SIZE),
                     database.searchPlaylists(query, PREVIEW_SIZE),
-                ) { songs, albums, artists, playlists ->
-                    songs + albums + artists + playlists
+                ) { songs, albums, artists, artistSongs, playlists ->
+                    val list = songs + albums + artists + artistSongs + playlists
+                    list.distinctBy { it.id }
                 }
-                LocalFilter.SONG -> database.searchSongs(query)
+                LocalFilter.SONG -> combine(
+                    database.searchSongs(query),
+                    database.searchArtistSongs(query),
+                ) { songs, artistSongs ->
+                    val list = songs + artistSongs
+                    list.distinctBy { it.id }
+                }
                 LocalFilter.ALBUM -> database.searchAlbums(query)
                 LocalFilter.ARTIST -> database.searchArtists(query)
                 LocalFilter.PLAYLIST -> database.searchPlaylists(query)

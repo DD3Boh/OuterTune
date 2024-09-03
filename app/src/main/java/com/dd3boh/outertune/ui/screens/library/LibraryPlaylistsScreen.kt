@@ -2,7 +2,9 @@ package com.dd3boh.outertune.ui.screens.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
@@ -27,12 +29,14 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -44,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
@@ -70,8 +75,8 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
 import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
-import java.time.LocalDateTime
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -102,8 +107,14 @@ fun LibraryPlaylistsScreen(
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
     var showAddPlaylistDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    var syncedPlaylist: Boolean by remember {
         mutableStateOf(false)
     }
 
@@ -114,7 +125,9 @@ fun LibraryPlaylistsScreen(
             onDismiss = { showAddPlaylistDialog = false },
             onDone = { playlistName ->
                 viewModel.viewModelScope.launch(Dispatchers.IO) {
-                    val browseId = YouTube.createPlaylist(playlistName).getOrNull()
+                    val browseId = if (syncedPlaylist)
+                        YouTube.createPlaylist(playlistName).getOrNull()
+                    else null
 
                     database.query {
                         insert(
@@ -126,6 +139,37 @@ fun LibraryPlaylistsScreen(
                         )
                     }
                 }
+            },
+            extraContent = {
+                // synced/unsynced toggle
+                Row(
+                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 40.dp)
+                ) {
+                    Column() {
+                        Text(
+                            text = "Sync Playlist",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+
+                        Text(
+                            text = "Note: This allows for syncing with YouTube Music. This is NOT changeable later. You cannot add local songs to synced playlists.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Switch(
+                            checked = syncedPlaylist,
+                            onCheckedChange = {
+                                syncedPlaylist = !syncedPlaylist
+                            },
+                        )
+                    }
+                }
+
             }
         )
     }
@@ -176,6 +220,16 @@ fun LibraryPlaylistsScreen(
             } else {
                 Spacer(Modifier.size(16.dp))
             }
+        }
+    }
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            when (viewType) {
+                LibraryViewType.LIST -> lazyListState.animateScrollToItem(0)
+                LibraryViewType.GRID -> lazyGridState.animateScrollToItem(0)
+            }
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
         }
     }
 

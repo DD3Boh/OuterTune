@@ -51,7 +51,6 @@ import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
@@ -124,7 +123,8 @@ fun YouTubeAlbumMenu(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
             album?.songs?.let { song ->
-                queueBoard.add(queueName, song.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+                queueBoard.add(queueName, song.map { it.toMediaMetadata() }, playerConnection,
+                    forceInsert = true, delta = false)
             }
             queueBoard.setCurrQueue(playerConnection)
         },
@@ -139,7 +139,7 @@ fun YouTubeAlbumMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
+        onGetSong = { playlist ->
             coroutineScope.launch(Dispatchers.IO) {
                 playlist.playlist.browseId?.let { playlistId ->
                     album?.album?.playlistId?.let { addPlaylistId ->
@@ -147,18 +147,8 @@ fun YouTubeAlbumMenu(
                     }
                 }
             }
-            var position = playlist.songCount
-            database.transaction {
-                album?.songs?.forEach { song ->
-                    insert(
-                        PlaylistSongMap(
-                            songId = song.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-            }
+
+            album?.songs?.map { it.id }.orEmpty()
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -262,7 +252,6 @@ fun YouTubeAlbumMenu(
             title = R.string.add_to_queue
         ) {
             showChooseQueueDialog = true
-            onDismiss()
         }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,

@@ -39,7 +39,7 @@ fun <E> ChipsRow(
             FilterChip(
                 label = { Text(label) },
                 selected = currentValue == value,
-                colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.background),
+                colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface),
                 onClick = { onValueUpdate(value) }
             )
 
@@ -79,7 +79,7 @@ fun <E> ChipsLazyRow(
             FilterChip(
                 label = { Text(label) },
                 selected = selected?.let { it(value) } ?: (currentValue == value),
-                colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.background),
+                colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface),
                 onClick = { onValueUpdate(value) },
                 modifier = Modifier.animateItemPlacement(tween)
             )

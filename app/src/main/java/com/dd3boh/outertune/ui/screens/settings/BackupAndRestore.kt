@@ -133,9 +133,7 @@ fun BackupAndRestore(
             isVisible = showChoosePlaylistDialog,
             noSyncing = true,
             initialTextFieldValue = importedTitle,
-            onAdd = { playlist ->
-                viewModel.importPlaylist(importedSongs, playlist)
-            },
+            onGetSong = { importedSongs.map { it.id } },
             onDismiss = { showChoosePlaylistDialog = false }
         )
 

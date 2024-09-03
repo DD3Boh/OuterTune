@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -85,7 +85,8 @@ fun SelectionSongMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songSelection.map { it.toMediaMetadata() }, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songSelection.map { it.toMediaMetadata() }, playerConnection,
+                forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -99,19 +100,8 @@ fun SelectionSongMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            database.query {
-                var position = playlist.songCount
-                songSelection.forEach { song ->
-                    insert(
-                        PlaylistSongMap(
-                            songId = song.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-            }
+        onGetSong = {
+            songSelection.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -198,9 +188,7 @@ fun SelectionSongMenu(
             icon = R.drawable.queue_music,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
-            clearAction()
         }
 
         GridMenuItem(
@@ -249,8 +237,8 @@ fun SelectionSongMenu(
 
         if (songPosition != null) {
             GridMenuItem(
-                icon = Icons.Rounded.Delete,
-                title = R.string.delete
+                icon = Icons.Rounded.PlaylistRemove,
+                title = R.string.remove_from_playlist
             ) {
                 onDismiss()
                 var i = 0
@@ -307,7 +295,7 @@ fun SelectionMediaMetadataMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, songSelection, forceInsert = true, delta = false)
+            queueBoard.add(queueName, songSelection, playerConnection, forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -321,19 +309,8 @@ fun SelectionMediaMetadataMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onAdd = { playlist ->
-            database.query {
-                var position = playlist.songCount
-                songSelection.forEach { song ->
-                    insert(
-                        PlaylistSongMap(
-                            songId = song.id,
-                            playlistId = playlist.id,
-                            position = position++
-                        )
-                    )
-                }
-            }
+        onGetSong = {
+            songSelection.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false }
     )
@@ -390,14 +367,14 @@ fun SelectionMediaMetadataMenu(
     ){
         if (currentItems.isNotEmpty()) {
             GridMenuItem(
-                icon = Icons.Rounded.Delete,
-                title = R.string.delete
+                icon = Icons.Rounded.PlaylistRemove,
+                title = R.string.remove_from_playlist
             ) {
                 onDismiss()
                 var i = 0
                 currentItems.forEach { cur ->
                     playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i)
-                    queueBoard.removeCurrentQueueSong(cur.firstPeriodIndex - i)
+                    queueBoard.removeCurrentQueueSong(cur.firstPeriodIndex - i, playerConnection.service)
                     i++
                 }
             }
@@ -435,9 +412,7 @@ fun SelectionMediaMetadataMenu(
             icon = R.drawable.queue_music,
             title = R.string.add_to_queue
         ) {
-            onDismiss()
             showChooseQueueDialog = true
-            clearAction()
         }
 
         GridMenuItem(
@@ -450,7 +425,7 @@ fun SelectionMediaMetadataMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songSelection.forEach { song ->
+                songSelection.filterNot { it.isLocal }.forEach { song ->
                     val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
                         .setCustomCacheKey(song.id)
                         .setData(song.title.toByteArray())

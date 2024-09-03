@@ -11,15 +11,12 @@ import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.db.InternalDatabase
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.ArtistEntity
-import com.dd3boh.outertune.db.entities.Playlist
-import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.div
 import com.dd3boh.outertune.extensions.zipInputStream
 import com.dd3boh.outertune.extensions.zipOutputStream
 import com.dd3boh.outertune.playback.MusicService
-import com.dd3boh.outertune.playback.MusicService.Companion.PERSISTENT_QUEUE_FILE
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.compareSong
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import javax.inject.Inject
 import kotlin.system.exitProcess
@@ -41,6 +39,7 @@ class BackupRestoreViewModel @Inject constructor(
         runCatching {
             context.applicationContext.contentResolver.openOutputStream(uri)?.use {
                 it.buffered().zipOutputStream().use { outputStream ->
+                    outputStream.setLevel(Deflater.BEST_COMPRESSION)
                     (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered().use { inputStream ->
                         outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
                         inputStream.copyTo(outputStream)
@@ -90,7 +89,6 @@ class BackupRestoreViewModel @Inject constructor(
                 }
             }
             context.stopService(Intent(context, MusicService::class.java))
-            context.filesDir.resolve(PERSISTENT_QUEUE_FILE).delete()
             context.startActivity(Intent(context, MainActivity::class.java))
             exitProcess(0)
         }.onFailure {
@@ -171,23 +169,6 @@ class BackupRestoreViewModel @Inject constructor(
         return this.bufferedReader().useLines { it.toList() }
     }
 
-    /**
-     * Import a playlist into the database
-     */
-    fun importPlaylist(songs: List<Song>, playlist: Playlist) {
-        database.query {
-            var position = playlist.songCount
-            songs.forEach {
-                insert(
-                    PlaylistSongMap(
-                        songId = it.song.id,
-                        playlistId = playlist.id,
-                        position = position++
-                    )
-                )
-            }
-        }
-    }
 
     companion object {
         const val SETTINGS_FILENAME = "settings.preferences_pb"

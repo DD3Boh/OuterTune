@@ -33,7 +33,6 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
-import androidx.media3.datasource.cache.CacheWriter
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -56,7 +55,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
-import com.dd3boh.outertune.constants.MaxSongCacheSizeKey
+import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleShuffle
@@ -65,14 +64,15 @@ import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.PlayerVolumeKey
 import com.dd3boh.outertune.constants.RepeatModeKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
+import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
+import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.FormatEntity
 import com.dd3boh.outertune.db.entities.LyricsEntity
 import com.dd3boh.outertune.db.entities.RelatedSongMap
 import com.dd3boh.outertune.di.DownloadCache
-import com.dd3boh.outertune.di.PlayerCache
 import com.dd3boh.outertune.extensions.SilentHandler
 import com.dd3boh.outertune.extensions.collect
 import com.dd3boh.outertune.extensions.collectLatest
@@ -85,7 +85,6 @@ import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
-import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.utils.CoilBitmapLoader
@@ -104,7 +103,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -122,8 +120,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.io.File
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -131,10 +127,8 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.math.min
 import kotlin.math.pow
-import kotlin.time.Duration.Companion.seconds
 
-const val MAX_CONSECUTIVE_ERR = 5
-const val MIN_PLAYBACK_THRESHOLD = 0.3 // 0 <= MIN_PLAYBACK_THRESHOLD <= 1
+const val MAX_CONSECUTIVE_ERR = 3
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @AndroidEntryPoint
@@ -177,10 +171,6 @@ class MusicService : MediaLibraryService(),
     lateinit var sleepTimer: SleepTimer
 
     @Inject
-    @PlayerCache
-    lateinit var playerCache: SimpleCache
-
-    @Inject
     @DownloadCache
     lateinit var downloadCache: SimpleCache
 
@@ -190,7 +180,6 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
-    var saveQueueCD = false
 
     override fun onCreate() {
         super.onCreate()
@@ -200,6 +189,22 @@ class MusicService : MediaLibraryService(),
                     setSmallIcon(R.drawable.small_icon)
                 }
         )
+
+        // FG notification
+        if (dataStore.get(KeepAliveKey, false)) {
+            try {
+                startService(Intent(this, KeepAlive::class.java))
+            } catch (e: Exception) {
+                reportException(e)
+            }
+        } else {
+            try {
+                stopService(Intent(this, KeepAlive::class.java))
+            } catch (e: Exception) {
+                reportException(e)
+            }
+        }
+
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(createDataSourceFactory()))
             .setRenderersFactory(createRenderersFactory())
@@ -221,11 +226,15 @@ class MusicService : MediaLibraryService(),
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
                         super.onPlayerError(error)
-                        consecutivePlaybackErr ++
+                        if (!dataStore.get(SkipOnErrorKey, true)) {
+                            return
+                        }
+
+                        consecutivePlaybackErr += 2
 
                         Toast.makeText(
                             this@MusicService,
-                            "Playback error: Could not resolve data: ${error.message} (${error.errorCode})",
+                            "Playback error: ${error.message} (${error.errorCode}): ${error.cause?.message?: "No further errors."} ",
                             Toast.LENGTH_SHORT
                         ).show()
 
@@ -236,7 +245,7 @@ class MusicService : MediaLibraryService(),
                          * too many errors come up too quickly. Pause to show player "stopped" state
                          */
                         val nextWindowIndex = player.nextMediaItemIndex
-                        if (consecutivePlaybackErr < MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
+                        if (consecutivePlaybackErr <= MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
                             player.seekTo(nextWindowIndex, C.TIME_UNSET)
                             player.prepare()
                             player.play()
@@ -247,33 +256,39 @@ class MusicService : MediaLibraryService(),
                                 "Playback stopped due to too many errors",
                                 Toast.LENGTH_SHORT
                             ).show()
-                        }
-
-                        // dismiss the errors after a cool down time
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(1000)
-                            if (consecutivePlaybackErr > 0) {
-                                consecutivePlaybackErr --
-                            }
+                            consecutivePlaybackErr = 0
                         }
                     }
 
                     // start playback again on seek
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         super.onMediaItemTransition(mediaItem, reason)
+                        // +2 when and error happens, and -1 when transition. Thus when error, number increments by 1, else doesn't change
+                        if (consecutivePlaybackErr > 0) {
+                            consecutivePlaybackErr --
+                        }
+
                         if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
                             player.prepare()
                             player.play()
                         }
-                        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex)
-                        queueTitle = queueBoard.getCurrentQueue()?.title
-                        if (!saveQueueCD && dataStore.get(PersistentQueueKey, true)) {
-                            saveQueueToDisk() // save queue, but rate limited
-                            scope.launch {
-                                delay(30.seconds)
-                                saveQueueCD = false
-                            }
+
+                        // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
+                        // no, when repeat mode is on, player does not "STATE_ENDED"
+                        if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
+                            (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
+                            isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
+                            player.pause()
+                            queueBoard.shuffleCurrent(this@MusicService, false) // reshuffle queue
+                            queueBoard.setCurrQueue(this@MusicService)
+                            player.play()
                         }
+                        lastMediaItemIndex = player.currentMediaItemIndex
+
+                        updateNotification() // also updates when queue changes
+
+                        queueBoard.setCurrQueuePosIndex(player.currentMediaItemIndex, this@MusicService)
+                        queueTitle = queueBoard.getCurrentQueue()?.title
                     }
                 })
                 sleepTimer = SleepTimer(scope, this)
@@ -365,28 +380,14 @@ class MusicService : MediaLibraryService(),
         }
 
         if (dataStore.get(PersistentQueueKey, true)) {
-            runCatching {
-                filesDir.resolve(PERSISTENT_QUEUE_FILE).inputStream().use { fis ->
-                    ObjectInputStream(fis).use { oos ->
-                        oos.readObject() as QueueBoard
-                    }
-                }
-            }.onSuccess { qb ->
-                queueBoard = qb
-                isShuffleEnabled.value = qb.getCurrentQueue()?.shuffled ?: false
-                if (qb.getAllQueues().isNotEmpty()) {
-                    val queue = queueBoard.getCurrentQueue()
-                    if (queue != null) {
-                        playQueue(
-                            queue = ListQueue(
-                                title = queue.title,
-                                items = qb.getCurrentQueue()?.getCurrentQueueShuffled() ?: ArrayList(),
-                                startIndex = queue.queuePos,
-                                position = 0,
-                                playlistId = null
-                            ),
-                            playWhenReady = false
-                        )
+            queueBoard = QueueBoard(database.readQueue().toMutableList())
+            isShuffleEnabled.value = queueBoard.getCurrentQueue()?.shuffled ?: false
+            if (queueBoard.getAllQueues().isNotEmpty()) {
+                val queue = queueBoard.getCurrentQueue()
+                if (queue != null) {
+                    isShuffleEnabled.value = queue.shuffled
+                    CoroutineScope(Dispatchers.Main).launch {
+                        queueBoard.setCurrQueue(this@MusicService)
                     }
                 }
             }
@@ -493,9 +494,8 @@ class MusicService : MediaLibraryService(),
         queueTitle = title
         queuePlaylistId = queue.playlistId
 
-        scope.launch(SilentHandler) {
+        CoroutineScope(Dispatchers.Main).launch {
             val initialStatus = withContext(Dispatchers.IO) { queue.getInitialStatus() }
-            if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
             if (queueTitle == null && initialStatus.title != null) { // do not find a title if an override is provided
                 queueTitle = initialStatus.title
             }
@@ -507,11 +507,11 @@ class MusicService : MediaLibraryService(),
             queueBoard.add(
                 queueTitle?: "Queue",
                 initialStatus.items,
-                queue = queue,
+                player = this@MusicService,
                 startIndex = if (initialStatus.mediaItemIndex > 0) initialStatus.mediaItemIndex else 0,
                 replace = replace
             )
-            queueBoard.setCurrQueue(player)
+            queueBoard.setCurrQueue(this@MusicService)
 
             player.prepare()
             player.playWhenReady = playWhenReady
@@ -539,10 +539,16 @@ class MusicService : MediaLibraryService(),
 
     fun addToQueue(items: List<MediaItem>) {
         val currentQueue = queueBoard.getCurrentQueue()
-        queueBoard.add(currentQueue?.title?: "Queue", items.map { it.metadata }, forceInsert = true, delta = false)
+        queueBoard.add(
+            currentQueue?.title?: "Queue",
+            items.map { it.metadata },
+            player = this,
+            forceInsert = true,
+            delta = false
+        )
 
         val pos = player.currentPosition
-        val newQueuePos = queueBoard.setCurrQueue(player, autoSeek = false)
+        val newQueuePos = queueBoard.setCurrQueue(this@MusicService, autoSeek = false)
         queueBoard.getCurrentQueue()?.let {
             if (newQueuePos != null) {
                 player.seekTo(newQueuePos, pos)
@@ -591,20 +597,6 @@ class MusicService : MediaLibraryService(),
         )
     }
 
-    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        // this absolute eye sore detects if we loop back to the beginning of queue, when shuffle AND repeat all
-        // no, when repeat mode is on, player does not "STATE_ENDED"
-        if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
-            (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
-            isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
-            queueBoard.shuffleCurrent(false) // reshuffle queue
-            queueBoard.setCurrQueue(player)
-        }
-        lastMediaItemIndex = player.currentMediaItemIndex
-
-        updateNotification() // also updates when queue changes
-    }
-
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {
         if (playbackState == STATE_IDLE) {
             queuePlaylistId = null
@@ -639,19 +631,14 @@ class MusicService : MediaLibraryService(),
         CacheDataSource.Factory()
             .setCache(downloadCache)
             .setUpstreamDataSourceFactory(
-                CacheDataSource.Factory()
-                    .setCache(playerCache)
-                    .setUpstreamDataSourceFactory(
-                        DefaultDataSource.Factory(
-                            this,
-                            OkHttpDataSource.Factory(
-                                OkHttpClient.Builder()
-                                    .proxy(YouTube.proxy)
-                                    .build()
-                            )
-                        )
+                DefaultDataSource.Factory(
+                    this,
+                    OkHttpDataSource.Factory(
+                        OkHttpClient.Builder()
+                            .proxy(YouTube.proxy)
+                            .build()
                     )
-                    .setCacheWriteDataSinkFactory(null) // write is handled externally
+                )
             )
             .setCacheWriteDataSinkFactory(null)
             .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
@@ -666,13 +653,14 @@ class MusicService : MediaLibraryService(),
                 val songPath = runBlocking(Dispatchers.IO) {
                     database.song(mediaId).firstOrNull()?.song?.localPath
                 }
+                if (songPath == null) {
+                    throw PlaybackException(getString(R.string.file_size), Throwable(), PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND)
+                }
 
                 return@Factory dataSpec.withUri(Uri.fromFile(File(songPath)))
             }
 
-            if (downloadCache.isCached(mediaId, dataSpec.position, if (dataSpec.length >= 0) dataSpec.length else 1) ||
-                playerCache.isCached(mediaId, dataSpec.position, CHUNK_LENGTH)
-            ) {
+            if (downloadCache.isCached(mediaId, dataSpec.position, if (dataSpec.length >= 0) dataSpec.length else 1)) {
                 scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
                 return@Factory dataSpec
             }
@@ -739,29 +727,8 @@ class MusicService : MediaLibraryService(),
             }
             scope.launch(Dispatchers.IO) { recoverSong(mediaId, playerResponse) }
 
-            // write to cache
             songUrlCache[mediaId] = format.url!! to playerResponse.streamingData!!.expiresInSeconds * 1000L
-            val resultDataSpec = dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
-
-            if (dataStore[MaxSongCacheSizeKey] == 0) { // cache disabled
-                // null pref will use caching (default caching on)
-                return@Factory resultDataSpec
-            }
-
-            val cache = CacheDataSource.Factory()
-                .setCache(downloadCache)
-                .setUpstreamDataSourceFactory(
-                    CacheDataSource.Factory()
-                        .setCache(playerCache)
-                        .setUpstreamDataSourceFactory(
-                            DefaultDataSource.Factory(this)
-                        )
-                )
-                .setCacheWriteDataSinkFactory(null)
-                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
-            CacheWriter(cache.createDataSource(), resultDataSpec, null, null).cache()
-
-            resultDataSpec
+            dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
         }
     }
 
@@ -784,12 +751,55 @@ class MusicService : MediaLibraryService(),
         }
     }
 
+    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        if (player.shuffleModeEnabled) {
+            triggerShuffle()
+        player.shuffleModeEnabled = false
+        }
+    }
+
+    /**
+     * Shuffles the queue
+     */
+    fun triggerShuffle() {
+        val oldIndex = player.currentMediaItemIndex
+        queueBoard.setCurrQueuePosIndex(oldIndex, this)
+        val currentQueue = queueBoard.getCurrentQueue() ?: return
+
+        // shuffle and update player playlist
+        if (!currentQueue.shuffled) {
+            queueBoard.shuffleCurrent(this)
+            player.moveMediaItem(oldIndex, 0)
+            val newItems = currentQueue.getCurrentQueueShuffled()
+            player.replaceMediaItems(1, Int.MAX_VALUE,
+                newItems.subList(1, newItems.size).map { it.toMediaItem() })
+        } else {
+            val unshuffledPos = queueBoard.unShuffleCurrent(this)
+            player.moveMediaItem(oldIndex, unshuffledPos)
+            val newItems = currentQueue.getCurrentQueueShuffled()
+            // replace items up to current playing, then replace items after current
+            player.replaceMediaItems(0, unshuffledPos,
+                newItems.subList(0, unshuffledPos).map { it.toMediaItem() })
+            player.replaceMediaItems(unshuffledPos + 1, Int.MAX_VALUE,
+                newItems.subList(unshuffledPos + 1, newItems.size).map { it.toMediaItem() })
+        }
+
+        updateNotification()
+    }
+
     override fun onPlaybackStatsReady(eventTime: AnalyticsListener.EventTime, playbackStats: PlaybackStats) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
+        var minPlaybackDur = (dataStore.get(minPlaybackDurKey, 30) / 100)
+        // ensure within bounds. Ehhh 99 is good enough to avoid any rounding errors
+        if (minPlaybackDur >= 100) {
+            minPlaybackDur = 99
+        } else if (minPlaybackDur < 1) {
+            minPlaybackDur = 1
+        }
 
 //        println("Playback ratio: ${playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1)} Min threshold: $MIN_PLAYBACK_THRESHOLD")
-        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= MIN_PLAYBACK_THRESHOLD &&
-            !dataStore.get(PauseListenHistoryKey, false)) {
+        if (playbackStats.totalPlayTimeMs.toFloat() / ((mediaItem.metadata?.duration?.times(1000)) ?: -1) >= minPlaybackDur
+            && !dataStore.get(PauseListenHistoryKey, false)) {
             database.query {
                 incrementPlayCount(mediaItem.mediaId)
                 incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)
@@ -807,15 +817,11 @@ class MusicService : MediaLibraryService(),
         }
     }
 
+    @Deprecated("This nukes the entire db and adds everything again. Saving queues is to be done inside QueueBoard, incrementally.")
     private fun saveQueueToDisk() {
-        runCatching {
-            filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(queueBoard)
-                }
-            }
-        }.onFailure {
-            reportException(it)
+        // TODO: get rid of this. Yeah I'd want to update individual queues instead of nuking the entire db and writing everything but ehhhhh that's for later
+        CoroutineScope(Dispatchers.IO).launch {
+            database.rewriteAllQueues(queueBoard.getAllQueues())
         }
     }
 
@@ -855,6 +861,5 @@ class MusicService : MediaLibraryService(),
         const val NOTIFICATION_ID = 888
         const val ERROR_CODE_NO_STREAM = 1000001
         const val CHUNK_LENGTH = 512 * 1024L
-        const val PERSISTENT_QUEUE_FILE = "persistent_queue.data"
     }
 }

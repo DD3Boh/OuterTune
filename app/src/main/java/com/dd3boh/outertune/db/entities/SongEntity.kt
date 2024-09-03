@@ -12,6 +12,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
+import java.time.Month
+import java.time.ZoneOffset
 
 @Immutable
 @Entity(
@@ -66,13 +68,30 @@ data class SongEntity(
      * This is the song's tag's date/year, NOT dateModified.
      */
     fun getDateString(): String? {
-        return date?.toString()
+        return date?.toLocalDate()?.toString()
             ?: if (year != null) {
                 return year.toString()
             } else {
                 return null
             }
     }
+
+    /**
+     * Get the value of the date released in Epoch Seconds
+     */
+    fun getDateLong(): Long? {
+        return date?.toEpochSecond(ZoneOffset.UTC)
+            ?: if (year != null) {
+                LocalDateTime.of(year, Month.JANUARY, 1, 0, 0).toEpochSecond(ZoneOffset.UTC)
+            } else {
+                null
+            }
+    }
+
+    /**
+     * Get the value of the date modified in Epoch Seconds
+     */
+    fun getDateModifiedLong(): Long? = dateModified?.toEpochSecond(ZoneOffset.UTC)
 
     companion object {
         fun generateSongId() = "LA" + RandomStringUtils.random(8, true, false)

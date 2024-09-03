@@ -16,16 +16,16 @@ data class WatchEndpoint(
     val params: String? = null,
     val index: Int? = null,
     val watchEndpointMusicSupportedConfigs: WatchEndpointMusicSupportedConfigs? = null,
-) : Endpoint(), java.io.Serializable {
+) : Endpoint() {
 
     @Serializable
     data class WatchEndpointMusicSupportedConfigs(
         val watchEndpointMusicConfig: WatchEndpointMusicConfig,
-    ): java.io.Serializable  {
+    ) {
         @Serializable
         data class WatchEndpointMusicConfig(
             val musicVideoType: String,
-        ): java.io.Serializable  {
+        ) {
             companion object {
                 const val MUSIC_VIDEO_TYPE_OMV = "MUSIC_VIDEO_TYPE_OMV"
                 const val MUSIC_VIDEO_TYPE_UGC = "MUSIC_VIDEO_TYPE_UGC"

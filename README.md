@@ -2,9 +2,7 @@
 
 <img src="./assets/outertune.webp" height="72">
 
-A Material 3 YouTube Music client for Android
-
-> This is a fork of [InnerTune](https://github.com/z-huang/InnerTune)
+A Material 3 YouTube Music client & local music player for Android
 
 [![Latest release](https://img.shields.io/github/v/release/DD3Boh/OuterTune?include_prereleases)](https://github.com/DD3Boh/OuterTune/releases)
 [![License](https://img.shields.io/github/license/DD3Boh/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
@@ -14,21 +12,20 @@ A Material 3 YouTube Music client for Android
 
 ## Features
 
+OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/InnerTune), with advanced account synchronization, local media playback, multiple queues, and a new take on UI design.
+
 - Play, search, and save all your songs, videos, albums, and playlists from YouTube Music
-- Background playback & AD free
-- Advanced account sync
+    - Song downloading for offline playback
+    - Background playback & AD free
+- New integrated library screen design & Multiple queues
+- Advanced account synchronization
     - YouTube Music account login support
-    - Fully fledged syncing of songs, playlists and albums — both to and from your account
-- Library management
-    - Cache and download songs for offline playback
-    - Personalized quick picks
-- Local media playback
+    - Fully fledged syncing of songs, subscriptions, playlists and albums — both to and from your account
+- Local audio file playback
     - Play local and Youtube Music songs at the same time
-    - We don't use MediaStore's broken metadata extractor!
+    - We don't use MediaStore's broken metadata extractor! (e.g tags delimited with `\\` now show up properly)
 - Synchronized lyrics (LRC format, also includes multi-line support)
 - Audio normalization, tempo/pitch adjustment, and various other audio effects
-- Dynamic Material theme & localization
-    - New integrated library screen design
 - Android Auto support
 
 ## Screenshots
@@ -58,28 +55,9 @@ recommend [Pano Scrobbler](https://play.google.com/store/apps/details?id=com.arn
 2. In the three dots menu at the top-right of the screen, click "Developer settings"
 3. Enable "Unknown sources"
 
-## Contributing Translations
+## Building & Contributing
 
-Follow the [instructions](https://developer.android.com/guide/topics/resources/localization) and
-create a pull request. If possible, please build the app beforehand and make sure there is no error
-before you create a pull request.
-./app/src/main/java/com/dd3boh/outertune/utils/scanners/jni/ffmpeg-android-maker
-## Building with FFmpeg (non-kit)
-
-By default, we ship a prebuilt library (`/app/prebuilt/ffMetadataEx.arr`), and you *do not* need to care about this.
-However, should you choose to opt for self built libraries and/or work on the extractor itself, keep reading:
-
-1. First you will need to setup the [Android NDK](https://developer.android.com/studio/projects/install-ndk)
-
-2. We use FFMpeg to extract metadata from local files. The FFMpeg (non-kit) implementation must be resolved in one of two ways:
-   
-   - a) Build libraries. Clone [ffmpeg-android-maker](https://github.com/Javernaut/ffmpeg-android-maker) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`, run the build script. Note: It may be helpful to modify the FFmpeg build script disable uneeded FFmpeg fetaures to reduce app size, see [here](https://github.com/mikooomich/ffmpeg-android-maker/blob/master/scripts/ffmpeg/build.sh) for an example.
-  
-   - b) Use prebuilt FFmpeg libraries. Clone [prebuilt ffmpeg-android-maker](https://github.com/mikooomich/ffmpeg-android-maker-prebuilt) into `/ffMetadataEx/src/main/cpp/ffmpeg-android-maker`.
-
-3. Modify `app/build.gradle.kts` and `settings.gradle.kts` to switch to the self built version, with the instructions being in both of the files
-
-Then start the build are you normally would.
+We are looking for contrubutors, translators, and maintainers! If you would like to help out, or just wish to build the app yourself, please see the [building and contribution notes](./CONTRIBUTING.md).
 
 ## Donate
 
@@ -88,7 +66,9 @@ including bug fixes and new features.
 
 <a href="https://paypal.me/DD3Boh"><img src="./assets/paypal.png" alt="PayPal" height="60" ></a>
 
-## Credit
+## Attribution
 
-I want to give credit to [z-huang/InnerTune](https://github.com/z-huang/InnerTune) for providing
+[z-huang/InnerTune](https://github.com/z-huang/InnerTune) for providing
 an awesome base for this fork, none of this would have been possible without it.
+
+[Musicolet](https://play.google.com/store/apps/details?id=in.krosbits.musicolet) for inspiration of a local music player experience done right.
