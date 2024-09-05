@@ -155,6 +155,8 @@ enum class ScannerMatchCriteria {
     LEVEL_3, // Title, artists, albums
 }
 
+val LastLocalScanKey = longPreferencesKey("lastLocalScan")
+
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
 val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
 val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")

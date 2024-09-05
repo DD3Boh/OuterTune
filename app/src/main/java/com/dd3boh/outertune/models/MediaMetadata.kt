@@ -20,10 +20,11 @@ data class MediaMetadata(
     val year: Int? = null,
     private val date: LocalDateTime? = null, // ID3 tag property
     private val dateModified: LocalDateTime? = null, // file property
-    val dateAdded: LocalDateTime? = null, // aka inLibrary
+    val inLibrary: LocalDateTime? = null, // doubles as "date added"
     val setVideoId: String? = null,
     val isLocal: Boolean = false,
     val localPath: String? = null,
+    val liked: Boolean = false
 ) : Serializable {
     data class Artist(
         val id: String?,
@@ -53,6 +54,7 @@ data class MediaMetadata(
         year = year,
         date = date,
         dateModified = dateModified,
+        liked = liked,
         isLocal = isLocal,
         inLibrary = if (isLocal) LocalDateTime.now() else null,
         localPath = localPath
@@ -124,7 +126,8 @@ fun Song.toMediaMetadata() = MediaMetadata(
     year = song.year,
     date = song.date,
     dateModified = song.dateModified,
-    dateAdded = song.inLibrary,
+    inLibrary = song.inLibrary,
+    liked = song.liked,
     isLocal = song.isLocal,
     localPath = song.localPath
 )
