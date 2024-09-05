@@ -3,7 +3,6 @@
 package com.dd3boh.outertune.viewmodels
 
 import android.content.Context
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,6 +43,8 @@ import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
+import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
+import com.dd3boh.outertune.ui.utils.getDirectoryTree
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
@@ -66,7 +67,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
-import java.util.Stack
 import javax.inject.Inject
 
 @HiltViewModel
@@ -77,19 +77,13 @@ class LibrarySongsViewModel @Inject constructor(
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
 
-    /**
-     * The top of the stack is the folder that the page will render.
-     * Clicking on a folder pushes, while the back button pops.
-     */
-    var folderPositionStack = Stack<DirectoryTree>()
     val databaseLink = database
 
     val allSongs = syncAllSongs(context, database, downloadUtil)
 
     private val scanPaths = context.dataStore[ScanPathsKey]?: DEFAULT_SCAN_PATH
     private val excludedScanPaths = context.dataStore[ExcludedScanPathsKey]?: ""
-    val localSongDirectoryTree =
-        refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
+    val localSongDirectoryTree = refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
 
     fun syncLibrarySongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
@@ -101,17 +95,22 @@ class LibrarySongsViewModel @Inject constructor(
 
 
     /**
-     * Get local songs
+     * Get local songs, update the one in the viewmodel
      *
      * @return DirectoryTree
      */
     fun getLocalSongs(database: MusicDatabase): MutableStateFlow<DirectoryTree> {
-        val directoryStructure =
-            refreshLocal(database, scanPaths.split('\n'),
-                excludedScanPaths.split('\n')).value
-
-        localSongDirectoryTree.value = directoryStructure
-        return MutableStateFlow(directoryStructure)
+        val cachedTree = getDirectoryTree()
+        if (cachedTree == null) {
+            val directoryStructure =
+                refreshLocal(database, scanPaths.split('\n'),
+                    excludedScanPaths.split('\n')).value
+            localSongDirectoryTree.value = directoryStructure
+            cacheDirectoryTree(directoryStructure)
+            return MutableStateFlow(directoryStructure)
+        } else {
+            return MutableStateFlow(cachedTree)
+        }
     }
 
 
