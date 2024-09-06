@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens.playlist
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -51,11 +53,16 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -102,7 +109,6 @@ import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
 import com.dd3boh.outertune.ui.menu.YouTubeSongMenu
-import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.OnlinePlaylistViewModel
 import com.zionhuang.innertube.models.SongItem
@@ -117,6 +123,7 @@ fun OnlinePlaylistScreen(
     viewModel: OnlinePlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -126,10 +133,23 @@ fun OnlinePlaylistScreen(
     val playlist by viewModel.playlist.collectAsState()
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<SongItem>() }
-    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
-    var selection by remember {
-        mutableStateOf(false)
+
+    // multiselect
+    var inSelectMode by rememberSaveable { mutableStateOf(false) }
+    val selection = rememberSaveable(
+        saver = listSaver<MutableList<Int>, Int>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() }
+        )
+    ) { mutableStateListOf() }
+    val onExitSelectionMode = {
+        inSelectMode = false
+        selection.clear()
     }
+    if (inSelectMode) {
+        BackHandler(onBack = onExitSelectionMode)
+    }
+
     val dbPlaylist by viewModel.dbPlaylist.collectAsState()
 
     val lazyListState = rememberLazyListState()
@@ -489,75 +509,97 @@ fun OnlinePlaylistScreen(
                         }
                     }
 
-                    stickyHeader(
+                    item(
                         key = "header",
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        if (selection) {
-                            SelectHeader(
-                                wrappedSongs = wrappedSongs,
-                                menuState = menuState,
-                                onDismiss = { selection = false },
-                                jvmHax = 69
-                            )
+                        if (inSelectMode) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            ) {
+                                SelectHeader(
+                                    selectedItems = selection.map { songs[it] }.map { it.toMediaMetadata() },
+                                    totalItemCount = songs.size,
+                                    onSelectAll = {
+                                        selection.clear()
+                                        selection.addAll(songs.indices)
+                                    },
+                                    onDeselectAll = { selection.clear() },
+                                    menuState = menuState,
+                                    onDismiss = onExitSelectionMode
+                                )
+                            }
                         }
                     }
 
                     itemsIndexed(
-                        items = wrappedSongs
+                        items = songs
                     ) { index, song ->
+                        val onCheckedChange: (Boolean) -> Unit = {
+                            if (it) {
+                                selection.add(index)
+                            } else {
+                                selection.remove(index)
+                            }
+                        }
+
                         SwipeToQueueBox(
-                            item = song.item.toMediaItem(),
+                            item = song.toMediaItem(),
                             content = {
                                 YouTubeListItem(
-                                    item = song.item,
-                                    isActive = mediaMetadata?.id == song.item.id,
+                                    item = song,
+                                    isActive = mediaMetadata?.id == song.id,
                                     isPlaying = isPlaying,
                                     trailingContent = {
-                                        IconButton(
-                                            onClick = {
-                                                menuState.show {
-                                                    YouTubeSongMenu(
-                                                        song = song.item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss
-                                                    )
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.MoreVert,
-                                                contentDescription = null
+                                        if (inSelectMode) {
+                                            Checkbox(
+                                                checked = index in selection,
+                                                onCheckedChange = onCheckedChange
                                             )
+                                        } else {
+                                            IconButton(
+                                                onClick = {
+                                                    menuState.show {
+                                                        YouTubeSongMenu(
+                                                            song = song,
+                                                            navController = navController,
+                                                            onDismiss = menuState::dismiss
+                                                        )
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.MoreVert,
+                                                    contentDescription = null
+                                                )
+                                            }
                                         }
                                     },
+                                    isSelected = inSelectMode && index in selection,
                                     modifier = Modifier
                                         .combinedClickable(
                                             onClick = {
-                                                if (!selection) {
-                                                    if (song.item.id == mediaMetadata?.id) {
-                                                        playerConnection.player.togglePlayPause()
-                                                    } else {
-                                                        playerConnection.playQueue(
-                                                            ListQueue(
-                                                                playlistId = playlist.id,
-                                                                title = playlist.title,
-                                                                items = songs.map { it.toMediaMetadata() },
-                                                                startIndex = index
-                                                            )
-                                                        )
-                                                    }
+                                                if (inSelectMode) {
+                                                    onCheckedChange(index !in selection)
+                                                } else if (song.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
                                                 } else {
-                                                    song.isSelected = !song.isSelected
+                                                    playerConnection.playQueue(
+                                                        ListQueue(
+                                                            playlistId = playlist.id,
+                                                            title = playlist.title,
+                                                            items = songs.map { it.toMediaMetadata() },
+                                                            startIndex = index
+                                                        )
+                                                    )
                                                 }
                                             },
                                             onLongClick = {
-                                                menuState.show {
-                                                    YouTubeSongMenu(
-                                                        song = song.item,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss
-                                                    )
+                                                if (!inSelectMode) {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    inSelectMode = true
+                                                    onCheckedChange(true)
                                                 }
                                             }
                                         )
