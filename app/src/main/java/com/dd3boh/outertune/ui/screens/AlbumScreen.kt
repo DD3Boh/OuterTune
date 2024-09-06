@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,13 +47,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -95,7 +104,6 @@ import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.AlbumMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
-import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.AlbumViewModel
 
@@ -107,6 +115,7 @@ fun AlbumScreen(
     viewModel: AlbumViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -114,9 +123,22 @@ fun AlbumScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val albumWithSongs by viewModel.albumWithSongs.collectAsState()
-    val wrappedSongs = albumWithSongs?.songs?.map { item -> ItemWrapper(item) }?.toMutableList()
-    var selection by remember {
-        mutableStateOf(false)
+    val state = rememberLazyListState()
+
+    // multiselect
+    var inSelectMode by rememberSaveable { mutableStateOf(false) }
+    val selection = rememberSaveable(
+        saver = listSaver<MutableList<Int>, Int>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() }
+        )
+    ) { mutableStateListOf() }
+    val onExitSelectionMode = {
+        inSelectMode = false
+        selection.clear()
+    }
+    if (inSelectMode) {
+        BackHandler(onBack = onExitSelectionMode)
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -145,6 +167,7 @@ fun AlbumScreen(
     }
 
     LazyColumn(
+        state = state,
         contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
     ) {
         val albumWithSongsLocal = albumWithSongs
@@ -369,74 +392,98 @@ fun AlbumScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(start = 16.dp)
                 ) {
-                    if (selection && wrappedSongs != null) {
+                    if (inSelectMode && albumWithSongs?.songs != null) {
                         SelectHeader(
-                            wrappedSongs = wrappedSongs,
+                            selectedItems = selection.mapNotNull { index ->
+                                albumWithSongs?.songs?.getOrNull(index)
+                            }.map { it.toMediaMetadata()},
+                            totalItemCount = albumWithSongs!!.songs.size,
+                            onSelectAll = {
+                                selection.clear()
+                                selection.addAll(albumWithSongs!!.songs.indices)
+                            },
+                            onDeselectAll = { selection.clear() },
                             menuState = menuState,
-                            onDismiss = { selection = false }
+                            onDismiss = onExitSelectionMode
                         )
                     }
                 }
             }
 
 
-            if (wrappedSongs != null) {
+            if (albumWithSongs?.songs != null) {
                 itemsIndexed(
-                    items = wrappedSongs,
-                    key = { _, song -> song.item.id }
-                ) { index, songWrapper ->
+                    items = albumWithSongs!!.songs,
+                    key = { _, song -> song.id }
+                ) { index, song ->
+                    val onCheckedChange: (Boolean) -> Unit = {
+                        if (it) {
+                            selection.add(index)
+                        } else {
+                            selection.remove(index)
+                        }
+                    }
+
                     SwipeToQueueBox(
-                        item = songWrapper.item.toMediaItem(),
+                        item = song.toMediaItem(),
                         content = {
                             SongListItem(
-                                song = songWrapper.item,
+                                song = song,
                                 albumIndex = index + 1,
-                                isActive = songWrapper.item.id == mediaMetadata?.id,
+                                isActive = song.id == mediaMetadata?.id,
                                 isPlaying = isPlaying,
                                 showInLibraryIcon = true,
                                 trailingContent = {
-                                    IconButton(
-                                        onClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss
-                                                )
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.MoreVert,
-                                            contentDescription = null
+                                    if (inSelectMode) {
+                                        Checkbox(
+                                            checked = index in selection,
+                                            onCheckedChange = onCheckedChange
                                         )
+                                    } else {
+                                        IconButton(
+                                            onClick = {
+                                                menuState.show {
+                                                    SongMenu(
+                                                        originalSong = song,
+                                                        navController = navController,
+                                                        onDismiss = menuState::dismiss
+                                                    )
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.MoreVert,
+                                                contentDescription = null
+                                            )
+                                        }
                                     }
                                 },
-                                isSelected = songWrapper.isSelected && selection,
+                                isSelected = inSelectMode && index in selection,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .combinedClickable(
                                         onClick = {
-                                            if (!selection) {
-                                                if (songWrapper.item.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
-                                                } else {
-                                                    playerConnection.playQueue(
-                                                        ListQueue(
-                                                            title = albumWithSongsLocal.album.title,
-                                                            items = albumWithSongsLocal.songs.map { it.toMediaMetadata() },
-                                                            startIndex = index,
-                                                            playlistId = albumWithSongsLocal.album.playlistId
-                                                        )
-                                                    )
-                                                }
+                                            if (inSelectMode) {
+                                                onCheckedChange(index !in selection)
+                                            } else if (song.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
                                             } else {
-                                                songWrapper.isSelected = !songWrapper.isSelected
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = albumWithSongsLocal.album.title,
+                                                        items = albumWithSongsLocal.songs.map { it.toMediaMetadata() },
+                                                        startIndex = index,
+                                                        playlistId = albumWithSongsLocal.album.playlistId
+                                                    )
+                                                )
                                             }
                                         },
                                         onLongClick = {
-                                            selection = true
-                                            songWrapper.isSelected = !songWrapper.isSelected
+                                            if (!inSelectMode) {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                inSelectMode = true
+                                                onCheckedChange(true)
+                                            }
                                         }
                                     )
                             )
