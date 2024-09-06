@@ -55,6 +55,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
+import com.dd3boh.outertune.constants.LastPosKey
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleShuffle
@@ -368,7 +369,10 @@ class MusicService : MediaLibraryService(),
                 if (queue != null) {
                     isShuffleEnabled.value = queue.shuffled
                     CoroutineScope(Dispatchers.Main).launch {
-                        queueBoard.setCurrQueue(this@MusicService)
+                        val queuePos = queueBoard.setCurrQueue(this@MusicService, false)
+                        if (queuePos != null) {
+                            player.seekTo(queuePos, dataStore.get(LastPosKey, C.TIME_UNSET))
+                        }
                     }
                 }
             }
@@ -809,6 +813,11 @@ class MusicService : MediaLibraryService(),
     override fun onDestroy() {
         if (dataStore.get(PersistentQueueKey, true)) {
             saveQueueToDisk()
+            scope.launch {
+                dataStore.edit { settings ->
+                    settings[LastPosKey] = player.currentPosition
+                }
+            }
         }
         mediaSession.release()
         player.removeListener(this)
