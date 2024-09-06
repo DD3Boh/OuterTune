@@ -55,7 +55,6 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
-import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleShuffle
@@ -189,22 +188,6 @@ class MusicService : MediaLibraryService(),
                     setSmallIcon(R.drawable.small_icon)
                 }
         )
-
-        // FG notification
-        if (dataStore.get(KeepAliveKey, false)) {
-            try {
-                startService(Intent(this, KeepAlive::class.java))
-            } catch (e: Exception) {
-                reportException(e)
-            }
-        } else {
-            try {
-                stopService(Intent(this, KeepAlive::class.java))
-            } catch (e: Exception) {
-                reportException(e)
-            }
-        }
-
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(createDataSourceFactory()))
             .setRenderersFactory(createRenderersFactory())
