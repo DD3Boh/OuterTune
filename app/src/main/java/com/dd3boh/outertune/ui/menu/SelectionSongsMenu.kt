@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,6 +45,7 @@ import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
+import java.time.LocalDateTime
 
 
 @Composable
@@ -56,6 +59,13 @@ fun SelectionSongMenu(
     val database = LocalDatabase.current
     val downloadUtil = LocalDownloadUtil.current
     val playerConnection = LocalPlayerConnection.current ?: return
+
+    val allInLibrary by remember(songSelection) { // exclude local songs
+        mutableStateOf(songSelection.isNotEmpty() && songSelection.all { !it.song.isLocal && it.song.inLibrary != null })
+    }
+    val allLocal by remember(songSelection) { // if only local songs in this selection
+        mutableStateOf(songSelection.isNotEmpty() && songSelection.all { it.song.isLocal })
+    }
 
     var downloadState by remember {
         mutableIntStateOf(Download.STATE_STOPPED)
@@ -218,6 +228,34 @@ fun SelectionSongMenu(
                 showRemoveDownloadDialog = true
             }
         )
+
+        if (!allLocal) {
+            if (allInLibrary) {
+                GridMenuItem(
+                    icon = Icons.Rounded.LibraryAddCheck,
+                    title = R.string.remove_all_from_library
+                ) {
+                    database.transaction {
+                        songSelection.forEach { song ->
+                            inLibrary(song.id, null)
+                        }
+                    }
+                }
+            } else {
+                GridMenuItem(
+                    icon = Icons.Rounded.LibraryAdd,
+                    title = R.string.add_all_to_library
+                ) {
+                    database.transaction {
+                        songSelection.forEach { song ->
+                            if (!song.song.isLocal) {
+                                inLibrary(song.id, LocalDateTime.now())
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         GridMenuItem(
             icon = if (songSelection.all{it.song.liked}) R.drawable.favorite else R.drawable.favorite_border,

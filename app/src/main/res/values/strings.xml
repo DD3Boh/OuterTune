@@ -87,6 +87,10 @@
     <string name="play">Play</string>
     <string name="play_next">Play next</string>
     <string name="add_to_queue">Add to queue</string>
+    <string name="add_to_library">Add to library</string>
+    <string name="add_all_to_library">Add all to library</string>
+    <string name="remove_from_library">Remove from library</string>
+    <string name="remove_all_from_library">Remove all from library</string>
     <string name="download">Download</string>
     <string name="downloading">Downloading</string>
     <string name="remove_download">Remove download</string>
