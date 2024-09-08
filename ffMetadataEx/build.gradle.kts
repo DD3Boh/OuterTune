@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.dd3boh.ffmpegex"
+    namespace = "com.dd3boh.ffMetadataEx"
     compileSdk = 35
 
     defaultConfig {
@@ -12,14 +12,14 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags("")
+                arguments += listOf("-DCMAKE_SHARED_LINKER_FLAGS=-Wl,--build-id=none")
             }
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = false // proguard or whatever isn't set up
         }
     }
 

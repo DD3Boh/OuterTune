@@ -8,8 +8,8 @@ A Material 3 YouTube Music client & local music player for Android
 [![License](https://img.shields.io/github/license/DD3Boh/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
 [![Downloads](https://img.shields.io/github/downloads/DD3Boh/OuterTune/total)](https://github.com/DD3Boh/OuterTune/releases)
 
-[<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="80">](https://github.com/DD3Boh/OuterTune/releases/latest)
-
+[<img src="assets/badge_github.png" alt="Get it on GitHub" height="40">](https://github.com/DD3Boh/OuterTune/releases/latest)
+[<img src="assets/IzzyOnDroidButtonGreyBorder.svg" alt="Get it on IzzyOnDroid" height="40">](https://apt.izzysoft.de/fdroid/index/apk/com.dd3boh.outertune)
 ## Features
 
 OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/InnerTune), with advanced account synchronization, local media playback, multiple queues, and a new take on UI design.

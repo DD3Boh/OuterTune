@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.HorizontalDivider
@@ -77,6 +79,7 @@ import com.dd3boh.outertune.ui.component.ListDialog
 import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @Composable
 fun AlbumMenu(
@@ -94,6 +97,13 @@ fun AlbumMenu(
     var songs by remember {
         mutableStateOf(emptyList<Song>())
     }
+    val allInLibrary = remember(songs) {
+        songs.all { it.song.inLibrary != null }
+    }
+//    for when local albums are a thing
+//    val allLocal by remember(songs) { // if only local songs in this selection
+//        mutableStateOf(songs.isNotEmpty() && songs.all { it.song.isLocal })
+//    }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -268,6 +278,29 @@ fun AlbumMenu(
             title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
+        }
+        if (allInLibrary) {
+            GridMenuItem(
+                icon = Icons.Rounded.LibraryAddCheck,
+                title = R.string.remove_all_from_library
+            ) {
+                database.transaction {
+                    songs.forEach {
+                        toggleInLibrary(it.id, null)
+                    }
+                }
+            }
+        } else {
+            GridMenuItem(
+                icon = Icons.Rounded.LibraryAdd,
+                title = R.string.add_all_to_library
+            ) {
+                database.transaction {
+                    songs.forEach {
+                        toggleInLibrary(it.id, LocalDateTime.now())
+                    }
+                }
+            }
         }
         DownloadGridMenu(
             state = downloadState,

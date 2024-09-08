@@ -55,7 +55,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
-import com.dd3boh.outertune.constants.KeepAliveKey
+import com.dd3boh.outertune.constants.LastPosKey
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleShuffle
@@ -189,22 +189,6 @@ class MusicService : MediaLibraryService(),
                     setSmallIcon(R.drawable.small_icon)
                 }
         )
-
-        // FG notification
-        if (dataStore.get(KeepAliveKey, false)) {
-            try {
-                startService(Intent(this, KeepAlive::class.java))
-            } catch (e: Exception) {
-                reportException(e)
-            }
-        } else {
-            try {
-                stopService(Intent(this, KeepAlive::class.java))
-            } catch (e: Exception) {
-                reportException(e)
-            }
-        }
-
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(createDataSourceFactory()))
             .setRenderersFactory(createRenderersFactory())
@@ -278,10 +262,8 @@ class MusicService : MediaLibraryService(),
                         if (player.currentMediaItemIndex == 0 && lastMediaItemIndex == player.mediaItemCount - 1 &&
                             (reason == MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) &&
                             isShuffleEnabled.value && player.repeatMode == REPEAT_MODE_ALL) {
-                            player.pause()
                             queueBoard.shuffleCurrent(this@MusicService, false) // reshuffle queue
                             queueBoard.setCurrQueue(this@MusicService)
-                            player.play()
                         }
                         lastMediaItemIndex = player.currentMediaItemIndex
 
@@ -387,7 +369,10 @@ class MusicService : MediaLibraryService(),
                 if (queue != null) {
                     isShuffleEnabled.value = queue.shuffled
                     CoroutineScope(Dispatchers.Main).launch {
-                        queueBoard.setCurrQueue(this@MusicService)
+                        val queuePos = queueBoard.setCurrQueue(this@MusicService, false)
+                        if (queuePos != null) {
+                            player.seekTo(queuePos, dataStore.get(LastPosKey, C.TIME_UNSET))
+                        }
                     }
                 }
             }
@@ -828,6 +813,11 @@ class MusicService : MediaLibraryService(),
     override fun onDestroy() {
         if (dataStore.get(PersistentQueueKey, true)) {
             saveQueueToDisk()
+            scope.launch {
+                dataStore.edit { settings ->
+                    settings[LastPosKey] = player.currentPosition
+                }
+            }
         }
         mediaSession.release()
         player.removeListener(this)

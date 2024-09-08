@@ -49,6 +49,7 @@ import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
+import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
@@ -261,7 +262,14 @@ fun YouTubePlaylistMenu(
                 title = R.string.play
             ) {
                 println("Play: ${it.playlistId}, ${it.params}")
-                playerConnection.playQueue(YouTubeQueue(it))
+                playerConnection.playQueue(
+                    ListQueue(
+                        playlistId = playlist.playEndpoint!!.playlistId,
+                        title = playlist.title,
+                        items = songs.map { it.toMediaMetadata() },
+                    )
+                )
+
                 onDismiss()
             }
         }
@@ -272,7 +280,13 @@ fun YouTubePlaylistMenu(
                 title = R.string.shuffle
             ) {
                 println("Shuffle: id: ${shuffleEndpoint.playlistId}, params: ${shuffleEndpoint.params}")
-                playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
+                playerConnection.playQueue(
+                    ListQueue(
+                        playlistId = playlist.playEndpoint!!.playlistId,
+                        title = playlist.title,
+                        items = songs.map { it.toMediaMetadata() }.shuffled(),
+                    )
+                )
                 onDismiss()
             }
         }

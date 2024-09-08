@@ -3,6 +3,7 @@ package com.dd3boh.outertune.constants
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
 val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
@@ -32,7 +33,6 @@ val SkipSilenceKey = booleanPreferencesKey("skipSilence")
 val SkipOnErrorKey = booleanPreferencesKey("skipOnError")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
 val YtmSyncKey = booleanPreferencesKey("ytmSync")
-val KeepAliveKey = booleanPreferencesKey("keepAlive")
 val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
@@ -126,6 +126,7 @@ val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
 
 val PlayerVolumeKey = floatPreferencesKey("playerVolume")
 val RepeatModeKey = intPreferencesKey("repeatMode")
+val LastPosKey = longPreferencesKey("lastPosKey")
 val LockQueueKey = booleanPreferencesKey("lockQueue")
 
 val SearchSourceKey = stringPreferencesKey("searchSource")

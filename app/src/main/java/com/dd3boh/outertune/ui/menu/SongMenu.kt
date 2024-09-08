@@ -20,6 +20,8 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material.icons.rounded.PlaylistRemove
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Share
@@ -343,6 +345,27 @@ fun SongMenu(
                 }
                 context.startActivity(Intent.createChooser(intent, null))
             }
+        if (!song.song.isLocal) {
+            if (song.song.inLibrary == null) {
+                GridMenuItem(
+                    icon = Icons.Rounded.LibraryAdd,
+                    title = R.string.add_to_library
+                ) {
+                    database.query {
+                        update(song.song.toggleLibrary())
+                    }
+                }
+            } else {
+                GridMenuItem(
+                    icon = Icons.Rounded.LibraryAddCheck,
+                    title = R.string.remove_from_library
+                ) {
+                    database.query {
+                        update(song.song.toggleLibrary())
+                    }
+                }
+            }
+        }
         if (event != null) {
             GridMenuItem(
                 icon = Icons.Rounded.Delete,

@@ -23,6 +23,8 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.rounded.Share
@@ -83,6 +85,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import kotlin.math.log2
 import kotlin.math.pow
 import kotlin.math.round
@@ -102,6 +105,7 @@ fun PlayerMenu(
     val playerConnection = LocalPlayerConnection.current ?: return
     val playerVolume = playerConnection.service.playerVolume.collectAsState()
     val activityResultLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
+    val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
 
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata.id).collectAsState(initial = null)
@@ -325,6 +329,26 @@ fun PlayerMenu(
                     )
                 }
             )
+        if (librarySong?.song?.inLibrary != null) {
+            GridMenuItem(
+                icon = Icons.Rounded.LibraryAddCheck,
+                title = R.string.remove_from_library,
+            ) {
+                database.query {
+                    toggleInLibrary(mediaMetadata.id, null)
+                }
+            }
+        } else {
+            GridMenuItem(
+                icon = Icons.Rounded.LibraryAdd,
+                title = R.string.add_to_library,
+            ) {
+                database.transaction {
+                    insert(mediaMetadata)
+                    toggleInLibrary(mediaMetadata.id, LocalDateTime.now())
+                }
+            }
+        }
         GridMenuItem(
             icon = R.drawable.artist,
             title = R.string.view_artist

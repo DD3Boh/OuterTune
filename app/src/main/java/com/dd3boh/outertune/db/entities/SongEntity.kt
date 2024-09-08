@@ -61,7 +61,11 @@ data class SongEntity(
         }
     }
 
-    fun toggleLibrary() = copy(inLibrary = if (inLibrary == null) LocalDateTime.now() else null)
+    fun toggleLibrary() = copy(
+        inLibrary = if (inLibrary == null) LocalDateTime.now() else null,
+        liked = if (inLibrary == null) liked else false,
+        likedDate = if (inLibrary == null) likedDate else null
+    )
 
     /**
      * Returns a full date string. If no full date is present, returns the year.
