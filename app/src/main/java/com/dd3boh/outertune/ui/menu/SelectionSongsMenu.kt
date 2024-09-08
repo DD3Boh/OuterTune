@@ -237,7 +237,7 @@ fun SelectionSongMenu(
                 ) {
                     database.transaction {
                         songSelection.forEach { song ->
-                            inLibrary(song.id, null)
+                            toggleInLibrary(song.id, null)
                         }
                     }
                 }
@@ -249,7 +249,7 @@ fun SelectionSongMenu(
                     database.transaction {
                         songSelection.forEach { song ->
                             if (!song.song.isLocal) {
-                                inLibrary(song.id, LocalDateTime.now())
+                                toggleInLibrary(song.id, LocalDateTime.now())
                             }
                         }
                     }

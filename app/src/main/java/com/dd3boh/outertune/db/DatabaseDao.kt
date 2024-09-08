@@ -662,8 +662,19 @@ interface DatabaseDao {
         incrementPlayCount(songId, time.year, time.monthValue)
     }
 
+    @Transaction
+    fun toggleInLibrary(songId: String, inLibrary: LocalDateTime?) {
+        inLibrary(songId, inLibrary)
+        if (inLibrary == null) {
+            removeLike(songId)
+        }
+    }
+
     @Query("UPDATE song SET inLibrary = :inLibrary WHERE id = :songId")
     fun inLibrary(songId: String, inLibrary: LocalDateTime?)
+
+    @Query("UPDATE song SET liked = 0, likedDate = null WHERE id = :songId")
+    fun removeLike(songId: String)
 
     @Query("UPDATE song SET inLibrary = null WHERE localPath = null")
     fun disableInvalidLocalSongs()
