@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
@@ -87,7 +87,7 @@ import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
-import com.dd3boh.outertune.playback.queues.YouTubeQueue
+import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
 import com.dd3boh.outertune.ui.component.DefaultDialog
 import com.dd3boh.outertune.ui.component.FontSizeRange
@@ -106,7 +106,6 @@ import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.OnlinePlaylistViewModel
 import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -442,7 +441,13 @@ fun OnlinePlaylistScreen(
                                 playlist.playEndpoint?.let { playEndpoint ->
                                     Button(
                                         onClick = {
-                                            playerConnection.playQueue(YouTubeQueue(playEndpoint))
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    playlistId = playlist.playEndpoint!!.playlistId,
+                                                    title = playlist.title,
+                                                    items = songs.map { it.toMediaMetadata() },
+                                                )
+                                            )
                                         },
                                         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                         modifier = Modifier.weight(1f)
@@ -457,10 +462,16 @@ fun OnlinePlaylistScreen(
                                     }
                                 }
 
-                                playlist.shuffleEndpoint?.let { shuffleEndpoint ->
+                                playlist.shuffleEndpoint?.let {
                                     OutlinedButton(
                                         onClick = {
-                                            playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    playlistId = playlist.playEndpoint!!.playlistId,
+                                                    title = playlist.title,
+                                                    items = songs.map { it.toMediaMetadata() }.shuffled(),
+                                                )
+                                            )
                                         },
                                         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                         modifier = Modifier.weight(1f)
@@ -492,9 +503,9 @@ fun OnlinePlaylistScreen(
                         }
                     }
 
-                    items(
+                    itemsIndexed(
                         items = wrappedSongs
-                    ) { song ->
+                    ) { index, song ->
                         SwipeToQueueBox(
                             item = song.item.toMediaItem(),
                             content = {
@@ -528,9 +539,11 @@ fun OnlinePlaylistScreen(
                                                         playerConnection.player.togglePlayPause()
                                                     } else {
                                                         playerConnection.playQueue(
-                                                            YouTubeQueue(
-                                                                song.item.endpoint ?: WatchEndpoint(videoId = song.item.id),
-                                                                song.item.toMediaMetadata()
+                                                            ListQueue(
+                                                                playlistId = playlist.id,
+                                                                title = playlist.title,
+                                                                items = songs.map { it.toMediaMetadata() },
+                                                                startIndex = index
                                                             )
                                                         )
                                                     }

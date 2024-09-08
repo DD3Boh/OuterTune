@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -236,10 +237,10 @@ fun ArtistScreen(
                         )
                     }
 
-                    items(
+                    itemsIndexed(
                         items = librarySongs,
-                        key = { "local_${it.id}" }
-                    ) { song ->
+                        key = { _, item -> item.hashCode() }
+                    ) { index, song ->
                         SwipeToQueueBox(
                             item = song.toMediaItem(),
                             content = {
@@ -270,19 +271,13 @@ fun ArtistScreen(
                                         .combinedClickable {
                                             if (song.id == mediaMetadata?.id) {
                                                 playerConnection.player.togglePlayPause()
-                                            } else if (song.song.isLocal) {
+                                            } else {
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = "Library: ${artistPage.artist.title}",
-                                                        items = librarySongs.filter { it.song.isLocal } .toList().shuffled().map { it.toMediaMetadata() }
-                                                    )
-                                                )
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    YouTubeQueue(
-                                                        WatchEndpoint(
-                                                            videoId = song.id
-                                                        ), song.toMediaMetadata()
+                                                        items = librarySongs.filter { it.song.isLocal }.toList()
+                                                            .shuffled().map { it.toMediaMetadata() },
+                                                        startIndex = index
                                                     )
                                                 )
                                             }
