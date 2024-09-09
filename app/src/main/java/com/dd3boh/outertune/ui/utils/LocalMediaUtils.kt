@@ -17,7 +17,7 @@ const val TAG = "LocalMediaUtils"
 const val SCANNER_CRASH_AT_FIRST_ERROR = false // crash at first FFmpeg scanner error. Currently not implemented
 const val SYNC_SCANNER = false // true will not use multithreading for scanner
 const val MAX_CONCURRENT_JOBS = 8
-const val SCANNER_DEBUG = false
+const val SCANNER_DEBUG = true
 
 @OptIn(ExperimentalCoroutinesApi::class)
 val scannerSession = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_JOBS)
