@@ -14,7 +14,7 @@ interface MetadataScanner {
      *
      * @param path Full file path
      */
-    fun getMediaStoreSupplement(path: String): ExtraMetadataWrapper
+//    fun getMediaStoreSupplement(path: String): ExtraMetadataWrapper
 
     /**
      * Given a path to a file, extract necessary metadata. For fields FFmpeg is
