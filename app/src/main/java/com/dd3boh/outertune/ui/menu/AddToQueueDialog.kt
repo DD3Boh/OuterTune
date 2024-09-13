@@ -46,7 +46,7 @@ fun AddToQueueDialog(
 
 
     LaunchedEffect(Unit) {
-        queues = queueBoard.getAllQueues()
+        queues = queueBoard.getAllQueues().reversed()
     }
 
     if (isVisible) {
@@ -70,14 +70,14 @@ fun AddToQueueDialog(
                 )
             }
 
-            var index = 1
+            var index = queues.size
             // add queue
             items(queues) { queue ->
                 QueueListItem(
                     queue = queue,
-                    number = index++,
+                    number = index--,
                     modifier = Modifier.clickable {
-                        onAdd(queue.title ?: "Queue")
+                        onAdd(queue.title)
                         onDismiss()
                     }
                 )

@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.internal.toImmutableList
 import timber.log.Timber
 import kotlin.math.max
@@ -85,6 +87,8 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
     private var masterIndex = masterQueues.size - 1 // current queue index
     var detachedHead = false
 
+    private val mutex = Mutex()
+
 
     /**
      * ========================
@@ -121,7 +125,9 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
 
         regenerateIndexes()
         CoroutineScope(Dispatchers.IO).launch {
-            player.database.updateAllQueues(masterQueues)
+            mutex.withLock { // possible ConcurrentModificationException
+                player.database.updateAllQueues(masterQueues)
+            }
         }
     }
 
@@ -174,6 +180,8 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
 
         val match = masterQueues.firstOrNull { it.title == title } // look for matching queue. Title is uid
         if (match != null) { // found an existing queue
+            // Titles ending in "+​" (u200B) signify a extension queue
+            val anyExts = masterQueues.firstOrNull { it.title == match.title + " +\u200B" }
             if (replace) { // force replace
                 if (QUEUE_DEBUG)
                     Timber.tag(TAG).d("Adding to queue: Replacing all queue items")
@@ -226,23 +234,29 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
                 }
 
                 bubbleUp(match, player) // move queue to end of list so it shows as most recent
-            } else if (match.title.endsWith('+')) { // this queue is an already an extension queue
+            } else if (match.title.endsWith("+\u200B") || anyExts != null) { // this queue is an already an extension queue
                 if (QUEUE_DEBUG)
                     Timber.tag(TAG).d("Adding to queue: extension queue additive")
                 // add items to existing queue unconditionally
-                match.queue.addAll(mediaList.filterNotNull())
-                match.unShuffled.addAll(mediaList.filterNotNull())
+                if (anyExts != null) {
+                    anyExts.queue.addAll(mediaList.filterNotNull())
+                    anyExts.unShuffled.addAll(mediaList.filterNotNull())
+                } else {
+                    match.queue.addAll(mediaList.filterNotNull())
+                    match.unShuffled.addAll(mediaList.filterNotNull())
+                }
 
                 // rewrite queue
                 if (player.dataStore.get(PersistentQueueKey, true)) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        player.database.rewriteQueue(match)
+                        player.database.rewriteQueue(anyExts ?: match)
                     }
                 }
 
                 // don't change index
                 bubbleUp(match, player) // move queue to end of list so it shows as most recent
-            } else { // make new extension queue
+            }
+            else { // make new extension queue
                 if (QUEUE_DEBUG)
                     Timber.tag(TAG).d("Adding to queue: extension queue creation (and additive)")
                 // add items to NEW queue unconditionally (add entirely new queue)
@@ -259,7 +273,7 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
 
                 val newQueue = MultiQueueObject(
                     QueueEntity.generateQueueId(),
-                    "$title +",
+                    "$title +\u200B",
                     shufQueue,
                     unShufQueue,
                     false,
