@@ -372,6 +372,9 @@ class MusicService : MediaLibraryService(),
                         val queuePos = queueBoard.setCurrQueue(this@MusicService, false)
                         if (queuePos != null) {
                             player.seekTo(queuePos, dataStore.get(LastPosKey, C.TIME_UNSET))
+                            dataStore.edit { settings ->
+                                settings[LastPosKey] = C.TIME_UNSET
+                            }
                         }
                     }
                 }

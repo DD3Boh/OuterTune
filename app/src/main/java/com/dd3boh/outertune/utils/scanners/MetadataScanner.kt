@@ -8,13 +8,6 @@ import com.dd3boh.outertune.models.SongTempData
  * Returns metadata information
  */
 interface MetadataScanner {
-    /**
-     * Given a path to a file, extract necessary metadata MediaStore fails to
-     * deliver upon. Extracts artists, genres, and date
-     *
-     * @param path Full file path
-     */
-    fun getMediaStoreSupplement(path: String): ExtraMetadataWrapper
 
     /**
      * Given a path to a file, extract necessary metadata. For fields FFmpeg is

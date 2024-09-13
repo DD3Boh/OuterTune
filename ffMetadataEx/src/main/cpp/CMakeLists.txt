@@ -38,7 +38,7 @@ set_target_properties( # Specifies the target library.
 # Include FFmpeg headers
 include_directories(${CMAKE_SOURCE_DIR}/ffmpeg-android-maker/output/include/${ANDROID_ABI})
 
-add_library(ffmetaexjni SHARED ffMetaExJni.c)
+add_library(ffmetaexjni SHARED ffMetaExJni.cpp)
 
 # Link FFmpeg libraries
 target_link_libraries(ffmetaexjni

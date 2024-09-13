@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Info
@@ -73,6 +74,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
+import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.ui.component.BigSeekBar
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
@@ -109,6 +111,22 @@ fun PlayerMenu(
     val coroutineScope = rememberCoroutineScope()
 
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata.id).collectAsState(initial = null)
+
+    var showChooseQueueDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AddToQueueDialog(
+        isVisible = showChooseQueueDialog,
+        onAdd = { queueName ->
+            queueBoard.add(queueName, listOf(mediaMetadata), playerConnection, forceInsert = true, delta = false)
+            queueBoard.setCurrQueue(playerConnection)
+        },
+        onDismiss = {
+            showChooseQueueDialog = false
+            onDismiss() // here we dismiss since we switch to the queue anyways
+        }
+    )
 
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -296,6 +314,12 @@ fun PlayerMenu(
                 playerConnection.service.startRadioSeamlessly()
                 onDismiss()
             }
+        GridMenuItem(
+            icon = Icons.AutoMirrored.Rounded.QueueMusic,
+            title = R.string.add_to_queue
+        ) {
+            showChooseQueueDialog = true
+        }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
             title = R.string.add_to_playlist

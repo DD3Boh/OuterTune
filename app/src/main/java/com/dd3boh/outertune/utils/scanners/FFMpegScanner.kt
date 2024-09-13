@@ -38,38 +38,6 @@ class FFMpegScanner : MetadataScanner {
     }
 
     /**
-     * Given a path to a file, extract necessary metadata
-     *
-     * @param path Full file path
-     */
-    override fun getMediaStoreSupplement(path: String): ExtraMetadataWrapper {
-        if (EXTRACTOR_DEBUG)
-            Timber.tag(EXTRACTOR_TAG).d("Starting MediaStoreSupplement session on: $path")
-        val ffmpeg = FFMpegWrapper()
-        val data = ffmpeg.getAudioMetadata(path)
-
-        if (EXTRACTOR_DEBUG && DEBUG_SAVE_OUTPUT) {
-            Timber.tag(EXTRACTOR_TAG).d("Full output for: $path \n $data")
-        }
-
-        var artists: String? = null
-        var genres: String? = null
-        var date: String? = null
-
-        data.lines().forEach {
-            val tag = it.substringBefore(':')
-            when (tag) {
-                "ARTISTS", "ARTIST", "artist" -> artists = it.substringAfter(':')
-                "GENRE", "genre" -> genres = it.substringAfter(':')
-                "DATE", "date" -> date = it.substringAfter(':')
-                else -> ""
-            }
-        }
-
-        return ExtraMetadataWrapper(artists, genres, date, null)
-    }
-
-    /**
      * Given a path to a file, extract all necessary metadata
      *
      * @param path Full file path
