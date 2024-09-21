@@ -45,6 +45,7 @@ import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.MultiQueueObject
+import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.ui.utils.resize
 import com.zionhuang.innertube.models.AlbumItem
@@ -52,11 +53,15 @@ import com.zionhuang.innertube.models.PlaylistItem
 import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.pages.AlbumPage
 import com.zionhuang.innertube.pages.ArtistPage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -1119,7 +1124,11 @@ interface DatabaseDao {
 
     @Transaction
     fun updateAllQueues(mqs: List<MultiQueueObject>) {
-        mqs.forEach { updateQueue(it) }
+        CoroutineScope(Dispatchers.IO).launch {
+            QueueBoard.mutex.withLock { // possible ConcurrentModificationException
+                mqs.forEach { updateQueue(it) }
+            }
+        }
     }
 
     @Query("SELECT * from queue ORDER BY `index`")

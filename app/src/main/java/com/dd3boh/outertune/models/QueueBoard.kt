@@ -16,7 +16,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import okhttp3.internal.toImmutableList
 import timber.log.Timber
 import kotlin.math.max
@@ -87,8 +86,6 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
     private var masterIndex = masterQueues.size - 1 // current queue index
     var detachedHead = false
 
-    private val mutex = Mutex()
-
 
     /**
      * ========================
@@ -118,6 +115,10 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
      * @param index
      */
     private fun bubbleUp(index: Int, player: MusicService) {
+        if (index == masterQueues.size - 1) {
+            return
+        }
+
         val item = masterQueues[index]
         masterQueues.remove(item)
         masterQueues.add(item)
@@ -125,9 +126,7 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
 
         regenerateIndexes()
         CoroutineScope(Dispatchers.IO).launch {
-            mutex.withLock { // possible ConcurrentModificationException
-                player.database.updateAllQueues(masterQueues)
-            }
+            player.database.updateAllQueues(masterQueues)
         }
     }
 
@@ -674,10 +673,12 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
      */
     fun setCurrQueuePosIndex(index: Int, player: MusicService) {
         getCurrentQueue()?.let {
-            it.queuePos = index
-            if (player.dataStore.get(PersistentQueueKey, true)) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    player.database.updateQueue(it)
+            if (it.queuePos != index) {
+                it.queuePos = index
+                if (player.dataStore.get(PersistentQueueKey, true)) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        player.database.updateQueue(it)
+                    }
                 }
             }
         }
@@ -708,6 +709,8 @@ class QueueBoard(queues: MutableList<MultiQueueObject> = ArrayList()) {
     }
 
     companion object {
+        val mutex = Mutex()
+
         const val TAG = "QueueBoard"
     }
 
