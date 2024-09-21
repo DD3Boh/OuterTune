@@ -10,6 +10,7 @@ import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Binder
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
@@ -45,7 +46,6 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CommandButton
-import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -183,12 +183,13 @@ class MusicService : MediaLibraryService(),
 
     override fun onCreate() {
         super.onCreate()
-        setMediaNotificationProvider(
-            DefaultMediaNotificationProvider(this, { NOTIFICATION_ID }, CHANNEL_ID, R.string.music_player)
-                .apply {
-                    setSmallIcon(R.drawable.small_icon)
-                }
-        )
+        val notificationBuilder = NotificationCompat.Builder(this, KEEP_ALIVE_CHANNEL_ID)
+            .setContentTitle(getString(R.string.music_player))
+            .setSmallIcon(R.drawable.small_icon)
+            .setOngoing(true) // Ensures notification stays until service stops
+
+        val notification = notificationBuilder.build()
+
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(createDataSourceFactory()))
             .setRenderersFactory(createRenderersFactory())
@@ -832,8 +833,16 @@ class MusicService : MediaLibraryService(),
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        if (dataStore.get(PersistentQueueKey, true)) {
+            saveQueueToDisk()
+            scope.launch {
+                dataStore.edit { settings ->
+                    settings[LastPosKey] = player.currentPosition
+                }
+            }
+        }
+
         super.onTaskRemoved(rootIntent)
-        stopSelf()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
@@ -851,7 +860,7 @@ class MusicService : MediaLibraryService(),
         const val PLAYLIST = "playlist"
 
         const val CHANNEL_ID = "music_channel_01"
-        const val NOTIFICATION_ID = 888
+        const val KEEP_ALIVE_CHANNEL_ID = "outertune_keep_alive"
         const val ERROR_CODE_NO_STREAM = 1000001
         const val CHUNK_LENGTH = 512 * 1024L
     }
