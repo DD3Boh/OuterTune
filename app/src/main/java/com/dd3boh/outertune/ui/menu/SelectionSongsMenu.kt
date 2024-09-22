@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryAdd
@@ -53,6 +54,7 @@ fun SelectionMediaMetadataMenu(
     selection: List<MediaMetadata>,
     onDismiss: () -> Unit,
     clearAction: () -> Unit,
+    onRemoveFromHistory: (() -> Unit)? = null,
 ){
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -280,5 +282,16 @@ fun SelectionMediaMetadataMenu(
                 showRemoveDownloadDialog = true
             }
         )
+
+        if (onRemoveFromHistory != null) {
+            GridMenuItem(
+                icon = Icons.Rounded.Delete,
+                title = R.string.remove_from_history,
+            ) {
+                onRemoveFromHistory()
+                onDismiss()
+                clearAction()
+            }
+        }
     }
 }

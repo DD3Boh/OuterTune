@@ -22,7 +22,8 @@ fun RowScope.SelectHeader(
     onSelectAll: () -> Unit,
     onDeselectAll: () -> Unit,
     menuState: MenuState,
-    onDismiss: () -> Unit = {}
+    onDismiss: () -> Unit = {},
+    onRemoveFromHistory: (() -> Unit)? = null
 ) {
     Text(
         text = "${selectedItems.size}/${totalItemCount} selected",
@@ -37,6 +38,7 @@ fun RowScope.SelectHeader(
                     selection = selectedItems,
                     onDismiss = menuState::dismiss,
                     clearAction = onDeselectAll,
+                    onRemoveFromHistory = onRemoveFromHistory
                 )
             }
         }
