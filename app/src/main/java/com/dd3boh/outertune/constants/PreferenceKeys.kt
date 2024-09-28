@@ -6,25 +6,37 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
+/**
+ * Appearance
+ */
 val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
 val PlayerBackgroundStyleKey = stringPreferencesKey("playerBackgroundStyle")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
+val NewInterfaceKey = booleanPreferencesKey("newInterface")
+val ShowLikedAndDownloadedPlaylist = booleanPreferencesKey("showLikedAndDownloadedPlaylist")
+val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
+
 val EnabledTabsKey = stringPreferencesKey("enabledTabs")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
 val DefaultOpenTabNewKey = stringPreferencesKey("defaultOpenTabNew")
-val NewInterfaceKey = booleanPreferencesKey("newInterface")
-val ShowLikedAndDownloadedPlaylist = booleanPreferencesKey("showLikedAndDownloadedPlaylist")
 
+/**
+ * Content
+ */
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
+val YtmSyncKey = booleanPreferencesKey("ytmSync")
 val ContentLanguageKey = stringPreferencesKey("contentLanguage")
 val ContentCountryKey = stringPreferencesKey("contentCountry")
 val ProxyEnabledKey = booleanPreferencesKey("proxyEnabled")
 val ProxyUrlKey = stringPreferencesKey("proxyUrl")
 val ProxyTypeKey = stringPreferencesKey("proxyType")
 
-val AudioQualityKey = stringPreferencesKey("audioQuality")
 
+/**
+ * Player & audio
+ */
+val AudioQualityKey = stringPreferencesKey("audioQuality")
 enum class AudioQuality {
     AUTO, HIGH, LOW
 }
@@ -33,17 +45,72 @@ val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
 val SkipSilenceKey = booleanPreferencesKey("skipSilence")
 val SkipOnErrorKey = booleanPreferencesKey("skipOnError")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
-val YtmSyncKey = booleanPreferencesKey("ytmSync")
 val KeepAliveKey = booleanPreferencesKey("keepAlive")
 val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 
+val PlayerVolumeKey = floatPreferencesKey("playerVolume")
+val RepeatModeKey = intPreferencesKey("repeatMode")
+val LastPosKey = longPreferencesKey("lastPosKey")
+val LockQueueKey = booleanPreferencesKey("lockQueue")
+val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
+
+
+/**
+ * Lyrics
+ */
+val ShowLyricsKey = booleanPreferencesKey("showLyrics")
+val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
+val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
+val LyricTrimKey = booleanPreferencesKey("lyricTrim")
+
+
+/**
+ * Storage
+ */
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 
+
+/**
+ * Privacy
+ */
 val PauseListenHistoryKey = booleanPreferencesKey("pauseListenHistory")
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
 
+
+/**
+ * Local media scanner
+ */
+val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
+val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
+val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
+val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")
+
+val ScanPathsKey = stringPreferencesKey("scanPaths")
+val ExcludedScanPathsKey = stringPreferencesKey("excludedScanPaths")
+val LastLocalScanKey = longPreferencesKey("lastLocalScan")
+
+
+/**
+ * Specify how strict the metadata scanner should be
+ */
+enum class ScannerMatchCriteria {
+    LEVEL_1, // Title only
+    LEVEL_2, // Title and artists
+    LEVEL_3, // Title, artists, albums
+}
+
+
+/**
+ * Experimental settings
+ */
+val DevSettingsKey = booleanPreferencesKey("devSettings")
+
+
+/**
+ * Non-settings UI preferences
+ */
 val SongSortTypeKey = stringPreferencesKey("songSortType")
 val SongSortDescendingKey = booleanPreferencesKey("songSortDescending")
 val PlaylistSongSortTypeKey = stringPreferencesKey("playlistSongSortType")
@@ -123,14 +190,6 @@ enum class LibraryFilter {
     ALL, ALBUMS, ARTISTS, PLAYLISTS, SONGS, FOLDERS
 }
 
-val ShowLyricsKey = booleanPreferencesKey("showLyrics")
-val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
-
-val PlayerVolumeKey = floatPreferencesKey("playerVolume")
-val RepeatModeKey = intPreferencesKey("repeatMode")
-val LastPosKey = longPreferencesKey("lastPosKey")
-val LockQueueKey = booleanPreferencesKey("lockQueue")
-
 val SearchSourceKey = stringPreferencesKey("searchSource")
 
 enum class SearchSource {
@@ -143,30 +202,6 @@ val AccountNameKey = stringPreferencesKey("accountName")
 val AccountEmailKey = stringPreferencesKey("accountEmail")
 val AccountChannelHandleKey = stringPreferencesKey("accountChannelHandle")
 
-//  local playback
-val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
-val ScannerTypeKey = stringPreferencesKey("scannerType")
-
-/**
- * Specify how strict the metadata scanner should be
- */
-enum class ScannerMatchCriteria {
-    LEVEL_1, // Title only
-    LEVEL_2, // Title and artists
-    LEVEL_3, // Title, artists, albums
-}
-
-val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
-val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
-val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")
-val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")
-val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
-val LyricTrimKey = booleanPreferencesKey("lyricTrim")
-val ScanPathsKey = stringPreferencesKey("scanPaths")
-val ExcludedScanPathsKey = stringPreferencesKey("excludedScanPaths")
-
-val DevSettingsKey = booleanPreferencesKey("devSettings")
-val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
 
 val LanguageCodeToName = mapOf(
     "af" to "Afrikaans",
