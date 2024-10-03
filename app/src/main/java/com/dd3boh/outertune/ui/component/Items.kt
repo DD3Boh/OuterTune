@@ -1,5 +1,7 @@
 package com.dd3boh.outertune.ui.component
 
+import android.content.Context
+import android.os.PowerManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandIn
@@ -59,6 +61,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -1092,6 +1095,9 @@ fun ItemThumbnail(
     modifier: Modifier = Modifier,
     albumIndex: Int? = null,
 ) {
+    // ehhhh make a nicer thing for later
+    val context = LocalContext.current
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -1128,7 +1134,7 @@ fun ItemThumbnail(
         }
 
         PlayingIndicatorBox(
-            isActive = isActive,
+            isActive = isActive && !(context.getSystemService(Context.POWER_SERVICE) as PowerManager).isPowerSaveMode,
             playWhenReady = isPlaying,
             color = if (albumIndex != null) MaterialTheme.colorScheme.onBackground else Color.White,
             modifier = Modifier

@@ -1,9 +1,11 @@
 package com.dd3boh.outertune.ui.player
 
+import android.content.Context
 import android.content.res.Configuration
 import android.graphics.drawable.BitmapDrawable
 import android.text.format.Formatter
 import android.widget.Toast
+import android.os.PowerManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -188,8 +190,12 @@ fun BottomSheetPlayer(
         mutableStateOf<List<Color>>(emptyList())
     }
 
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+
+
+    // gradient colours
     LaunchedEffect(mediaMetadata) {
-        if (playerBackground != PlayerBackgroundStyle.GRADIENT) return@LaunchedEffect
+        if (playerBackground != PlayerBackgroundStyle.GRADIENT || powerManager.isPowerSaveMode) return@LaunchedEffect
 
         withContext(Dispatchers.IO) {
             if (mediaMetadata?.isLocal == true) {
@@ -567,7 +573,7 @@ fun BottomSheetPlayer(
         }
 
         AnimatedVisibility(
-            visible = state.isExpanded,
+            visible = !powerManager.isPowerSaveMode && state.isExpanded,
             enter = fadeIn(tween(1000)),
             exit = fadeOut()
         ) {
