@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreVert
@@ -24,17 +25,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.HistorySource
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
+import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.IconButton
 import com.dd3boh.outertune.ui.component.LocalMenuState
 import com.dd3boh.outertune.ui.component.NavigationTitle
@@ -56,11 +60,13 @@ fun HistoryScreen(
     navController: NavController,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
+    val historySource by viewModel.historySource.collectAsState()
     val events by viewModel.events.collectAsState()
     val historyPage by viewModel.historyPage
 
@@ -69,11 +75,34 @@ fun HistoryScreen(
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
 
+    fun dateAgoToString(dateAgo: DateAgo): String {
+        return when (dateAgo) {
+            DateAgo.Today -> context.getString(R.string.today)
+            DateAgo.Yesterday -> context.getString(R.string.yesterday)
+            DateAgo.ThisWeek -> context.getString(R.string.this_week)
+            DateAgo.LastWeek -> context.getString(R.string.last_week)
+            is DateAgo.Other -> dateAgo.date.format(DateTimeFormatter.ofPattern("yyyy/MM"))
+        }
+    }
+
     LazyColumn(
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom).asPaddingValues(),
         modifier = Modifier.windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Top))
     ) {
-        if (isLoggedIn) {
+        item {
+            ChipsRow(
+                chips = if (isLoggedIn) listOf(
+                    HistorySource.LOCAL to stringResource(R.string.local_history),
+                    HistorySource.REMOTE to stringResource(R.string.remote_history),
+                ) else {
+                    listOf(HistorySource.LOCAL to stringResource(R.string.local_history))
+                },
+                currentValue = historySource,
+                onValueUpdate = { viewModel.historySource.value = it }
+            )
+        }
+
+        if (historySource == HistorySource.REMOTE && isLoggedIn) {
             historyPage?.sections?.forEach { section ->
                 stickyHeader {
                     NavigationTitle(
@@ -150,23 +179,16 @@ fun HistoryScreen(
             events.forEach { (dateAgo, events) ->
                 stickyHeader {
                     NavigationTitle(
-                        title = when (dateAgo) {
-                            DateAgo.Today -> stringResource(R.string.today)
-                            DateAgo.Yesterday -> stringResource(R.string.yesterday)
-                            DateAgo.ThisWeek -> stringResource(R.string.this_week)
-                            DateAgo.LastWeek -> stringResource(R.string.last_week)
-                            is DateAgo.Other -> dateAgo.date.format(DateTimeFormatter.ofPattern("yyyy/MM"))
-                        },
+                        title = dateAgoToString(dateAgo),
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surface)
                     )
                 }
 
-                items(
+                itemsIndexed(
                     items = events,
-                    key = { it.event.id }
-                ) { event ->
+                ) { index, event ->
                     SongListItem(
                         song = event.song,
                         isActive = event.song.id == mediaMetadata?.id,
@@ -199,9 +221,10 @@ fun HistoryScreen(
                                         playerConnection.player.togglePlayPause()
                                     } else {
                                         playerConnection.playQueue(
-                                            YouTubeQueue(
-                                                endpoint = WatchEndpoint(videoId = event.song.id),
-                                                preloadItem = event.song.toMediaMetadata()
+                                            ListQueue(
+                                                title = dateAgoToString(dateAgo),
+                                                items = events.map { it.song.toMediaMetadata() },
+                                                startIndex = index
                                             )
                                         )
                                     }

@@ -396,11 +396,17 @@ class Migration11To12 : AutoMigrationSpec {
 /**
  * Migration from InnerTune
  */
+@DeleteColumn.Entries(
+    // these fields were removed back in migration 5_6, but never deleted
+    // https://github.com/z-huang/InnerTune/commit/a7116ac7e510667b06d51c7c4ff61b8b2ecec02b
+    DeleteColumn(tableName = "playlist", columnName = "lastUpdateTime"),
+    DeleteColumn(tableName = "playlist", columnName = "createdAt")
+)
 class Migration12To13 : AutoMigrationSpec {
     override fun onPostMigrate(db: SupportSQLiteDatabase) {
         // playlists
-        db.execSQL("UPDATE playlist SET isLocal = true WHERE browseId IS NULL")
-        db.execSQL("UPDATE playlist SET isEditable = true WHERE browseId IS NOT NULL")
+        db.execSQL("UPDATE playlist SET isLocal = 1 WHERE browseId IS NULL")
+        db.execSQL("UPDATE playlist SET isEditable = 1 WHERE browseId IS NOT NULL")
 
         // play counts
         db.query("SELECT * FROM event").use { cursor ->
