@@ -102,6 +102,7 @@ fun LibraryPlaylistsScreen(
 
     LaunchedEffect(Unit) { viewModel.sync() }
 
+
     val playlists by viewModel.allPlaylists.collectAsState()
 
     val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
@@ -118,6 +119,12 @@ fun LibraryPlaylistsScreen(
 
     var syncedPlaylist: Boolean by remember {
         mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+        if (ytmSync) {
+            viewModel.sync()
+        }
     }
 
     if (showAddPlaylistDialog) {
