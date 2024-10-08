@@ -1,7 +1,6 @@
 package com.dd3boh.outertune.ui.component
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -42,8 +41,6 @@ private fun SelectHeaderContent(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-
-        Spacer(Modifier.weight(1f)) // or adjust as needed
 
         IconButton(onClick = onSelectAllToggle) {
             Icon(
