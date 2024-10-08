@@ -225,7 +225,7 @@ class LibraryAlbumsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryAlbums() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -267,7 +267,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryPlaylists() } }
 }
 
 @HiltViewModel
