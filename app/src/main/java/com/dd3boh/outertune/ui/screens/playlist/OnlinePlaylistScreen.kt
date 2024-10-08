@@ -149,6 +149,8 @@ fun OnlinePlaylistScreen(
 
     val syncUtils = LocalSyncUtils.current
 
+    var isSyncing by remember { mutableStateOf(false) }
+
     LaunchedEffect(songs) {
         mutableSongs.apply {
             clear()
@@ -365,32 +367,37 @@ fun OnlinePlaylistScreen(
                                                 else -> {
                                                     IconButton(
                                                         onClick = {
-                                                            viewModel.viewModelScope.launch(
-                                                                Dispatchers.IO
-                                                            ) {
-                                                                syncUtils.syncPlaylist(
-                                                                    playlist.id,
-                                                                    dbPlaylist!!.id
-                                                                )
-                                                            }
-
-                                                            songs.forEach { song ->
-                                                                val downloadRequest =
-                                                                    DownloadRequest.Builder(
-                                                                        song.id,
-                                                                        song.id.toUri()
+                                                            if (!isSyncing) {
+                                                                isSyncing = true
+                                                                viewModel.viewModelScope.launch(
+                                                                    Dispatchers.IO
+                                                                ) {
+                                                                    syncUtils.syncPlaylist(
+                                                                        playlist.id,
+                                                                        dbPlaylist!!.id
                                                                     )
-                                                                        .setCustomCacheKey(song.id)
-                                                                        .setData(song.title.toByteArray())
-                                                                        .build()
-                                                                DownloadService.sendAddDownload(
-                                                                    context,
-                                                                    ExoDownloadService::class.java,
-                                                                    downloadRequest,
-                                                                    false
-                                                                )
+                                                                }
+
+                                                                songs.forEach { song ->
+                                                                    val downloadRequest =
+                                                                        DownloadRequest.Builder(
+                                                                            song.id,
+                                                                            song.id.toUri()
+                                                                        )
+                                                                            .setCustomCacheKey(song.id)
+                                                                            .setData(song.title.toByteArray())
+                                                                            .build()
+                                                                    DownloadService.sendAddDownload(
+                                                                        context,
+                                                                        ExoDownloadService::class.java,
+                                                                        downloadRequest,
+                                                                        false
+                                                                    )
+                                                                }
+                                                                isSyncing = false
                                                             }
-                                                        }
+                                                        },
+                                                        enabled = !isSyncing
                                                     ) {
                                                         Icon(
                                                             Icons.Rounded.Download,

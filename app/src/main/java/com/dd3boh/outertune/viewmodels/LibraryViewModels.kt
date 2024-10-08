@@ -3,7 +3,6 @@
 package com.dd3boh.outertune.viewmodels
 
 import android.content.Context
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -226,7 +225,7 @@ class LibraryAlbumsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryAlbums() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -268,7 +267,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryPlaylists() } }
 }
 
 @HiltViewModel
