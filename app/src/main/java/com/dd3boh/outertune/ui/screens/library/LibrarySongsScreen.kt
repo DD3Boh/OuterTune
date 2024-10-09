@@ -90,11 +90,11 @@ fun LibrarySongsScreen(
     val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val songs by viewModel.allSongs.collectAsState()
+    val isSyncingRemoteLikedSongs by viewModel.isSyncingRemoteLikedSongs.collectAsState()
+    val isSyncingRemoteSongs by viewModel.isSyncingRemoteSongs.collectAsState()
 
     val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
-    var selection by remember {
-        mutableStateOf(false)
-    }
+    var selection by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (ytmSync) {
@@ -120,6 +120,9 @@ fun LibrarySongsScreen(
                     if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
                     else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
                 }
+            },
+            isLoading = { filter ->
+                (filter == SongFilter.LIKED && isSyncingRemoteLikedSongs) || (filter == SongFilter.LIBRARY && isSyncingRemoteSongs)
             }
         )
     }

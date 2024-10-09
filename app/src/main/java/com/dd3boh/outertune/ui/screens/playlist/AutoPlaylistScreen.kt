@@ -182,7 +182,7 @@ fun AutoPlaylistScreen(
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            if (playlistId == "liked") syncUtils.syncLikedSongs()
+            if (playlistId == "liked") syncUtils.syncRemoteLikedSongs()
         }
     }
 

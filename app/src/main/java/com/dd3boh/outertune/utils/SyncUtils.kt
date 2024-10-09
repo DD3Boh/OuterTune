@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -35,25 +36,25 @@ import javax.inject.Singleton
 class SyncUtils @Inject constructor(
     val database: MusicDatabase,
 ) {
-    private val _isSyncingLikedSongs = MutableStateFlow(false)
-    private val _isSyncingLibrarySongs = MutableStateFlow(false)
-    private val _isSyncingLibraryAlbums = MutableStateFlow(false)
-    private val _isSyncingArtistsSubscriptions = MutableStateFlow(false)
-    private val _isSyncingSavedPlaylists = MutableStateFlow(false)
+    private val _isSyncingRemoteLikedSongs = MutableStateFlow(false)
+    private val _isSyncingRemoteSongs = MutableStateFlow(false)
+    private val _isSyncingRemoteAlbums = MutableStateFlow(false)
+    private val _isSyncingRemoteArtists = MutableStateFlow(false)
+    private val _isSyncingRemotePlaylists = MutableStateFlow(false)
 
-    val isSyncingLikedSongs: StateFlow<Boolean> = _isSyncingLikedSongs.asStateFlow()
-    val isSyncingLibrarySongs: StateFlow<Boolean> = _isSyncingLibrarySongs.asStateFlow()
-    val isSyncingLibraryAlbums: StateFlow<Boolean> = _isSyncingLibraryAlbums.asStateFlow()
-    val isSyncingArtistsSubscriptions: StateFlow<Boolean> = _isSyncingArtistsSubscriptions.asStateFlow()
-    val isSyncingSavedPlaylists: StateFlow<Boolean> = _isSyncingSavedPlaylists.asStateFlow()
+    val isSyncingRemoteLikedSongs: StateFlow<Boolean> = _isSyncingRemoteLikedSongs.asStateFlow()
+    val isSyncingRemoteSongs: StateFlow<Boolean> = _isSyncingRemoteSongs.asStateFlow()
+    val isSyncingRemoteAlbums: StateFlow<Boolean> = _isSyncingRemoteAlbums.asStateFlow()
+    val isSyncingRemoteArtists: StateFlow<Boolean> = _isSyncingRemoteArtists.asStateFlow()
+    val isSyncingRemotePlaylists: StateFlow<Boolean> = _isSyncingRemotePlaylists.asStateFlow()
 
     private val _TAG = "SyncUtils"
 
     /**
-     * Singleton syncLikedSongs
+     * Singleton syncRemoteLikedSongs
      */
-    suspend fun syncLikedSongs() {
-        if (!_isSyncingLikedSongs.compareAndSet(expect = false, update = true)) {
+    suspend fun syncRemoteLikedSongs() {
+        if (!_isSyncingRemoteLikedSongs.compareAndSet(expect = false, update = true)) {
             Timber.tag(_TAG).d("Liked songs synchronization already in progress")
             return // Synchronization already in progress
         }
@@ -95,15 +96,15 @@ class SyncUtils @Inject constructor(
             }
         } finally {
             Timber.tag(_TAG).d("Liked songs synchronization ended")
-            _isSyncingLikedSongs.value = false
+            _isSyncingRemoteLikedSongs.value = false
         }
     }
 
     /**
-     * Singleton syncLibrarySongs
+     * Singleton syncRemoteSongs
      */
-    suspend fun syncLibrarySongs() {
-        if (!_isSyncingLibrarySongs.compareAndSet(expect = false, update = true)) {
+    suspend fun syncRemoteSongs() {
+        if (!_isSyncingRemoteSongs.compareAndSet(expect = false, update = true)) {
             Timber.tag(_TAG).d("Library songs synchronization already in progress")
             return // Synchronization already in progress
         }
@@ -145,7 +146,7 @@ class SyncUtils @Inject constructor(
 
             // Inset or mark songs to library
             coroutineScope {
-                remoteSongs.forEach { song ->
+                val jobs = remoteSongs.map { song ->
                     launch(Dispatchers.IO) {
                         val dbSong = database.song(song.id).firstOrNull()
                         database.transaction {
@@ -157,18 +158,19 @@ class SyncUtils @Inject constructor(
                         }
                     }
                 }
+                jobs.joinAll()
             }
         } finally {
             Timber.tag(_TAG).d("Library songs synchronization ended")
-            _isSyncingLibrarySongs.value = false
+            _isSyncingRemoteSongs.value = false
         }
     }
 
     /**
-     * Singleton syncLibraryAlbums
+     * Singleton syncRemoteAlbums
      */
-    suspend fun syncLibraryAlbums() {
-        if (!_isSyncingLibraryAlbums.compareAndSet(expect = false, update = true)) {
+    suspend fun syncRemoteAlbums() {
+        if (!_isSyncingRemoteAlbums.compareAndSet(expect = false, update = true)) {
             Timber.tag(_TAG).d("Library albums synchronization already in progress")
             return // Synchronization already in progress
         }
@@ -212,15 +214,15 @@ class SyncUtils @Inject constructor(
             }
         } finally {
             Timber.tag(_TAG).d("Library albums synchronization ended")
-            _isSyncingLibraryAlbums.value = false // Use the correct AtomicBoolean
+            _isSyncingRemoteAlbums.value = false // Use the correct AtomicBoolean
         }
     }
 
     /**
-     * Singleton syncArtistsSubscriptions
+     * Singleton syncRemoteArtists
      */
-    suspend fun syncArtistsSubscriptions() {
-        if (!_isSyncingArtistsSubscriptions.compareAndSet(expect = false, update = true)) {
+    suspend fun syncRemoteArtists() {
+        if (!_isSyncingRemoteArtists.compareAndSet(expect = false, update = true)) {
             Timber.tag(_TAG).d("Artist subscriptions synchronization already in progress")
             return // Synchronization already in progress
         }
@@ -272,15 +274,15 @@ class SyncUtils @Inject constructor(
 
         } finally {
             Timber.tag(_TAG).d("Artist subscriptions synchronization ended")
-            _isSyncingArtistsSubscriptions.value = false
+            _isSyncingRemoteArtists.value = false
         }
     }
 
     /**
-     * Singleton syncSavedPlaylists
+     * Singleton syncRemotePlaylists
      */
-    suspend fun syncLibraryPlaylists() {
-        if (!_isSyncingSavedPlaylists.compareAndSet(expect = false, update = true)) {
+    suspend fun syncRemotePlaylists() {
+        if (!_isSyncingRemotePlaylists.compareAndSet(expect = false, update = true)) {
             Timber.tag(_TAG).d("Library playlist synchronization already in progress")
             return
         }
@@ -346,7 +348,7 @@ class SyncUtils @Inject constructor(
                 }
             }
         } finally {
-            _isSyncingSavedPlaylists.value = false
+            _isSyncingRemotePlaylists.value = false
             Timber.tag(_TAG).d("Library playlist synchronization ended")
         }
     }

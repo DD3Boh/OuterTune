@@ -97,12 +97,12 @@ class HomeViewModel @Inject constructor(
                 }
                 .distinctUntilChanged()
 
-            if (syncYtm.first() != false) { // defaults to true
-                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
-                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
-                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryPlaylists() }
-                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryAlbums() }
-                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() }
+            if (syncYtm.first() == true) { // defaults to true
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteLikedSongs() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteSongs() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemotePlaylists() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteAlbums() }
+                viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteArtists() }
             }
         }
     }

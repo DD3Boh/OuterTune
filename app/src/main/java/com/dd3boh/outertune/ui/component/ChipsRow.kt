@@ -8,10 +8,12 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +29,7 @@ fun <E> ChipsRow(
     currentValue: E,
     onValueUpdate: (E) -> Unit,
     modifier: Modifier = Modifier,
+    isLoading: (E) -> Boolean = { false }
 ) {
     Row(
         modifier = modifier
@@ -40,7 +43,15 @@ fun <E> ChipsRow(
                 label = { Text(label) },
                 selected = currentValue == value,
                 colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface),
-                onClick = { onValueUpdate(value) }
+                onClick = { onValueUpdate(value) },
+                trailingIcon = {
+                    if (isLoading(value)) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
             )
 
             Spacer(Modifier.width(8.dp))
@@ -56,6 +67,7 @@ fun <E> ChipsLazyRow(
     onValueUpdate: (E) -> Unit,
     modifier: Modifier = Modifier,
     selected: ((E) -> Boolean)? = null,
+    isLoading: (E) -> Boolean = { false }
 ) {
     val tween: FiniteAnimationSpec<IntOffset> = tween(
         durationMillis = 200,
@@ -81,7 +93,15 @@ fun <E> ChipsLazyRow(
                 selected = selected?.let { it(value) } ?: (currentValue == value),
                 colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface),
                 onClick = { onValueUpdate(value) },
-                modifier = Modifier.animateItemPlacement(tween)
+                modifier = Modifier.animateItemPlacement(tween),
+                trailingIcon = {
+                    if (isLoading(value)) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
             )
 
             Spacer(Modifier.width(8.dp))

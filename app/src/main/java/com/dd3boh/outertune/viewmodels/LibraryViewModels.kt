@@ -83,27 +83,22 @@ class LibrarySongsViewModel @Inject constructor(
     var folderPositionStack = Stack<DirectoryTree>()
     val databaseLink = database
 
-    val allSongs = syncAllSongs(context, database, downloadUtil)
+    val allSongs = getSyncedSongs(context, database, downloadUtil)
+    val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
+    val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
 
     private val scanPaths = context.dataStore[ScanPathsKey]?: DEFAULT_SCAN_PATH
     private val excludedScanPaths = context.dataStore[ExcludedScanPathsKey]?: ""
-    val localSongDirectoryTree =
-        refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
+    val localSongDirectoryTree = refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
 
     fun syncLibrarySongs() {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteSongs() }
     }
 
     fun syncLikedSongs() {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteLikedSongs() }
     }
 
-
-    /**
-     * Get local songs
-     *
-     * @return DirectoryTree
-     */
     fun getLocalSongs(database: MusicDatabase): MutableStateFlow<DirectoryTree> {
         val directoryStructure =
             refreshLocal(database, scanPaths.split('\n'),
@@ -113,8 +108,7 @@ class LibrarySongsViewModel @Inject constructor(
         return MutableStateFlow(directoryStructure)
     }
 
-
-    fun syncAllSongs(context: Context, database: MusicDatabase, downloadUtil: DownloadUtil): StateFlow<List<Song>> {
+    private fun getSyncedSongs(context: Context, database: MusicDatabase, downloadUtil: DownloadUtil): StateFlow<List<Song>> {
 
         return context.dataStore.data
                 .map {
@@ -163,6 +157,8 @@ class LibraryArtistsViewModel @Inject constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val isSyncingRemoteArtists = syncUtils.isSyncingRemoteArtists
+
     val allArtists = context.dataStore.data
         .map {
             Triple(
@@ -180,7 +176,7 @@ class LibraryArtistsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteArtists() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -208,6 +204,8 @@ class LibraryAlbumsViewModel @Inject constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val isSyncingRemoteAlbums = syncUtils.isSyncingRemoteAlbums
+
     val allAlbums = context.dataStore.data
         .map {
             Triple(
@@ -225,7 +223,7 @@ class LibraryAlbumsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryAlbums() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteAlbums() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -257,6 +255,8 @@ class LibraryPlaylistsViewModel @Inject constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val isSyncingRemotePlaylists = syncUtils.isSyncingRemotePlaylists
+
     val allPlaylists = context.dataStore.data
         .map {
             it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE) to (it[PlaylistSortDescendingKey] ?: true)
@@ -267,7 +267,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibraryPlaylists() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemotePlaylists() } }
 }
 
 @HiltViewModel
@@ -275,7 +275,15 @@ class LibraryPlaylistsViewModel @Inject constructor(
 class LibraryViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
+    private val syncUtils: SyncUtils
 ) : ViewModel() {
+
+    val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
+    val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
+    val isSyncingRemoteAlbums = syncUtils.isSyncingRemoteAlbums
+    val isSyncingRemoteArtists = syncUtils.isSyncingRemoteArtists
+    val isSyncingRemotePlaylists = syncUtils.isSyncingRemotePlaylists
+
     var artists = database.artistsBookmarked(ArtistSortType.CREATE_DATE, true)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     var albums = database.albumsLiked(AlbumSortType.CREATE_DATE, true)
