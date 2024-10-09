@@ -66,26 +66,27 @@ fun LibraryArtistsScreen(
     libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
     val menuState = LocalMenuState.current
+    val coroutineScope = rememberCoroutineScope()
+
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
     libraryFilterContent?.let { filter = ArtistFilter.LIKED }
 
-    var viewTypeLocal by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
+    var artistViewType by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
-
-    val viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+    val viewType = if (libraryFilterContent != null) libraryViewType else artistViewType
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
 
-    LaunchedEffect(Unit) { viewModel.sync() }
-
     val artists by viewModel.allArtists.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
+    val isSyncingRemoteArtists by viewModel.isSyncingRemoteArtists.collectAsState()
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.sync() }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
@@ -106,18 +107,19 @@ fun LibraryArtistsScreen(
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isLoading = { _ -> isSyncingRemoteArtists }
             )
 
             IconButton(
                 onClick = {
-                    viewTypeLocal = viewTypeLocal.toggle()
+                    artistViewType = artistViewType.toggle()
                 },
                 modifier = Modifier.padding(end = 6.dp)
             ) {
                 Icon(
                     imageVector =
-                    when (viewTypeLocal) {
+                    when (artistViewType) {
                         LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
                         LibraryViewType.GRID -> Icons.Rounded.GridView
                     },

@@ -99,6 +99,9 @@ fun LibrarySongsScreen(
     val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val songs by viewModel.allSongs.collectAsState()
+    val isSyncingRemoteLikedSongs by viewModel.isSyncingRemoteLikedSongs.collectAsState()
+    val isSyncingRemoteSongs by viewModel.isSyncingRemoteSongs.collectAsState()
+
     val lazyListState = rememberLazyListState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
@@ -162,6 +165,9 @@ fun LibrarySongsScreen(
                     if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
                     else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
                 }
+            },
+            isLoading = { filter ->
+                (filter == SongFilter.LIKED && isSyncingRemoteLikedSongs) || (filter == SongFilter.LIBRARY && isSyncingRemoteSongs)
             }
         )
     }

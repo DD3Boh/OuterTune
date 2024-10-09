@@ -50,6 +50,7 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
 import com.dd3boh.outertune.constants.LibraryViewTypeKey
+import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.LibraryAlbumGridItem
 import com.dd3boh.outertune.ui.component.LibraryAlbumListItem
@@ -71,27 +72,28 @@ fun LibraryAlbumsScreen(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
+    val coroutineScope = rememberCoroutineScope()
+
     var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIKED)
     libraryFilterContent?.let { filter = AlbumFilter.LIKED }
 
-    var viewTypeLocal by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
+    var albumViewType by rememberEnumPreference(AlbumViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
-
-    val viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+    val viewType = if (libraryFilterContent != null) libraryViewType else albumViewType
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(AlbumSortTypeKey, AlbumSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(AlbumSortDescendingKey, true)
-
-    LaunchedEffect(Unit) { viewModel.sync() }
+    val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val albums by viewModel.allAlbums.collectAsState()
-
-    val coroutineScope = rememberCoroutineScope()
+    val isSyncingLibraryAlbums by viewModel.isSyncingRemoteAlbums.collectAsState()
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    LaunchedEffect(Unit) { if (ytmSync) viewModel.sync() }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
@@ -112,18 +114,19 @@ fun LibraryAlbumsScreen(
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isLoading = { _ -> isSyncingLibraryAlbums }
             )
 
             IconButton(
                 onClick = {
-                    viewTypeLocal = viewTypeLocal.toggle()
+                    albumViewType = albumViewType.toggle()
                 },
                 modifier = Modifier.padding(end = 6.dp)
             ) {
                 Icon(
                     imageVector =
-                        when (viewTypeLocal) {
+                        when (albumViewType) {
                             LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
                             LibraryViewType.GRID -> Icons.Rounded.GridView
                         },
