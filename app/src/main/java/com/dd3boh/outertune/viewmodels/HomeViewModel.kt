@@ -97,7 +97,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .distinctUntilChanged()
 
-            if (syncYtm.first() != false) { // defaults to true
+            if (syncYtm.first() == true) { // defaults to true
                 viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteLikedSongs() }
                 viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteSongs() }
                 viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemotePlaylists() }
