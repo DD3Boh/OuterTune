@@ -146,7 +146,7 @@ class SyncUtils @Inject constructor(
 
             // Inset or mark songs to library
             coroutineScope {
-                val jobs = remoteSongs.map { song ->
+                remoteSongs.forEach { song ->
                     launch(Dispatchers.IO) {
                         val dbSong = database.song(song.id).firstOrNull()
                         database.transaction {
@@ -158,7 +158,6 @@ class SyncUtils @Inject constructor(
                         }
                     }
                 }
-                jobs.joinAll()
             }
         } finally {
             Timber.tag(_TAG).d("Library songs synchronization ended")
