@@ -61,6 +61,7 @@ import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSortType
 import com.dd3boh.outertune.constants.PlaylistSortTypeKey
 import com.dd3boh.outertune.constants.PlaylistViewTypeKey
+import com.dd3boh.outertune.constants.ShowLikedAndDownloadedPlaylist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.ui.component.AutoPlaylistGridItem
 import com.dd3boh.outertune.ui.component.AutoPlaylistListItem
@@ -97,6 +98,7 @@ fun LibraryPlaylistsScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSortTypeKey, PlaylistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSortDescendingKey, true)
+    val (showLikedAndDownloadedPlaylist, _) = rememberPreference(ShowLikedAndDownloadedPlaylist, false)
 
     LaunchedEffect(Unit) { viewModel.sync() }
 
@@ -256,7 +258,7 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (libraryFilterContent != null) {
+                    if (libraryFilterContent != null || showLikedAndDownloadedPlaylist) {
                         item(
                             key = likedPlaylist.id,
                             contentType = { CONTENT_TYPE_PLAYLIST }
@@ -336,7 +338,7 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (libraryFilterContent != null) {
+                    if (libraryFilterContent != null || showLikedAndDownloadedPlaylist) {
                         item(
                             key = likedPlaylist.id,
                             contentType = { CONTENT_TYPE_PLAYLIST }

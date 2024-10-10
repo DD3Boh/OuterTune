@@ -346,6 +346,7 @@
     <string name="player_background_gradient">Gradient</string>
     <string name="player_background_blur">Blur</string>
     <string name="new_interface">New interface layout</string>
+    <string name="show_liked_and_downloaded_playlist">Show liked and downloaded playlist</string>">
 
     <!-- Content settings -->
     <string name="ytm_sync">Automatically sync with your YouTube Music account</string>

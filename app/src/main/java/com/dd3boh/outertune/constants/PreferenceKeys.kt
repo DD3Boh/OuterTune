@@ -14,6 +14,7 @@ val EnabledTabsKey = stringPreferencesKey("enabledTabs")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
 val DefaultOpenTabNewKey = stringPreferencesKey("defaultOpenTabNew")
 val NewInterfaceKey = booleanPreferencesKey("newInterface")
+val ShowLikedAndDownloadedPlaylist = booleanPreferencesKey("showLikedAndDownloadedPlaylist")
 
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
 val ContentLanguageKey = stringPreferencesKey("contentLanguage")
