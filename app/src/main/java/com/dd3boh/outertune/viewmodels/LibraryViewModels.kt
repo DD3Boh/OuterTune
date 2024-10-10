@@ -38,7 +38,6 @@ import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
-import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.playback.DownloadUtil
@@ -61,7 +60,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -131,27 +129,8 @@ class LibrarySongsViewModel @Inject constructor(
                         SongFilter.LIBRARY -> database.songs(sortType, descending)
                         SongFilter.LIKED -> database.likedSongs(sortType, descending)
                         SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
-                            database.allSongs()
-                                    .flowOn(Dispatchers.IO)
-                                    .map { songs ->
-                                        songs.filter {
-                                            // show local songs as under downloaded for now
-                                            downloads[it.id]?.state == Download.STATE_COMPLETED || it.song.isLocal
-                                        }
-                                    }
-                                    .map { songs ->
-                                        when (sortType) {
-                                            SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
-                                            SongSortType.MODIFIED_DATE -> songs.sortedBy { it.song.getDateModifiedLong() }
-                                            SongSortType.RELEASE_DATE -> songs.sortedBy { it.song.getDateLong() }
-                                            SongSortType.NAME -> songs.sortedBy { it.song.title.lowercase() }
-                                            SongSortType.ARTIST -> songs.sortedBy { song ->
-                                                song.artists.joinToString(separator = "") { it.name }.lowercase()
-                                            }
-
-                                            SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
-                                        }.reversed(descending)
-                                    }
+                            val downloadsIds = downloads.filter { it.value.state == Download.STATE_COMPLETED }.keys
+                            database.allSongs(downloadsIds, sortType, descending)
                         }
                     }
                 }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -282,7 +261,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
 class LibraryViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    private val syncUtils: SyncUtils
+    syncUtils: SyncUtils
 ) : ViewModel() {
 
     val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs

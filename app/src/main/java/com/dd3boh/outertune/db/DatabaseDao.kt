@@ -324,8 +324,54 @@ interface DatabaseDao {
     fun song(songId: String?): Flow<Song?>
 
     @Transaction
+    @Query("SELECT * FROM song ORDER BY rowId")
+    fun allSongsByRowIdAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song ORDER BY inLibrary")
+    fun allSongsByCreateDateAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song ORDER BY date")
+    fun allSongsByReleaseDateAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song ORDER BY dateModified")
+    fun allSongsByDateModifiedAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song ORDER BY title COLLATE NOCASE ASC")
+    fun allSongsByNameAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song ORDER BY totalPlayTime")
+    fun allSongsByPlayTimeAsc(): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song")
     fun allSongs(): Flow<List<Song>>
+
+    fun allSongs(
+        downloads: Set<String>,
+        sortType: SongSortType,
+        descending: Boolean
+    ) = when (sortType) {
+            SongSortType.CREATE_DATE -> allSongsByCreateDateAsc()
+            SongSortType.MODIFIED_DATE -> allSongsByDateModifiedAsc()
+            SongSortType.RELEASE_DATE -> allSongsByReleaseDateAsc()
+            SongSortType.NAME -> allSongsByNameAsc()
+            SongSortType.ARTIST -> allSongsByRowIdAsc().map { songs ->
+                songs.sortedBy { song ->
+                    song.artists.joinToString(separator = "") { it.name }.lowercase()
+                }
+            }
+            SongSortType.PLAY_TIME -> allSongsByPlayTimeAsc()
+        }.map { songs ->
+            songs.filter { song ->
+                // show local songs as under downloaded for now
+                song.song.isLocal || downloads.any { it == song.song.id }
+            }
+        }.map { it.reversed(descending) }
 
     @Transaction
     @Query("SELECT * FROM song WHERE isLocal = 1 and inLibrary IS NOT NULL")
@@ -601,7 +647,7 @@ interface DatabaseDao {
 
     @Transaction
     @Query("UPDATE playlist SET isLocal = 1 WHERE id = :playlistId")
-    fun playlistDesync(playlistId: String): Unit
+    fun playlistDesync(playlistId: String)
 
     @Transaction
     @Query("SELECT * FROM song WHERE title LIKE '%' || :query || '%' AND inLibrary IS NOT NULL LIMIT :previewSize")
