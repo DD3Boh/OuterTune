@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -86,6 +87,7 @@ import com.dd3boh.outertune.constants.SongSortDescendingKey
 import com.dd3boh.outertune.constants.SongSortType
 import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
+import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
@@ -108,6 +110,8 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -146,6 +150,7 @@ fun AutoPlaylistScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
+    val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val playlistId = viewModel.playlistId
     val playlist = PlaylistEntity(
@@ -160,6 +165,8 @@ fun AutoPlaylistScreen(
             else -> null
         },
     )
+
+    val isSyncingRemotePlaylists by syncUtils.isSyncingRemotePlaylists.collectAsState()
 
     val thumbnail by viewModel.thumbnail.collectAsState()
     val mutableSongs = remember { mutableStateListOf<Song>() }
@@ -199,7 +206,7 @@ fun AutoPlaylistScreen(
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            if (playlistId == "liked") syncUtils.syncRemoteLikedSongs()
+            if (playlistId == "liked" && ytmSync) syncUtils.syncRemoteLikedSongs()
         }
     }
 
@@ -292,11 +299,21 @@ fun AutoPlaylistScreen(
                                 fontSizeRange = FontSizeRange(16.sp, 22.sp)
                             )
 
-                            Text(
-                                text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Normal
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isSyncingRemotePlaylists) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+
+                                Text(
+                                    text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Normal
+                                )
+                            }
 
                             Text(
                                 text = makeTimeString(playlistLength * 1000L),

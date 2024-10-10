@@ -93,7 +93,7 @@ fun LibraryAlbumsScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
-    LaunchedEffect(Unit) { if (ytmSync) viewModel.sync() }
+    LaunchedEffect(Unit) { if (ytmSync) { viewModel.sync() } }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {

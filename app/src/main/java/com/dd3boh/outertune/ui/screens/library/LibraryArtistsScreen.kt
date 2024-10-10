@@ -49,6 +49,7 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
 import com.dd3boh.outertune.constants.LibraryViewTypeKey
+import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.LibraryArtistGridItem
 import com.dd3boh.outertune.ui.component.LibraryArtistListItem
@@ -77,6 +78,7 @@ fun LibraryArtistsScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
+    val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val artists by viewModel.allArtists.collectAsState()
     val isSyncingRemoteArtists by viewModel.isSyncingRemoteArtists.collectAsState()
@@ -86,7 +88,7 @@ fun LibraryArtistsScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.sync() }
+    LaunchedEffect(Unit) { if (ytmSync) { viewModel.sync() } }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {

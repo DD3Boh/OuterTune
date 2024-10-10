@@ -121,7 +121,7 @@ fun LibraryPlaylistsScreen(
     var showAddPlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var syncedPlaylist: Boolean by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.sync() }
+    LaunchedEffect(Unit) { if (ytmSync) { viewModel.sync() } }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
