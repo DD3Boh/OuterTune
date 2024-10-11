@@ -57,7 +57,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -107,14 +106,7 @@ interface DatabaseDao {
         when (sortType) {
             SongSortType.CREATE_DATE -> songsByCreateDateAsc()
             SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
-            SongSortType.RELEASE_DATE -> {
-                val songs = songsByReleaseDateAsc()
-                runBlocking {
-                    flowOf(songs.first().sortedBy {
-                        it.song.getDateLong()
-                    })
-                }
-            }
+            SongSortType.RELEASE_DATE -> songsByReleaseDateAsc()
             SongSortType.NAME -> songsByNameAsc()
             SongSortType.ARTIST -> songsByRowIdAsc().map { songs ->
                 songs.sortedBy { song ->
@@ -165,14 +157,7 @@ interface DatabaseDao {
         when (sortType) {
             SongSortType.CREATE_DATE -> likedSongsByCreateDateAsc()
             SongSortType.MODIFIED_DATE -> likedSongsByDateModifiedAsc()
-            SongSortType.RELEASE_DATE -> {
-                val songs = likedSongsByReleaseDateAsc()
-                runBlocking {
-                    flowOf(songs.first().sortedBy {
-                        it.song.getDateLong()
-                    })
-                }
-            }
+            SongSortType.RELEASE_DATE -> ikedSongsByReleaseDateAsc()
             SongSortType.NAME -> likedSongsByNameAsc()
             SongSortType.ARTIST -> likedSongsByRowIdAsc().map { songs ->
                 songs.sortedBy { song ->
