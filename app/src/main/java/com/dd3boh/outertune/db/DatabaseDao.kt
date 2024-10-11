@@ -94,7 +94,7 @@ interface DatabaseDao {
     @Transaction
     @RewriteQueriesToDropUnusedColumns
     @Query("""
-        SELECT song.*, (SELECT COUNT(playCount.song) 
+        SELECT song.*, (SELECT SUM(playCount.count) 
             FROM playCount 
             WHERE playCount.song = song.id) AS pc 
         FROM song 
@@ -107,7 +107,7 @@ interface DatabaseDao {
         when (sortType) {
             SongSortType.CREATE_DATE -> songsByCreateDateAsc()
             SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
-                SongSortType.RELEASE_DATE -> {
+            SongSortType.RELEASE_DATE -> {
                 val songs = songsByReleaseDateAsc()
                 runBlocking {
                     flowOf(songs.first().sortedBy {
@@ -152,7 +152,7 @@ interface DatabaseDao {
     @Transaction
     @RewriteQueriesToDropUnusedColumns
     @Query("""
-        SELECT song.*, (SELECT COUNT(playCount.song) 
+        SELECT song.*, (SELECT SUM(playCount.count) 
             FROM playCount 
             WHERE playCount.song = song.id) AS pc 
         FROM song 
