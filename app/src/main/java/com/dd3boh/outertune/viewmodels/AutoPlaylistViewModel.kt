@@ -9,13 +9,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.exoplayer.offline.Download
 import com.dd3boh.outertune.constants.SongSortDescendingKey
 import com.dd3boh.outertune.constants.SongSortType
 import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.toEnum
-import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,7 +33,6 @@ import javax.inject.Inject
 class AutoPlaylistViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    downloadUtil: DownloadUtil,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val playlistId = savedStateHandle.get<String>("playlistId")!!
@@ -56,10 +53,7 @@ class AutoPlaylistViewModel @Inject constructor(
         .flatMapLatest { (sortType, descending) ->
             when (playlistId) {
                 "liked" -> database.likedSongs(sortType, descending)
-                "downloaded" -> downloadUtil.downloads.flatMapLatest { downloads ->
-                    val downloadsIds = downloads.filter { it.value.state == Download.STATE_COMPLETED }.keys
-                    database.allSongs(downloadsIds, sortType, descending)
-                }
+                "downloaded" -> database.downloadSongs(sortType, descending)
                 else -> MutableStateFlow(emptyList())
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

@@ -6,7 +6,6 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.exoplayer.offline.Download
 import com.dd3boh.outertune.constants.AlbumFilter
 import com.dd3boh.outertune.constants.AlbumFilterKey
 import com.dd3boh.outertune.constants.AlbumSortDescendingKey
@@ -40,7 +39,6 @@ import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.models.DirectoryTree
-import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.getDirectoryTree
@@ -71,13 +69,12 @@ import javax.inject.Inject
 class LibrarySongsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    downloadUtil: DownloadUtil,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
 
     val databaseLink = database
 
-    val allSongs = getSyncedSongs(context, database, downloadUtil)
+    val allSongs = getSyncedSongs(context, database)
     val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
     val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
 
@@ -113,7 +110,7 @@ class LibrarySongsViewModel @Inject constructor(
         }
     }
 
-    private fun getSyncedSongs(context: Context, database: MusicDatabase, downloadUtil: DownloadUtil): StateFlow<List<Song>> {
+    private fun getSyncedSongs(context: Context, database: MusicDatabase): StateFlow<List<Song>> {
 
         return context.dataStore.data
                 .map {
@@ -128,10 +125,7 @@ class LibrarySongsViewModel @Inject constructor(
                     when (filter) {
                         SongFilter.LIBRARY -> database.songs(sortType, descending)
                         SongFilter.LIKED -> database.likedSongs(sortType, descending)
-                        SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
-                            val downloadsIds = downloads.filter { it.value.state == Download.STATE_COMPLETED }.keys
-                            database.allSongs(downloadsIds, sortType, descending)
-                        }
+                        SongFilter.DOWNLOADED -> database.downloadSongs(sortType, descending)
                     }
                 }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }

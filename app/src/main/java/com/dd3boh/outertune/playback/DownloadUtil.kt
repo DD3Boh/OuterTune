@@ -20,14 +20,18 @@ import com.dd3boh.outertune.di.DownloadCache
 import com.dd3boh.outertune.utils.enumPreference
 import com.zionhuang.innertube.YouTube
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -131,6 +135,13 @@ class DownloadUtil @Inject constructor(
                     downloads.update { map ->
                         map.toMutableMap().apply {
                             set(download.request.id, download)
+                        }
+                    }
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (download.state == Download.STATE_COMPLETED){
+                            val updateTime = Instant.ofEpochMilli(download.updateTimeMs).atZone(ZoneOffset.UTC).toLocalDateTime()
+                            database.updateDownloadStatus(download.request.id, updateTime)
                         }
                     }
                 }
