@@ -106,7 +106,6 @@ fun LibraryPlaylistsScreen(
 
     LaunchedEffect(Unit) { viewModel.sync() }
 
-
     val playlists by viewModel.allPlaylists.collectAsState()
     val isSyncingRemotePlaylists by viewModel.isSyncingRemotePlaylists.collectAsState()
 
@@ -121,7 +120,7 @@ fun LibraryPlaylistsScreen(
     var showAddPlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var syncedPlaylist: Boolean by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { if (ytmSync) { viewModel.sync() } }
+    LaunchedEffect(Unit) { viewModel.sync() }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
@@ -198,9 +197,7 @@ fun LibraryPlaylistsScreen(
             currentValue = filter,
             onValueUpdate = {
                 filter = it
-                if (ytmSync) {
-                    if (it == PlaylistFilter.LIBRARY) viewModel.sync()
-                }
+                if (it == PlaylistFilter.LIBRARY) viewModel.sync()
             },
             isLoading = { filter ->
                 filter == PlaylistFilter.LIBRARY && isSyncingRemotePlaylists
