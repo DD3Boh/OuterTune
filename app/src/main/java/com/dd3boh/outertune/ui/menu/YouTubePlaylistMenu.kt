@@ -62,6 +62,8 @@ import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.utils.completed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.lastOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -92,7 +94,9 @@ fun YouTubePlaylistMenu(
             coroutineScope.launch {
                 songs.ifEmpty {
                     withContext(Dispatchers.IO) {
-                        YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
+                        YouTube.playlist(playlist.id).completed()
+                            .map { result -> result.getOrNull()?.songs.orEmpty() }
+                            .lastOrNull().orEmpty()
                     }
                 }.let { songs ->
                     queueBoard.add(queueName, songs.map { it.toMediaMetadata() }, playerConnection,
@@ -111,7 +115,9 @@ fun YouTubePlaylistMenu(
         onGetSong = { targetPlaylist ->
             val allSongs = songs
                 .ifEmpty {
-                    YouTube.playlist(targetPlaylist.id).completed().getOrNull()?.songs.orEmpty()
+                    YouTube.playlist(targetPlaylist.id).completed()
+                        .map { result -> result.getOrNull()?.songs.orEmpty() }
+                        .lastOrNull().orEmpty()
                 }.map {
                     it.toMediaMetadata()
                 }
@@ -216,7 +222,8 @@ fun YouTubePlaylistMenu(
                                 coroutineScope.launch(Dispatchers.IO) {
                                     songs.ifEmpty {
                                         YouTube.playlist(playlist.id).completed()
-                                            .getOrNull()?.songs.orEmpty()
+                                            .map { result -> result.getOrNull()?.songs.orEmpty() }
+                                            .lastOrNull().orEmpty()
                                     }.map { it.toMediaMetadata() }
                                         .onEach(::insert)
                                         .mapIndexed { index, song ->
@@ -309,7 +316,9 @@ fun YouTubePlaylistMenu(
             coroutineScope.launch {
                 songs.ifEmpty {
                     withContext(Dispatchers.IO) {
-                        YouTube.playlist(playlist.id).completed().getOrNull()?.songs.orEmpty()
+                        YouTube.playlist(playlist.id).completed()
+                            .map { result -> result.getOrNull()?.songs.orEmpty() }
+                            .lastOrNull().orEmpty()
                     }
                 }.let { songs ->
                     playerConnection.playNext(songs.map { it.toMediaItem() })

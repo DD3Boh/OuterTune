@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -71,33 +72,35 @@ class SyncUtils @Inject constructor(
         try {
             Timber.tag(_TAG).d("Liked songs synchronization started")
 
-            // Get remote and local liked songs
-            val remoteSongs = YouTube.playlist("LM").completed().getOrThrow().songs.reversed()
+            // Get remote and local liked songs ASYNC
+            val remoteSongsFlow = YouTube.playlist("LM").completed()
+                .map { result -> result.getOrNull()?.songs?.reversed() ?: emptyList() }
 
-            // Identify local songs to unlike
-            val songsToUnlike = database.likedSongsByNameAsc().first()
-                .filterNot { it.song.isLocal }
-                .filterNot { localSong -> remoteSongs.any { it.id == localSong.id } }
+            val likedSongs = database.likedSongsByNameAsc().first()
+            remoteSongsFlow.collect { remoteSongs ->
+                coroutineScope {
+                    // Identify local songs to unlike
+                    val songsToUnlike = likedSongs
+                        .filterNot { it.song.isLocal }
+                        .filterNot { localSong -> remoteSongs.any { it.id == localSong.id } }
 
-            // Unlike local songs in the database
-            coroutineScope {
-                songsToUnlike.forEach { song ->
-                    launch(Dispatchers.IO) {
-                        database.update(song.song.localToggleLike())
+                    // Unlike local songs in the database
+                    songsToUnlike.forEach { song ->
+                        launch(Dispatchers.IO) {
+                            database.update(song.song.localToggleLike())
+                        }
                     }
-                }
-            }
 
-            // Insert or like songs in the database
-            coroutineScope {
-                remoteSongs.forEach { remoteSong ->
-                    launch(Dispatchers.IO) {
-                        val localSong = database.song(remoteSong.id).firstOrNull()
-                        database.transaction {
-                            if (localSong == null) {
-                                insert(remoteSong.toMediaMetadata(), SongEntity::localToggleLike)
-                            } else if (!localSong.song.liked) {
-                                update(localSong.song.localToggleLike())
+                    // Insert or like songs in the database
+                    remoteSongs.forEach { remoteSong ->
+                        launch(Dispatchers.IO) {
+                            val localSong = database.song(remoteSong.id).firstOrNull()
+                            database.transaction {
+                                if (localSong == null) {
+                                    insert(remoteSong.toMediaMetadata(), SongEntity::localToggleLike)
+                                } else if (!localSong.song.liked) {
+                                    update(localSong.song.localToggleLike())
+                                }
                             }
                         }
                     }
@@ -363,24 +366,28 @@ class SyncUtils @Inject constructor(
     }
 
     suspend fun syncPlaylist(browseId: String, playlistId: String) {
-        val playlistPage = YouTube.playlist(browseId).completed().getOrThrow()
-        coroutineScope {
-            launch(Dispatchers.IO) {
-                database.transaction {
-                    clearPlaylist(playlistId)
-                    val songEntities = playlistPage.songs
-                        .map(SongItem::toMediaMetadata)
-                        .onEach { insert(it) }
+        val playlistFlow = YouTube.playlist(browseId).completed()
+            .map { result -> result.getOrThrow() }
 
-                    val playlistSongMaps = songEntities.mapIndexed { position, song ->
-                        PlaylistSongMap(
-                            songId = song.id,
-                            playlistId = playlistId,
-                            position = position,
-                            setVideoId = song.setVideoId
-                        )
+        playlistFlow.collect { playlist ->
+            coroutineScope {
+                launch(Dispatchers.IO) {
+                    database.transaction {
+                        clearPlaylist(playlistId)
+                        val songEntities = playlist.songs
+                            .map(SongItem::toMediaMetadata)
+                            .onEach { insert(it) }
+
+                        val playlistSongMaps = songEntities.mapIndexed { position, song ->
+                            PlaylistSongMap(
+                                songId = song.id,
+                                playlistId = playlistId,
+                                position = position,
+                                setVideoId = song.setVideoId
+                            )
+                        }
+                        playlistSongMaps.forEach { insert(it) }
                     }
-                    playlistSongMaps.forEach { insert(it) }
                 }
             }
         }

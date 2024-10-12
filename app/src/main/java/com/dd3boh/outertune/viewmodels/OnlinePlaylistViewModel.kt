@@ -13,6 +13,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,11 +35,12 @@ class OnlinePlaylistViewModel @Inject constructor(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             YouTube.playlist(playlistId).completed()
-                .onSuccess { playlistPage ->
+                .map { result -> result.getOrNull() }
+                .filterNotNull()
+                .catch { throwable -> reportException(throwable) }
+                .collect { playlistPage ->
                     playlist.value = playlistPage.playlist
                     playlistSongs.value = playlistPage.songs
-                }.onFailure {
-                    reportException(it)
                 }
         }
     }
