@@ -74,6 +74,7 @@ import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
+import isSyncEnabled
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -140,10 +141,12 @@ fun LibrarySongsScreen(
     }
 
     LaunchedEffect(Unit) {
-        when (filter) {
-            SongFilter.LIKED -> viewModel.syncLikedSongs()
-            SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
-            else -> return@LaunchedEffect
+        if (context.isSyncEnabled()){
+            when (filter) {
+                SongFilter.LIKED -> viewModel.syncLikedSongs()
+                SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
+                else -> return@LaunchedEffect
+            }
         }
     }
 
@@ -157,8 +160,10 @@ fun LibrarySongsScreen(
             currentValue = filter,
             onValueUpdate = {
                 filter = it
-                if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
-                else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+                if (context.isSyncEnabled()){
+                    if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
+                    else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
+                }
             },
             isLoading = { filter ->
                 (filter == SongFilter.LIKED && isSyncingRemoteLikedSongs) || (filter == SongFilter.LIBRARY && isSyncingRemoteSongs)

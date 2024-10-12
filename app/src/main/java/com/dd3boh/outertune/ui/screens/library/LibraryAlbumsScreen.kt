@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,7 @@ import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryAlbumsViewModel
+import isSyncEnabled
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -66,6 +68,7 @@ fun LibraryAlbumsScreen(
     viewModel: LibraryAlbumsViewModel = hiltViewModel(),
     libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
@@ -91,7 +94,7 @@ fun LibraryAlbumsScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.sync() }
+    LaunchedEffect(Unit) { if (context.isSyncEnabled()) viewModel.sync() }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {

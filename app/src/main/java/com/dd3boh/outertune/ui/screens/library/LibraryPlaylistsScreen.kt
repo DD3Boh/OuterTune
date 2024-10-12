@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -78,6 +79,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
 import com.zionhuang.innertube.YouTube
+import isSyncEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -89,6 +91,7 @@ fun LibraryPlaylistsScreen(
     viewModel: LibraryPlaylistsViewModel = hiltViewModel(),
     libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
     val coroutineScope = rememberCoroutineScope()
@@ -120,7 +123,7 @@ fun LibraryPlaylistsScreen(
     var showAddPlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var syncedPlaylist: Boolean by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.sync() }
+    LaunchedEffect(Unit) { if (context.isSyncEnabled()) viewModel.sync() }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
@@ -197,7 +200,9 @@ fun LibraryPlaylistsScreen(
             currentValue = filter,
             onValueUpdate = {
                 filter = it
-                if (it == PlaylistFilter.LIBRARY) viewModel.sync()
+                if (context.isSyncEnabled()){
+                    if (it == PlaylistFilter.LIBRARY) viewModel.sync()
+                }
             },
             isLoading = { filter ->
                 filter == PlaylistFilter.LIBRARY && isSyncingRemotePlaylists

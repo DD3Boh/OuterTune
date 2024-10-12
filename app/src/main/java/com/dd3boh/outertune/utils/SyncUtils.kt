@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -34,7 +33,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class SyncUtils @Inject constructor(
-    val database: MusicDatabase,
+    val database: MusicDatabase
 ) {
     private val _isSyncingRemoteLikedSongs = MutableStateFlow(false)
     private val _isSyncingRemoteSongs = MutableStateFlow(false)
@@ -49,6 +48,16 @@ class SyncUtils @Inject constructor(
     val isSyncingRemotePlaylists: StateFlow<Boolean> = _isSyncingRemotePlaylists.asStateFlow()
 
     private val _TAG = "SyncUtils"
+
+    suspend fun syncAll() {
+        coroutineScope {
+            launch { syncRemoteLikedSongs() }
+            launch { syncRemoteSongs() }
+            launch { syncRemoteAlbums() }
+            launch { syncRemoteArtists() }
+            launch { syncRemotePlaylists() }
+        }
+    }
 
     /**
      * Singleton syncRemoteLikedSongs
