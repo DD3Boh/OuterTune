@@ -10,6 +10,7 @@ import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
+import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.dd3boh.outertune.constants.AlbumSortType
 import com.dd3boh.outertune.constants.ArtistSongSortType
@@ -609,26 +610,53 @@ interface DatabaseDao {
     fun albumWithSongs(albumId: String): Flow<AlbumWithSongs?>
 
     @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = 1 ORDER BY rowId")
-    fun playlistsByCreateDateAsc(): Flow<List<Playlist>>
+    @RawQuery(observedEntities = [PlaylistEntity::class])
+    fun _getPlaylists(query: SupportSQLiteQuery): Flow<List<Playlist>>
 
-    @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = 1 ORDER BY name COLLATE NOCASE ASC")
-    fun playlistsByNameAsc(): Flow<List<Playlist>>
+    private fun queryPlaylists(orderBy: String): SimpleSQLiteQuery {
+        return SimpleSQLiteQuery("""
+            SELECT p.*, COUNT(psm.playlistId) AS songCount
+            FROM playlist p
+                LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
+            WHERE p.bookmarkedAt IS NOT NULL OR p.isLocal = 1
+            GROUP BY p.id
+            ORDER BY $orderBy
+        """)
+    }
 
-    @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE bookmarkedAt IS NOT NULL OR isLocal = 1 ORDER BY songCount")
-    fun playlistsBySongCountAsc(): Flow<List<Playlist>>
-
-    @Transaction
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE isEditable AND bookmarkedAt IS NOT NULL ORDER BY rowId")
-    fun editablePlaylistsByCreateDateAsc(): Flow<List<Playlist>>
+    fun playlistsByCreateDateAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylists("p.rowId"))
+    fun playlistsByNameAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylists("p.name COLLATE NOCASE ASC"))
+    fun playlistsBySongCountAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylists("songCount ASC"))
+    fun editablePlaylistsByCreateDateAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylists("p.rowId ASC"))
 
     fun playlists(sortType: PlaylistSortType, descending: Boolean) =
         when (sortType) {
             PlaylistSortType.CREATE_DATE -> playlistsByCreateDateAsc()
             PlaylistSortType.NAME -> playlistsByNameAsc()
             PlaylistSortType.SONG_COUNT -> playlistsBySongCountAsc()
+        }.map { it.reversed(descending) }
+
+    private fun queryPlaylistsWithDownloads(orderBy: String): SimpleSQLiteQuery {
+        return SimpleSQLiteQuery("""
+            SELECT p.*, COUNT(psm.playlistId) AS songCount
+            FROM playlist p
+                LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
+                INNER JOIN song s ON psm.songId = s.id and s.dateDownload IS NOT NULL
+            WHERE p.bookmarkedAt IS NOT NULL OR p.isLocal = 1
+            GROUP BY p.id
+            ORDER BY $orderBy
+        """)
+    }
+
+    fun playlistsWithDownloadsByCreateDateAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylistsWithDownloads("p.rowId"))
+    fun playlistsWithDownloadsByNameAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylistsWithDownloads("p.name COLLATE NOCASE ASC"))
+    fun playlistsWithDownloadsBySongCountAsc(): Flow<List<Playlist>> = _getPlaylists(queryPlaylistsWithDownloads("songCount ASC"))
+
+    fun playlistsWithDownloads(sortType: PlaylistSortType, descending: Boolean) =
+        when (sortType) {
+            PlaylistSortType.CREATE_DATE -> playlistsWithDownloadsByCreateDateAsc()
+            PlaylistSortType.NAME -> playlistsWithDownloadsByNameAsc()
+            PlaylistSortType.SONG_COUNT -> playlistsWithDownloadsBySongCountAsc()
         }.map { it.reversed(descending) }
 
     @Transaction

@@ -23,6 +23,8 @@ import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LibrarySortDescendingKey
 import com.dd3boh.outertune.constants.LibrarySortType
 import com.dd3boh.outertune.constants.LibrarySortTypeKey
+import com.dd3boh.outertune.constants.PlaylistFilter
+import com.dd3boh.outertune.constants.PlaylistFilterKey
 import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSortType
 import com.dd3boh.outertune.constants.PlaylistSortTypeKey
@@ -239,11 +241,18 @@ class LibraryPlaylistsViewModel @Inject constructor(
 
     val allPlaylists = context.dataStore.data
         .map {
-            it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE) to (it[PlaylistSortDescendingKey] ?: true)
+            Triple(
+                it[PlaylistFilterKey].toEnum(PlaylistFilter.LIBRARY),
+                it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE),
+            it[PlaylistSortDescendingKey] ?: true
+            )
         }
         .distinctUntilChanged()
-        .flatMapLatest { (sortType, descending) ->
-            database.playlists(sortType, descending)
+        .flatMapLatest { (filter, sortType, descending) ->
+            when (filter) {
+                PlaylistFilter.LIBRARY -> database.playlists(sortType, descending)
+                PlaylistFilter.DOWNLOADED -> database.playlistsWithDownloads(sortType, descending)
+            }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
