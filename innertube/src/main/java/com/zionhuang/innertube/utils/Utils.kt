@@ -3,21 +3,23 @@ package com.zionhuang.innertube.utils
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.pages.LibraryPage
 import com.zionhuang.innertube.pages.PlaylistPage
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import java.security.MessageDigest
 
-fun Result<PlaylistPage>.completed(): Flow<Result<PlaylistPage>> = flow {
-    var page = getOrThrow()
+suspend fun Result<PlaylistPage>.completed() = runCatching {
+    val page = getOrThrow()
+    val songs = page.songs.toMutableList()
     var continuation = page.songsContinuation
     while (continuation != null) {
         val continuationPage = YouTube.playlistContinuation(continuation).getOrNull() ?: break
+        songs += continuationPage.songs
         continuation = continuationPage.continuation
-        page = page.copy(
-            songs = page.songs + continuationPage.songs,
-        )
-        emit(Result.success(page))
     }
+    PlaylistPage(
+        playlist = page.playlist,
+        songs = songs,
+        songsContinuation = null,
+        continuation = page.continuation
+    )
 }
 
 suspend fun Result<LibraryPage>.completedLibraryPage(): Result<LibraryPage> = runCatching {
