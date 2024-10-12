@@ -91,7 +91,7 @@ class MusicDatabase(
         SortedSongAlbumMap::class,
         PlaylistSongMapPreview::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
@@ -120,6 +120,7 @@ abstract class InternalDatabase : RoomDatabase() {
                 delegate = Room.databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
                     .addMigrations(MIGRATION_1_2)
                     .addMigrations(MIGRATION_14_15)
+                    .addMigrations(MIGRATION_15_16)
                     .build()
             )
     }
@@ -310,6 +311,12 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `queue_song_map` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `queueId` INTEGER NOT NULL, `songId` TEXT NOT NULL, `shuffled` INTEGER NOT NULL, FOREIGN KEY(`queueId`) REFERENCES `queue`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`songId`) REFERENCES `song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_queue_song_map_queueId` ON `queue_song_map` (`queueId`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_queue_song_map_songId` ON `queue_song_map` (`songId`)")
+    }
+}
+
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE song ADD COLUMN dateDownload LocalDateTime NULL DEFAULT NULL")
     }
 }
 

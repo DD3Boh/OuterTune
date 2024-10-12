@@ -1018,6 +1018,9 @@ interface DatabaseDao {
     @Query("UPDATE album_artist_map SET artistId = :newId WHERE artistId = :oldId")
     fun updateAlbumArtistMap(oldId: String, newId: String)
 
+    @Query("UPDATE song SET dateDownload = :dateDownload WHERE id = :songId")
+    suspend fun updateDownloadStatus(songId: String, dateDownload: LocalDateTime?)
+
     @Upsert
     fun upsert(map: SongAlbumMap)
 
