@@ -87,6 +87,19 @@ interface DatabaseDao {
     fun songsByNameAsc(): Flow<List<Song>>
 
     @Transaction
+    @Query("""
+        SELECT * FROM song 
+        WHERE inLibrary IS NOT NULL 
+        ORDER BY (
+            SELECT LOWER(GROUP_CONCAT(name, ''))
+            FROM artist
+            WHERE id IN (SELECT artistId FROM song_artist_map WHERE songId = song.id)
+            ORDER BY name
+        ) COLLATE NOCASE
+    """)
+    fun songsByArtistAsc(): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY totalPlayTime")
     fun songsByPlayTimeAsc(): Flow<List<Song>>
 
@@ -108,12 +121,7 @@ interface DatabaseDao {
             SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
             SongSortType.RELEASE_DATE -> songsByReleaseDateAsc()
             SongSortType.NAME -> songsByNameAsc()
-            SongSortType.ARTIST -> songsByRowIdAsc().map { songs ->
-                songs.sortedBy { song ->
-                    song.artists.joinToString(separator = "") { it.name }.lowercase()
-                }
-            }
-
+            SongSortType.ARTIST -> songsByArtistAsc()
             SongSortType.PLAY_TIME -> songsByPlayTimeAsc()
         }.map { it.reversed(descending) }
 
@@ -138,6 +146,19 @@ interface DatabaseDao {
     fun likedSongsByNameAsc(): Flow<List<Song>>
 
     @Transaction
+    @Query("""
+        SELECT * FROM song 
+        WHERE liked 
+        ORDER BY (
+            SELECT LOWER(GROUP_CONCAT(name, ''))
+            FROM artist
+            WHERE id IN (SELECT artistId FROM song_artist_map WHERE songId = song.id)
+            ORDER BY name
+        ) COLLATE NOCASE
+    """)
+    fun likedSongsByArtistAsc(): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song WHERE liked ORDER BY totalPlayTime")
     fun likedSongsByPlayTimeAsc(): Flow<List<Song>>
 
@@ -159,12 +180,7 @@ interface DatabaseDao {
             SongSortType.MODIFIED_DATE -> likedSongsByDateModifiedAsc()
             SongSortType.RELEASE_DATE -> ikedSongsByReleaseDateAsc()
             SongSortType.NAME -> likedSongsByNameAsc()
-            SongSortType.ARTIST -> likedSongsByRowIdAsc().map { songs ->
-                songs.sortedBy { song ->
-                    song.artists.joinToString(separator = "") { it.name }.lowercase()
-                }
-            }
-
+            SongSortType.ARTIST -> likedSongsByArtistAsc()
             SongSortType.PLAY_TIME -> likedSongsByPlayTimeAsc()
         }.map { it.reversed(descending) }
 
@@ -477,6 +493,19 @@ interface DatabaseDao {
     fun albumsByNameAsc(): Flow<List<Album>>
 
     @Transaction
+    @Query("""
+        SELECT * FROM album
+        WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL)
+        ORDER BY (
+            SELECT LOWER(GROUP_CONCAT(name, ''))
+            FROM artist
+            WHERE id IN (SELECT artistId FROM album_artist_map WHERE albumId = album.id)
+            ORDER BY name
+        ) COLLATE NOCASE
+    """)
+    fun albumByArtistAsc(): Flow<List<Album>>
+
+    @Transaction
     @Query("SELECT * FROM album WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL) ORDER BY year")
     fun albumsByYearAsc(): Flow<List<Album>>
 
@@ -511,6 +540,19 @@ interface DatabaseDao {
     fun albumsLikedByNameAsc(): Flow<List<Album>>
 
     @Transaction
+    @Query("""
+        SELECT * FROM album
+        WHERE bookmarkedAt IS NOT NULL
+        ORDER BY (
+            SELECT LOWER(GROUP_CONCAT(name, ''))
+            FROM artist
+            WHERE id IN (SELECT artistId FROM album_artist_map WHERE albumId = album.id)
+            ORDER BY name
+        ) COLLATE NOCASE
+    """)
+    fun albumLikeByArtistAsc(): Flow<List<Album>>
+
+    @Transaction
     @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY year")
     fun albumsLikedByYearAsc(): Flow<List<Album>>
 
@@ -540,12 +582,7 @@ interface DatabaseDao {
         when (sortType) {
             AlbumSortType.CREATE_DATE -> albumsByCreateDateAsc()
             AlbumSortType.NAME -> albumsByNameAsc()
-            AlbumSortType.ARTIST -> albumsByCreateDateAsc().map { albums ->
-                albums.sortedBy { album ->
-                    album.artists.joinToString(separator = "") { it.name }.lowercase()
-                }
-            }
-
+            AlbumSortType.ARTIST -> albumByArtistAsc()
             AlbumSortType.YEAR -> albumsByYearAsc()
             AlbumSortType.SONG_COUNT -> albumsBySongCountAsc()
             AlbumSortType.LENGTH -> albumsByLengthAsc()
@@ -556,12 +593,7 @@ interface DatabaseDao {
         when (sortType) {
             AlbumSortType.CREATE_DATE -> albumsLikedByCreateDateAsc()
             AlbumSortType.NAME -> albumsLikedByNameAsc()
-            AlbumSortType.ARTIST -> albumsLikedByCreateDateAsc().map { albums ->
-                albums.sortedBy { album ->
-                    album.artists.joinToString(separator = "") { it.name }.lowercase()
-                }
-            }
-
+            AlbumSortType.ARTIST -> albumLikeByArtistAsc()
             AlbumSortType.YEAR -> albumsLikedByYearAsc()
             AlbumSortType.SONG_COUNT -> albumsLikedBySongCountAsc()
             AlbumSortType.LENGTH -> albumsLikedByLengthAsc()
