@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
@@ -103,7 +104,7 @@ fun AppearanceSettings(
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(DefaultOpenTabKey, defaultValue = NavigationTab.HOME)
     val (defaultOpenTabNew, onDefaultOpenTabNewChange) = rememberEnumPreference(DefaultOpenTabNewKey, defaultValue = NavigationTabNew.HOME)
     val (newInterfaceStyle, onNewInterfaceStyleChange) = rememberPreference(key = NewInterfaceKey, defaultValue = true)
-    val (showLikedAndDownloadedPlaylist, onShowLikedAndDownloadedPlaylistChange) = rememberPreference(key = ShowLikedAndDownloadedPlaylist, defaultValue = false)
+    val (showLikedAndDownloadedPlaylist, onShowLikedAndDownloadedPlaylistChange) = rememberPreference(key = ShowLikedAndDownloadedPlaylist, defaultValue = true)
     val (flatSubfolders, onFlatSubfoldersChange) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
 
     val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
@@ -196,14 +197,12 @@ fun AppearanceSettings(
             onCheckedChange = onNewInterfaceStyleChange
         )
 
-        if (!newInterfaceStyle){
-            SwitchPreference(
-                title = { Text(stringResource(R.string.show_liked_and_downloaded_playlist)) },
-                icon = { Icon(Icons.Rounded.PlaylistPlay, null) },
-                checked = showLikedAndDownloadedPlaylist,
-                onCheckedChange = onShowLikedAndDownloadedPlaylistChange
-            )
-        }
+        SwitchPreference(
+            title = { Text(stringResource(R.string.show_liked_and_downloaded_playlist)) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.PlaylistPlay, null) },
+            checked = showLikedAndDownloadedPlaylist,
+            onCheckedChange = onShowLikedAndDownloadedPlaylistChange
+        )
 
         PreferenceEntry(
             title = { Text("Tab arrangement") },

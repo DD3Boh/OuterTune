@@ -98,7 +98,7 @@ fun LibraryPlaylistsScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSortTypeKey, PlaylistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSortDescendingKey, true)
-    val (showLikedAndDownloadedPlaylist, _) = rememberPreference(ShowLikedAndDownloadedPlaylist, false)
+    val (showLikedAndDownloadedPlaylist) = rememberPreference(ShowLikedAndDownloadedPlaylist, true)
 
     LaunchedEffect(Unit) { viewModel.sync() }
 
@@ -258,7 +258,7 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (libraryFilterContent != null || showLikedAndDownloadedPlaylist) {
+                    if (showLikedAndDownloadedPlaylist) {
                         item(
                             key = likedPlaylist.id,
                             contentType = { CONTENT_TYPE_PLAYLIST }
@@ -338,7 +338,7 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (libraryFilterContent != null || showLikedAndDownloadedPlaylist) {
+                    if (showLikedAndDownloadedPlaylist) {
                         item(
                             key = likedPlaylist.id,
                             contentType = { CONTENT_TYPE_PLAYLIST }
