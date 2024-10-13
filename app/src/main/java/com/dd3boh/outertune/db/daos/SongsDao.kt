@@ -180,8 +180,8 @@ interface SongsDao {
     fun likedSongs(sortType: SongSortType, descending: Boolean) =
         when (sortType) {
             SongSortType.CREATE_DATE -> likedSongsByCreateDateAsc()
-            SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
-            SongSortType.RELEASE_DATE -> songsByReleaseDateAsc()
+            SongSortType.MODIFIED_DATE -> likedSongsByDateModifiedAsc()
+            SongSortType.RELEASE_DATE -> likedSongsByReleaseDateAsc()
             SongSortType.NAME -> likedSongsByNameAsc()
             SongSortType.ARTIST -> likedSongsByArtistAsc()
             SongSortType.PLAY_TIME -> likedSongsByPlayTimeAsc()
