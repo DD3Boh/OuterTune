@@ -58,6 +58,7 @@ import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AutomaticScannerKey
 import com.dd3boh.outertune.constants.ExcludedScanPathsKey
+import com.dd3boh.outertune.constants.LastLocalScanKey
 import com.dd3boh.outertune.constants.LookupYtmArtistsKey
 import com.dd3boh.outertune.constants.ScanPathsKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
@@ -85,6 +86,8 @@ import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdv
 import com.dd3boh.outertune.utils.scanners.ScannerAbortException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,6 +133,7 @@ fun LocalPlayerSettings(
 
     // other vars
     var tempScanPaths by remember { mutableStateOf("") }
+    val (lastLocalScan, onLastLocalScanChange) = rememberPreference(LastLocalScanKey, LocalDateTime.now().atOffset(ZoneOffset.UTC).toEpochSecond())
 
     Column(
         Modifier
@@ -413,6 +417,7 @@ fun LocalPlayerSettings(
                         cacheDirectoryTree(null)
 
                         scannerActive.value = false
+                        onLastLocalScanChange(LocalDateTime.now().atOffset(ZoneOffset.UTC).toEpochSecond())
                         scannerFinished.value = true
                     }
                 }

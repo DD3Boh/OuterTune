@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -36,14 +37,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
@@ -51,12 +58,14 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_FOLDER
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.CONTENT_TYPE_SONG
 import com.dd3boh.outertune.constants.FlatSubfoldersKey
+import com.dd3boh.outertune.constants.LastLocalScanKey
 import com.dd3boh.outertune.constants.SongSortDescendingKey
 import com.dd3boh.outertune.constants.SongSortType
 import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
+import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
@@ -67,11 +76,10 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
-import com.dd3boh.outertune.ui.utils.ItemWrapper
-import com.dd3boh.outertune.ui.utils.getDirectoryTree
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Stack
 
@@ -83,14 +91,21 @@ fun LibraryFoldersScreen(
     viewModel: LibrarySongsViewModel = hiltViewModel(),
     filterContent: @Composable() (() -> Unit)? = null
 ) {
+    val haptic = LocalHapticFeedback.current
     val menuState = LocalMenuState.current
+    val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val folderStack = remember { viewModel.folderPositionStack }
-    val (flatSubfolders) = rememberPreference(FlatSubfoldersKey, defaultValue = true)
+    /**
+     * The top of the stack is the folder that the page will render.
+     * Clicking on a folder pushes, while the back button pops.
+     */
+    val folderStack = remember { Stack<DirectoryTree>() }
+    val flatSubfolders by rememberPreference(FlatSubfoldersKey, defaultValue = true)
+    val lastLocalScan by rememberPreference(LastLocalScanKey, LocalDateTime.now().atOffset(ZoneOffset.UTC).toEpochSecond())
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
@@ -100,16 +115,14 @@ fun LibraryFoldersScreen(
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
     // destroy old structure when pref changes
-    flatSubfolders.let {
-        viewModel.folderPositionStack = Stack()
+    LaunchedEffect(flatSubfolders, lastLocalScan) {
+        folderStack.clear()
     }
 
     // initialize with first directory
     if (folderStack.isEmpty()) {
-        val cachedTree = getDirectoryTree()
-        if (cachedTree == null) {
-            viewModel.getLocalSongs(viewModel.databaseLink)
-        }
+        println("wtrf reinti")
+        viewModel.getLocalSongs(database)
 
         folderStack.push(
             if (flatSubfolders) viewModel.localSongDirectoryTree.value.toFlattenedTree()
@@ -119,15 +132,34 @@ fun LibraryFoldersScreen(
 
     // content to load for this page
     var currDir by remember {
+        // hello mikooo from the fture, this is mikooo from the past warning you to not touch this.
+        // mikooo, you clearly are just going to waste time trying to put this in the in the viewmodel
+        // If anyone else would like to try, be my guest
         mutableStateOf(folderStack.peek())
     }
 
-    val wrappedSongs = remember {
-        mutableStateListOf<ItemWrapper<Song>>()
+    val mutableSongs = remember {
+        mutableStateListOf<Song>()
     }
 
-    var selection by remember {
-        mutableStateOf(false)
+    // multiselect
+    var inSelectMode by rememberSaveable { mutableStateOf(false) }
+    val selection = rememberSaveable(
+        saver = listSaver<MutableList<String>, String>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() }
+        )
+    ) { mutableStateListOf() }
+    val onExitSelectionMode = {
+        inSelectMode = false
+        selection.clear()
+    }
+    if (inSelectMode) {
+        BackHandler(onBack = onExitSelectionMode)
+    }
+
+    LaunchedEffect(inSelectMode) {
+        backStackEntry?.savedStateHandle?.set("inSelectMode", inSelectMode)
     }
 
     LaunchedEffect(scrollToTop?.value) {
@@ -138,19 +170,18 @@ fun LibraryFoldersScreen(
     }
 
     LaunchedEffect(sortType, sortDescending, currDir) {
-        val tempList = currDir.files.map { item -> ItemWrapper(item) }.toMutableList()
+        val tempList = currDir.files.map { it }.toMutableList()
         // sort songs
         tempList.sortBy {
             when (sortType) {
-                SongSortType.CREATE_DATE -> it.item.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
-                SongSortType.MODIFIED_DATE -> it.item.song.getDateModifiedLong().toString()
-                SongSortType.RELEASE_DATE -> it.item.song.getDateLong().toString()
-                SongSortType.NAME -> it.item.song.title.lowercase()
-                SongSortType.ARTIST -> it.item.artists.joinToString { artist -> artist.name }.lowercase()
-                SongSortType.PLAY_TIME -> it.item.song.totalPlayTime.toString()
+                SongSortType.CREATE_DATE -> it.song.inLibrary?.toEpochSecond(ZoneOffset.UTC).toString()
+                SongSortType.MODIFIED_DATE -> it.song.getDateModifiedLong().toString()
+                SongSortType.RELEASE_DATE -> it.song.getDateLong().toString()
+                SongSortType.NAME -> it.song.title.lowercase()
+                SongSortType.ARTIST -> it.artists.joinToString { artist -> artist.name }.lowercase()
+                SongSortType.PLAY_TIME -> it.song.totalPlayTime.toString()
             }
         }
-
         // sort folders
         currDir.subdirs.sortBy { it.currentDir.lowercase() } // only sort by name
 
@@ -159,8 +190,8 @@ fun LibraryFoldersScreen(
             tempList.reverse()
         }
 
-        wrappedSongs.clear()
-        wrappedSongs.addAll(tempList)
+        mutableSongs.clear()
+        mutableSongs.addAll(tempList)
     }
 
     BackHandler(folderStack.size > 1) {
@@ -190,11 +221,19 @@ fun LibraryFoldersScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        if (selection) {
+                        if (inSelectMode) {
                             SelectHeader(
-                                wrappedSongs = wrappedSongs,
+                                selectedItems = selection.mapNotNull { songId ->
+                                    mutableSongs.find { it.id == songId }
+                                }.map { it.toMediaMetadata()},
+                                totalItemCount = mutableSongs.size,
+                                onSelectAll = {
+                                    selection.clear()
+                                    selection.addAll(mutableSongs.map { it.id })
+                                },
+                                onDeselectAll = { selection.clear() },
                                 menuState = menuState,
-                                onDismiss = { selection = false }
+                                onDismiss = onExitSelectionMode
                             )
                         } else {
                             SortHeader(
@@ -227,7 +266,6 @@ fun LibraryFoldersScreen(
                     }
                 }
             }
-
             if (folderStack.size > 1)
                 item(
                     key = "previous",
@@ -267,7 +305,7 @@ fun LibraryFoldersScreen(
             }
 
             // separator
-            if (currDir.subdirs.size > 0 && currDir.files.size > 0) {
+            if (currDir.subdirs.size > 0 && mutableSongs.size > 0) {
                 item(
                     key = "folder_songs_divider",
                 ) {
@@ -280,60 +318,76 @@ fun LibraryFoldersScreen(
 
             // all songs get listed here
             itemsIndexed(
-                items = wrappedSongs,
-                key = { _, item -> item.item.id },
+                items = mutableSongs,
+                key = { _, item -> item.id },
                 contentType = { _, _ -> CONTENT_TYPE_SONG }
-            ) { index, songWrapper ->
+            ) { index, song ->
+                val onCheckedChange: (Boolean) -> Unit = {
+                    if (it) {
+                        selection.add(song.id)
+                    } else {
+                        selection.remove(song.id)
+                    }
+                }
+
                 SwipeToQueueBox(
-                    item = songWrapper.item.toMediaItem(),
+                    item = song.toMediaItem(),
                     content = {
                         SongListItem(
-                            song = songWrapper.item,
-                            isActive = songWrapper.item.id == mediaMetadata?.id,
+                            song = song,
+                            isActive = song.id == mediaMetadata?.id,
                             isPlaying = isPlaying,
                             trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = songWrapper.item,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = null
+                                if (inSelectMode) {
+                                    Checkbox(
+                                        checked = song.id in selection,
+                                        onCheckedChange = onCheckedChange
                                     )
+                                } else {
+                                    IconButton(
+                                        onClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.MoreVert,
+                                            contentDescription = null
+                                        )
+                                    }
                                 }
                             },
-                            isSelected = songWrapper.isSelected && selection,
+                            isSelected = inSelectMode && song.id in selection,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .combinedClickable(
                                     onClick = {
-                                        if (!selection) {
-                                            if (songWrapper.item.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = currDir.currentDir,
-                                                        // I surely hope this applies to all in this folder...
-                                                        items = wrappedSongs.map { it.item.toMediaMetadata() },
-                                                            startIndex = currDir.toSortedList(sortType, sortDescending).indexOf(songWrapper.item)
-                                                    )
-                                                )
-                                            }
+                                        if (inSelectMode) {
+                                            onCheckedChange(song.id !in selection)
+                                        } else if (song.id == mediaMetadata?.id) {
+                                            playerConnection.player.togglePlayPause()
                                         } else {
-                                            songWrapper.isSelected = !songWrapper.isSelected
+                                            println()
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    title = currDir.currentDir,
+                                                    items = mutableSongs.map { it.toMediaMetadata() },
+                                                    startIndex = mutableSongs.indexOf(song)
+                                                )
+                                            )
                                         }
                                     },
                                     onLongClick = {
-                                        selection = true
-                                        songWrapper.isSelected = !songWrapper.isSelected
+                                        if (!inSelectMode) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            inSelectMode = true
+                                            onCheckedChange(true)
+                                        }
                                     }
                                 )
                                 .animateItemPlacement()

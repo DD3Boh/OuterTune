@@ -1,5 +1,6 @@
 package com.dd3boh.outertune.ui.screens.playlist
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -51,10 +52,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -97,7 +103,6 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
-import com.dd3boh.outertune.ui.utils.ItemWrapper
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -113,6 +118,7 @@ fun AutoPlaylistScreen(
     viewModel: AutoPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
     val syncUtils = LocalSyncUtils.current
@@ -122,9 +128,20 @@ fun AutoPlaylistScreen(
 
     val songs by viewModel.songs.collectAsState()
 
-    val wrappedSongs = songs.map { item -> ItemWrapper(item) }.toMutableList()
-    var selection by remember {
-        mutableStateOf(false)
+    // multiselect
+    var inSelectMode by rememberSaveable { mutableStateOf(false) }
+    val selection = rememberSaveable(
+        saver = listSaver<MutableList<Int>, Int>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() }
+        )
+    ) { mutableStateListOf() }
+    val onExitSelectionMode = {
+        inSelectMode = false
+        selection.clear()
+    }
+    if (inSelectMode) {
+        BackHandler(onBack = onExitSelectionMode)
     }
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
@@ -429,12 +446,23 @@ fun AutoPlaylistScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        if (selection) {
-                            SelectHeader(
-                                wrappedSongs = wrappedSongs,
-                                menuState = menuState,
-                                onDismiss = { selection = false }
-                            )
+                        if (inSelectMode) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            ) {
+                                SelectHeader(
+                                    selectedItems = selection.map { songs[it] }.map { it.toMediaMetadata() },
+                                    totalItemCount = songs.size,
+                                    onSelectAll = {
+                                        selection.clear()
+                                        selection.addAll(songs.indices)
+                                    },
+                                    onDeselectAll = { selection.clear() },
+                                    menuState = menuState,
+                                    onDismiss = onExitSelectionMode
+                                )
+                            }
                         } else {
                             SortHeader(
                                 sortType = sortType,
@@ -474,15 +502,23 @@ fun AutoPlaylistScreen(
 
 
             itemsIndexed(
-                items = wrappedSongs,
-                key = { _, song -> song.item.id }
-            ) { index, songWrapper ->
+                items = songs,
+                key = { _, song -> song.id }
+            ) { index, song ->
+                val onCheckedChange: (Boolean) -> Unit = {
+                    if (it) {
+                        selection.add(index)
+                    } else {
+                        selection.remove(index)
+                    }
+                }
+
                 SwipeToQueueBox(
-                    item = songWrapper.item.toMediaItem(),
+                    item = song.toMediaItem(),
                     content = {
                         SongListItem(
-                            song = songWrapper.item,
-                            isActive = songWrapper.item.song.id == mediaMetadata?.id,
+                            song = song,
+                            isActive = song.song.id == mediaMetadata?.id,
                             isPlaying = isPlaying,
                             showInLibraryIcon = true,
                             showLikedIcon = false,
@@ -491,7 +527,7 @@ fun AutoPlaylistScreen(
                                     onClick = {
                                         menuState.show {
                                             SongMenu(
-                                                originalSong = songWrapper.item,
+                                                originalSong = song,
                                                 playlistBrowseId = playlist.browseId,
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss
@@ -505,32 +541,33 @@ fun AutoPlaylistScreen(
                                     )
                                 }
                             },
-                            isSelected = songWrapper.isSelected && selection,
+                            isSelected = inSelectMode && index in selection,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background)
                                 .combinedClickable(
                                     onClick = {
-                                        if (!selection) {
-                                            if (songWrapper.item.song.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = playlist.name,
-                                                        items = songs.map { it.toMediaMetadata()},
-                                                        startIndex = index,
-                                                        playlistId = playlist.browseId
-                                                    )
-                                                )
-                                            }
+                                        if (inSelectMode) {
+                                            onCheckedChange(index !in selection)
+                                        } else if (song.id == mediaMetadata?.id) {
+                                            playerConnection.player.togglePlayPause()
                                         } else {
-                                            songWrapper.isSelected = !songWrapper.isSelected
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    title = playlist.name,
+                                                    items = songs.map { it.toMediaMetadata()},
+                                                    startIndex = index,
+                                                    playlistId = playlist.browseId
+                                                )
+                                            )
                                         }
                                     },
                                     onLongClick = {
-                                        selection = true
-                                        songWrapper.isSelected = !songWrapper.isSelected
+                                        if (!inSelectMode) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            inSelectMode = true
+                                            onCheckedChange(true)
+                                        }
                                     }
                                 )
                         )

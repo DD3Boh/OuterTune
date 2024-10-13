@@ -1,23 +1,30 @@
 package com.dd3boh.outertune.ui.menu
 
 import android.content.Intent
+import android.text.format.Formatter
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
@@ -53,9 +60,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,14 +107,17 @@ fun PlayerMenu(
     mediaMetadata: MediaMetadata?,
     navController: NavController,
     playerBottomSheetState: BottomSheetState,
-    onShowDetailsDialog: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     mediaMetadata ?: return
     val context = LocalContext.current
     val database = LocalDatabase.current
+    val clipboardManager = LocalClipboardManager.current
+
     val playerConnection = LocalPlayerConnection.current ?: return
     val playerVolume = playerConnection.service.playerVolume.collectAsState()
+    val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
+    val currentPlayCount by playerConnection.currentPlayCount.collectAsState(initial = null)
     val activityResultLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
@@ -277,6 +289,73 @@ fun PlayerMenu(
         )
     }
 
+    var showDetailsDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showDetailsDialog) {
+        AlertDialog(
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            onDismissRequest = { showDetailsDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Info,
+                    contentDescription = null
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showDetailsDialog = false }
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .sizeIn(minWidth = 280.dp, maxWidth = 560.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    listOf(
+                        stringResource(R.string.song_title) to mediaMetadata?.title,
+                        stringResource(R.string.song_artists) to mediaMetadata?.artists?.joinToString { it.name },
+                        stringResource(R.string.sort_by_date_released) to mediaMetadata?.getDateString(),
+                        stringResource(R.string.sort_by_date_modified) to mediaMetadata?.getDateModifiedString(),
+                        stringResource(R.string.media_id) to mediaMetadata?.id,
+                        stringResource(R.string.play_count) to currentPlayCount.toString(),
+                        "Itag" to currentFormat?.itag?.toString(),
+                        stringResource(R.string.mime_type) to currentFormat?.mimeType,
+                        stringResource(R.string.codecs) to currentFormat?.codecs,
+                        stringResource(R.string.bitrate) to currentFormat?.bitrate?.let { "${it / 1000} Kbps" },
+                        stringResource(R.string.sample_rate) to currentFormat?.sampleRate?.let { "$it Hz" },
+                        stringResource(R.string.loudness) to currentFormat?.loudnessDb?.let { "$it dB" },
+                        stringResource(R.string.volume) to "${(playerConnection.player.volume * 100).toInt()}%",
+                        stringResource(R.string.file_size) to currentFormat?.contentLength?.let { Formatter.formatShortFileSize(context, it) }
+                    ).forEach { (label, text) ->
+                        val displayText = text ?: stringResource(R.string.unknown)
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(displayText))
+                                    Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+        )
+    }
+
     Row(
         horizontalArrangement = Arrangement.spacedBy(24.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -413,8 +492,7 @@ fun PlayerMenu(
             icon = Icons.Rounded.Info,
             title = R.string.details
         ) {
-            onShowDetailsDialog()
-            onDismiss()
+            showDetailsDialog = true
         }
         SleepTimerGridMenu(
             sleepTimerTimeLeft = sleepTimerTimeLeft,

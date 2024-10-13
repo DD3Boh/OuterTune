@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -112,6 +114,7 @@ fun LazyGridScope.GridMenuItem(
 fun LazyGridScope.GridMenuItem(
     modifier: Modifier = Modifier,
     icon: ImageVector,
+    tint: @Composable () -> Color = { LocalContentColor.current },
     @StringRes title: Int,
     enabled: Boolean = true,
     onClick: () -> Unit,
@@ -120,6 +123,7 @@ fun LazyGridScope.GridMenuItem(
     icon = {
         Icon(
             imageVector = icon,
+            tint = tint(),
             contentDescription = null
         )
     },

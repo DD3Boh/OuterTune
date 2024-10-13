@@ -16,8 +16,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,4 +49,18 @@ class LocalPlaylistViewModel @Inject constructor(
             PlaylistSongSortType.PLAY_TIME -> songs.sortedBy { it.song.song.totalPlayTime }
         }.reversed(sortDescending && sortType != PlaylistSongSortType.CUSTOM)
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    init {
+        // Fix playlist song order
+        viewModelScope.launch {
+            val sortedSongs = playlistSongs.first().sortedWith(compareBy({ it.map.position }, { it.map.id }))
+            database.transaction {
+                sortedSongs.forEachIndexed { index, song ->
+                    if (song.map.position != index) {
+                        update(song.map.copy(position = index))
+                    }
+                }
+            }
+        }
+    }
 }
