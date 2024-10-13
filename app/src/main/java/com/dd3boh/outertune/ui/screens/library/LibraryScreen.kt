@@ -57,6 +57,7 @@ import com.dd3boh.outertune.constants.LibrarySortType
 import com.dd3boh.outertune.constants.LibrarySortTypeKey
 import com.dd3boh.outertune.constants.LibraryViewType
 import com.dd3boh.outertune.constants.LibraryViewTypeKey
+import com.dd3boh.outertune.constants.ShowLikedAndDownloadedPlaylist
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
@@ -102,6 +103,7 @@ fun LibraryScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(LibrarySortTypeKey, LibrarySortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(LibrarySortDescendingKey, true)
+    val (showLikedAndDownloadedPlaylist) = rememberPreference(ShowLikedAndDownloadedPlaylist, true)
 
     val allItems by viewModel.allItems.collectAsState()
 
@@ -312,36 +314,38 @@ fun LibraryScreen(
                                 headerContent()
                             }
 
-                            item(
-                                key = likedPlaylist.id,
-                                contentType = { CONTENT_TYPE_PLAYLIST }
-                            ) {
-                                AutoPlaylistListItem(
-                                    playlist = likedPlaylist,
-                                    thumbnail = Icons.Rounded.Favorite,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            navController.navigate("auto_playlist/${likedPlaylist.id}")
-                                        }
-                                        .animateItemPlacement()
-                                )
-                            }
+                            if (showLikedAndDownloadedPlaylist) {
+                                item(
+                                    key = likedPlaylist.id,
+                                    contentType = { CONTENT_TYPE_PLAYLIST }
+                                ) {
+                                    AutoPlaylistListItem(
+                                        playlist = likedPlaylist,
+                                        thumbnail = Icons.Rounded.Favorite,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                            }
+                                            .animateItemPlacement()
+                                    )
+                                }
 
-                            item(
-                                key = downloadedPlaylist.id,
-                                contentType = { CONTENT_TYPE_PLAYLIST }
-                            ) {
-                                AutoPlaylistListItem(
-                                    playlist = downloadedPlaylist,
-                                    thumbnail = Icons.Rounded.CloudDownload,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            navController.navigate("auto_playlist/${downloadedPlaylist.id}")
-                                        }
-                                        .animateItemPlacement()
-                                )
+                                item(
+                                    key = downloadedPlaylist.id,
+                                    contentType = { CONTENT_TYPE_PLAYLIST }
+                                ) {
+                                    AutoPlaylistListItem(
+                                        playlist = downloadedPlaylist,
+                                        thumbnail = Icons.Rounded.CloudDownload,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                navController.navigate("auto_playlist/${downloadedPlaylist.id}")
+                                            }
+                                            .animateItemPlacement()
+                                    )
+                                }
                             }
 
                             items(
@@ -409,38 +413,40 @@ fun LibraryScreen(
                                 headerContent()
                             }
 
-                            item(
-                                key = likedPlaylist.id,
-                                contentType = { CONTENT_TYPE_PLAYLIST }
-                            ) {
-                                AutoPlaylistGridItem(
-                                    playlist = likedPlaylist,
-                                    thumbnail = Icons.Rounded.Favorite,
-                                    fillMaxWidth = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            navController.navigate("auto_playlist/${likedPlaylist.id}")
-                                        }
-                                        .animateItemPlacement()
-                                )
-                            }
+                            if (showLikedAndDownloadedPlaylist) {
+                                item(
+                                    key = likedPlaylist.id,
+                                    contentType = { CONTENT_TYPE_PLAYLIST }
+                                ) {
+                                    AutoPlaylistGridItem(
+                                        playlist = likedPlaylist,
+                                        thumbnail = Icons.Rounded.Favorite,
+                                        fillMaxWidth = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                navController.navigate("auto_playlist/${likedPlaylist.id}")
+                                            }
+                                            .animateItemPlacement()
+                                    )
+                                }
 
-                            item(
-                                key = downloadedPlaylist.id,
-                                contentType = { CONTENT_TYPE_PLAYLIST }
-                            ) {
-                                AutoPlaylistGridItem(
-                                    playlist = downloadedPlaylist,
-                                    thumbnail = Icons.Rounded.CloudDownload,
-                                    fillMaxWidth = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            navController.navigate("auto_playlist/${downloadedPlaylist.id}")
-                                        }
-                                        .animateItemPlacement()
-                                )
+                                item(
+                                    key = downloadedPlaylist.id,
+                                    contentType = { CONTENT_TYPE_PLAYLIST }
+                                ) {
+                                    AutoPlaylistGridItem(
+                                        playlist = downloadedPlaylist,
+                                        thumbnail = Icons.Rounded.CloudDownload,
+                                        fillMaxWidth = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                navController.navigate("auto_playlist/${downloadedPlaylist.id}")
+                                            }
+                                            .animateItemPlacement()
+                                    )
+                                }
                             }
 
                             items(
