@@ -508,7 +508,7 @@ fun LocalPlaylistScreen(
                                         }
                                     }
                                 },
-                                isSelected = inSelectMode && index in selection,
+                                isSelected = inSelectMode && song.map.id in selection,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.background)
