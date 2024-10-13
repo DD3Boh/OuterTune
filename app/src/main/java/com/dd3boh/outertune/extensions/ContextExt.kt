@@ -1,3 +1,5 @@
+package com.dd3boh.outertune.extensions
+
 import android.content.Context
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.YtmSyncKey

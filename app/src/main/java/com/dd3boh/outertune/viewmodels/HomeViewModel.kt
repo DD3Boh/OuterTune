@@ -15,7 +15,7 @@ import com.zionhuang.innertube.models.YTItem
 import com.zionhuang.innertube.pages.ExplorePage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import isSyncEnabled
+import com.dd3boh.outertune.extensions.isSyncEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
