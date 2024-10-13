@@ -137,11 +137,11 @@ interface SongsDao {
     fun likedSongsByCreateDateAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE liked IS NOT NULL ORDER BY date")
+    @Query("SELECT * FROM song WHERE liked ORDER BY date")
     fun likedSongsByReleaseDateAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE liked IS NOT NULL ORDER BY dateModified")
+    @Query("SELECT * FROM song WHERE liked ORDER BY dateModified")
     fun likedSongsByDateModifiedAsc(): Flow<List<Song>>
 
     @Transaction
