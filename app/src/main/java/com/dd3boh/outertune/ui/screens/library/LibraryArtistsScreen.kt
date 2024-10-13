@@ -106,12 +106,13 @@ fun LibraryArtistsScreen(
             ChipsRow(
                 chips = listOf(
                     ArtistFilter.LIKED to stringResource(R.string.filter_liked),
-                    ArtistFilter.LIBRARY to stringResource(R.string.filter_library)
+                    ArtistFilter.LIBRARY to stringResource(R.string.filter_library),
+                    ArtistFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },
                 modifier = Modifier.weight(1f),
-                isLoading = { _ -> isSyncingRemoteArtists }
+                isLoading = { filter -> filter == ArtistFilter.LIBRARY && isSyncingRemoteArtists }
             )
 
             IconButton(

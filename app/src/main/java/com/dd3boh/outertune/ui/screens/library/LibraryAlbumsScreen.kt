@@ -111,12 +111,13 @@ fun LibraryAlbumsScreen(
             ChipsRow(
                 chips = listOf(
                     AlbumFilter.LIKED to stringResource(R.string.filter_liked),
-                    AlbumFilter.LIBRARY to stringResource(R.string.filter_library)
+                    AlbumFilter.LIBRARY to stringResource(R.string.filter_library),
+                    AlbumFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },
                 modifier = Modifier.weight(1f),
-                isLoading = { _ -> isSyncingLibraryAlbums }
+                isLoading = { filter -> filter == AlbumFilter.LIBRARY && isSyncingLibraryAlbums }
             )
 
             IconButton(

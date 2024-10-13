@@ -154,6 +154,7 @@ class LibraryArtistsViewModel @Inject constructor(
             when (filter) {
                 ArtistFilter.LIBRARY -> database.artists(sortType, descending)
                 ArtistFilter.LIKED -> database.artistsBookmarked(sortType, descending)
+                ArtistFilter.DOWNLOADED -> database.artistsWithDonwloads(sortType, descending)
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -201,6 +202,7 @@ class LibraryAlbumsViewModel @Inject constructor(
             when (filter) {
                 AlbumFilter.LIBRARY -> database.albums(sortType, descending)
                 AlbumFilter.LIKED -> database.albumsLiked(sortType, descending)
+                AlbumFilter.DOWNLOADED -> database.albumsWithDonwloads(sortType, descending)
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
