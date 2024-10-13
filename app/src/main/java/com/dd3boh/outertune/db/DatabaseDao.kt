@@ -134,11 +134,11 @@ interface DatabaseDao {
     fun likedSongsByCreateDateAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE liked IS NOT NULL ORDER BY date")
+    @Query("SELECT * FROM song WHERE liked ORDER BY date")
     fun likedSongsByReleaseDateAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM song WHERE liked IS NOT NULL ORDER BY dateModified")
+    @Query("SELECT * FROM song WHERE liked ORDER BY dateModified")
     fun likedSongsByDateModifiedAsc(): Flow<List<Song>>
 
     @Transaction
@@ -164,9 +164,9 @@ interface DatabaseDao {
     fun likedSongs(sortType: SongSortType, descending: Boolean) =
         when (sortType) {
             SongSortType.CREATE_DATE -> likedSongsByCreateDateAsc()
-            SongSortType.MODIFIED_DATE -> songsByDateModifiedAsc()
+            SongSortType.MODIFIED_DATE -> likedSongsByDateModifiedAsc()
             SongSortType.RELEASE_DATE -> {
-                val songs = songsByReleaseDateAsc()
+                val songs = likedSongsByReleaseDateAsc()
                 runBlocking {
                     flowOf(songs.first().sortedBy {
                         it.song.getDateLong()
