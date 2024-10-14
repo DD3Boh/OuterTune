@@ -87,9 +87,9 @@ import com.dd3boh.outertune.constants.SongSortDescendingKey
 import com.dd3boh.outertune.constants.SongSortType
 import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
-import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.extensions.isSyncEnabled
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -110,9 +110,11 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+
+enum class PlaylistType {
+    LIKE, DOWNLOAD, OTHER
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -150,23 +152,27 @@ fun AutoPlaylistScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
-    val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val playlistId = viewModel.playlistId
+    val playlistType = when (playlistId) {
+            "liked" -> PlaylistType.LIKE
+            "downloaded" -> PlaylistType.DOWNLOAD
+            else -> PlaylistType.OTHER
+    }
     val playlist = PlaylistEntity(
         id = playlistId,
-        name = when (playlistId) {
-            "liked" -> stringResource(id = R.string.liked_songs)
-            "downloaded" -> stringResource(id = R.string.downloaded_songs)
+        name = when (playlistType) {
+            PlaylistType.LIKE -> stringResource(id = R.string.liked_songs)
+            PlaylistType.DOWNLOAD -> stringResource(id = R.string.downloaded_songs)
             else -> ""
         },
-        browseId = when (playlistId) {
-            "liked" -> "LM"
+        browseId = when (playlistType) {
+            PlaylistType.LIKE -> "LM"
             else -> null
         },
     )
 
-    val isSyncingRemotePlaylists by syncUtils.isSyncingRemotePlaylists.collectAsState()
+    val isSyncingRemoteLikedSongs by syncUtils.isSyncingRemoteLikedSongs.collectAsState()
 
     val thumbnail by viewModel.thumbnail.collectAsState()
     val mutableSongs = remember { mutableStateListOf<Song>() }
@@ -206,7 +212,7 @@ fun AutoPlaylistScreen(
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            if (playlistId == "liked" && ytmSync) syncUtils.syncRemoteLikedSongs()
+            if (playlistType == PlaylistType.LIKE && context.isSyncEnabled()) syncUtils.syncRemoteLikedSongs()
         }
     }
 
@@ -300,7 +306,7 @@ fun AutoPlaylistScreen(
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (isSyncingRemotePlaylists) {
+                                if (playlistType == PlaylistType.LIKE && isSyncingRemoteLikedSongs) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
                                         strokeWidth = 2.dp
