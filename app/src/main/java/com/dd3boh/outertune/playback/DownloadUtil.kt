@@ -143,6 +143,9 @@ class DownloadUtil @Inject constructor(
                             val updateTime = Instant.ofEpochMilli(download.updateTimeMs).atZone(ZoneOffset.UTC).toLocalDateTime()
                             database.updateDownloadStatus(download.request.id, updateTime)
                         }
+                        else {
+                            database.updateDownloadStatus(download.request.id, null)
+                        }
                     }
                 }
             }
