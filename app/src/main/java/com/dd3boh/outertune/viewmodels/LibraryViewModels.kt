@@ -246,7 +246,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
             Triple(
                 it[PlaylistFilterKey].toEnum(PlaylistFilter.LIBRARY),
                 it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE),
-            it[PlaylistSortDescendingKey] ?: true
+                it[PlaylistSortDescendingKey] ?: true
             )
         }
         .distinctUntilChanged()
