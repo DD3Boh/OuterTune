@@ -23,8 +23,45 @@ import kotlinx.coroutines.flow.map
 interface PlaylistsDao {
 
     // region Gets
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE id = :playlistId")
+    @Query("""
+        SELECT 
+            p.*, 
+            COUNT(psm.playlistId) AS songCount,
+            SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
+        FROM playlist p
+            LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
+            LEFT JOIN song s ON psm.songId = s.id
+        WHERE p.id = :playlistId
+        GROUP BY p.id
+    """)
     fun playlist(playlistId: String): Flow<Playlist?>
+
+    @Query("""
+        SELECT 
+            p.*, 
+            COUNT(psm.playlistId) AS songCount,
+            SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
+        FROM playlist p
+            LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
+            LEFT JOIN song s ON psm.songId = s.id
+        WHERE p.browseId = :browseId
+        GROUP BY p.id
+    """)
+    fun playlistByBrowseId(browseId: String): Flow<Playlist?>
+
+    @Query("""
+        SELECT 
+            p.*, 
+            COUNT(psm.playlistId) AS songCount,
+            SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
+        FROM playlist p
+            LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
+            LEFT JOIN song s ON psm.songId = s.id
+        WHERE name LIKE '%' || :query || '%'
+        GROUP BY p.id
+        LIMIT :previewSize
+    """)
+    fun searchPlaylists(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Playlist>>
 
     @Query("SELECT * FROM playlist_song_map WHERE playlistId = :playlistId ORDER BY position")
     fun playlistSongs(playlistId: String): Flow<List<PlaylistSong>>
@@ -32,18 +69,19 @@ interface PlaylistsDao {
     @Query("SELECT songId from playlist_song_map WHERE playlistId = :playlistId AND songId IN (:songIds)")
     fun playlistDuplicates(playlistId: String, songIds: List<String>,): List<String>
 
-    @Query("SELECT *, (SELECT COUNT(*) FROM playlist_song_map WHERE playlistId = playlist.id) AS songCount FROM playlist WHERE browseId = :browseId")
-    fun playlistByBrowseId(browseId: String): Flow<Playlist?>
-
     @RawQuery(observedEntities = [PlaylistEntity::class])
     fun _getPlaylists(query: SupportSQLiteQuery): Flow<List<Playlist>>
 
     // region Playlist Sort
     private fun queryPlaylists(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT p.*, COUNT(psm.playlistId) AS songCount
+            SELECT 
+                p.*, 
+                COUNT(psm.playlistId) AS songCount,
+                SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM playlist p
                 LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
+                LEFT JOIN song s ON psm.songId = s.id
             WHERE p.bookmarkedAt IS NOT NULL OR p.isLocal = 1
             GROUP BY p.id
             ORDER BY $orderBy
@@ -66,12 +104,16 @@ interface PlaylistsDao {
     // region Playlist Sort with Downloads Sort
     private fun queryPlaylistsWithDownloads(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT p.*, COUNT(psm.playlistId) AS songCount
+            SELECT 
+                p.*, 
+                COUNT(psm.playlistId) AS songCount,
+                SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM playlist p
                 LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
-                INNER JOIN song s ON psm.songId = s.id and s.dateDownload IS NOT NULL
+                LEFT JOIN song s ON psm.songId = s.id
             WHERE p.bookmarkedAt IS NOT NULL OR p.isLocal = 1
             GROUP BY p.id
+            HAVING SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) > 0
             ORDER BY $orderBy
         """)
     }

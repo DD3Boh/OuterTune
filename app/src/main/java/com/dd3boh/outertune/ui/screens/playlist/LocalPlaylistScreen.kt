@@ -161,7 +161,6 @@ fun LocalPlaylistScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSongSortDescendingKey, true)
     var locked by rememberPreference(PlaylistEditLockKey, defaultValue = false)
 
-    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
@@ -686,11 +685,26 @@ fun LocalPlaylistHeader(
                     fontSizeRange = FontSizeRange(16.sp, 22.sp)
                 )
 
-                Text(
-                    text = pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Normal
-                )
+                Row {
+                    if (playlist.downloadCount > 0){
+                        Icon(
+                            imageVector = Icons.Rounded.OfflinePin,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 2.dp)
+                        )
+                    }
+
+                    Text(
+                        text = if (playlist.downloadCount > 0)
+                            "${playlist.downloadCount} / " + pluralStringResource(R.plurals.n_song, songs.size, songs.size)
+                        else
+                            pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
 
                 Text(
                     text = makeTimeString(playlistLength * 1000L),

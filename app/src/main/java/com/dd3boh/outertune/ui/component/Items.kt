@@ -288,6 +288,10 @@ fun GridItem(
         )
     },
     subtitle = {
+        Row{
+            badges()
+        }
+
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
@@ -716,6 +720,8 @@ fun PlaylistListItem(
     subtitle =
         if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
             pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+        else if (playlist.downloadCount > 0)
+            "${playlist.downloadCount} / " + pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount)
         else
             pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
     badges = {
@@ -735,6 +741,19 @@ fun PlaylistListItem(
                     .size(18.dp)
                     .padding(end = 2.dp)
             )
+        }
+
+        if (playlist.downloadCount > 0) {
+            Row {
+
+                Icon(
+                    imageVector = Icons.Rounded.OfflinePin,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(end = 2.dp)
+                )
+            }
         }
     },
     thumbnailContent = {
@@ -759,16 +778,29 @@ fun PlaylistListItem(
 fun PlaylistGridItem(
     playlist: Playlist,
     modifier: Modifier = Modifier,
-    badges: @Composable RowScope.() -> Unit = { },
     fillMaxWidth: Boolean = false,
 ) = GridItem(
     title = playlist.playlist.name,
     subtitle =
         if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
             pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+        else if (playlist.downloadCount > 0)
+            "${playlist.downloadCount} / " + pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount)
         else
             pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
-    badges = badges,
+    badges = {
+        if (playlist.downloadCount > 0) {
+            Row {
+                Icon(
+                    imageVector = Icons.Rounded.OfflinePin,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(end = 2.dp)
+                )
+            }
+        }
+    },
     thumbnailContent = {
         val width = maxWidth
         PlaylistThumbnail(
@@ -1069,10 +1101,13 @@ fun YouTubeCardItem(
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(8.dp).background(
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(ThumbnailCornerRadius)
-                ).size(20.dp)
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(ThumbnailCornerRadius)
+                    )
+                    .size(20.dp)
             ) {
                 PlayingIndicator(
                     color = MaterialTheme.colorScheme.primary,
