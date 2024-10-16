@@ -107,8 +107,6 @@ fun LibraryPlaylistsScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSortDescendingKey, true)
     val (showLikedAndDownloadedPlaylist) = rememberPreference(ShowLikedAndDownloadedPlaylist, true)
 
-    LaunchedEffect(Unit) { viewModel.sync() }
-
     val playlists by viewModel.allPlaylists.collectAsState()
     val isSyncingRemotePlaylists by viewModel.isSyncingRemotePlaylists.collectAsState()
 
