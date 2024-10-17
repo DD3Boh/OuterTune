@@ -31,4 +31,5 @@ data class AlbumWithSongs(
         )
     )
     val songs: List<Song>,
+    val downloadCount: Int,
 )

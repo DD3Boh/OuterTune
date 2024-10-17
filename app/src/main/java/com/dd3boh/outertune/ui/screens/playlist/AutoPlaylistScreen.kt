@@ -105,6 +105,7 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.utils.getNSongsString
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -329,9 +330,9 @@ fun AutoPlaylistScreen(
 
                                 Text(
                                     text = if (playlistType == PlaylistType.LIKE && downloadCount > 0)
-                                            "$downloadCount / " + pluralStringResource(R.plurals.n_song, songs.size, songs.size)
+                                            getNSongsString(songs.size, downloadCount)
                                         else
-                                            pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                                            getNSongsString(songs.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Normal
                                 )

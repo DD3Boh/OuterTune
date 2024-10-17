@@ -8,6 +8,7 @@ data class Artist(
     @Embedded
     val artist: ArtistEntity,
     val songCount: Int,
+    val downloadCount: Int
 ) : LocalItem() {
     override val id: String
         get() = artist.id

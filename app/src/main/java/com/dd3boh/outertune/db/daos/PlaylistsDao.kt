@@ -42,8 +42,8 @@ interface PlaylistsDao {
             COUNT(psm.playlistId) AS songCount,
             SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
         FROM playlist p
-            LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
-            LEFT JOIN song s ON psm.songId = s.id
+            INNER JOIN playlist_song_map psm ON p.id = psm.playlistId
+            INNER JOIN song s ON psm.songId = s.id
         WHERE p.browseId = :browseId
         GROUP BY p.id
     """)
@@ -55,8 +55,8 @@ interface PlaylistsDao {
             COUNT(psm.playlistId) AS songCount,
             SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
         FROM playlist p
-            LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
-            LEFT JOIN song s ON psm.songId = s.id
+            INNER JOIN playlist_song_map psm ON p.id = psm.playlistId
+            INNER JOIN song s ON psm.songId = s.id
         WHERE name LIKE '%' || :query || '%'
         GROUP BY p.id
         LIMIT :previewSize
@@ -80,8 +80,8 @@ interface PlaylistsDao {
                 COUNT(psm.playlistId) AS songCount,
                 SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM playlist p
-                LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
-                LEFT JOIN song s ON psm.songId = s.id
+                INNER JOIN playlist_song_map psm ON p.id = psm.playlistId
+                INNER JOIN song s ON psm.songId = s.id
             WHERE p.bookmarkedAt IS NOT NULL OR p.isLocal = 1
             GROUP BY p.id
             ORDER BY $orderBy
@@ -109,8 +109,8 @@ interface PlaylistsDao {
                 COUNT(psm.playlistId) AS songCount,
                 SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM playlist p
-                LEFT JOIN playlist_song_map psm ON p.id = psm.playlistId
-                LEFT JOIN song s ON psm.songId = s.id
+                INNER JOIN playlist_song_map psm ON p.id = psm.playlistId
+                INNER JOIN song s ON psm.songId = s.id
             WHERE p.bookmarkedAt IS NOT NULL OR p.isLocal = 1
             GROUP BY p.id
             HAVING SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) > 0

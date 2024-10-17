@@ -9,6 +9,7 @@ import androidx.room.Relation
 data class Album(
     @Embedded
     val album: AlbumEntity,
+    val downloadCount: Int,
     @Relation(
         entity = ArtistEntity::class,
         entityColumn = "id",

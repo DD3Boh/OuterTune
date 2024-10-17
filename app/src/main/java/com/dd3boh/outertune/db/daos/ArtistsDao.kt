@@ -26,13 +26,35 @@ import java.time.LocalDateTime
 interface ArtistsDao {
 
     // region Gets
-    @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE id = :id")
+    @Query("""
+        SELECT 
+            artist.*,
+            COUNT(song.id) AS songCount,
+            SUM(CASE WHEN song.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
+        FROM artist
+            INNER JOIN song_artist_map sam ON artist.id = sam.artistId
+            INNER JOIN song ON sam.songId = song.id
+        WHERE artist.id = :id AND song.inLibrary IS NOT NULL
+        GROUP BY artist.id
+    """)
     fun artist(id: String): Flow<Artist?>
 
     @Query("SELECT * FROM artist WHERE name = :name")
     fun artistByName(name: String): ArtistEntity?
 
-    @Query("SELECT *, (SELECT COUNT(1) FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = artist.id AND song.inLibrary IS NOT NULL) AS songCount FROM artist WHERE name LIKE '%' || :query || '%' AND songCount > 0 LIMIT :previewSize")
+    @Query("""
+        SELECT 
+            artist.*,
+            COUNT(song.id) AS songCount,
+            SUM(CASE WHEN song.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
+        FROM artist
+            INNER JOIN song_artist_map sam ON artist.id = sam.artistId
+            INNER JOIN song ON sam.songId = song.id
+        WHERE artist.name LIKE '%' || :query || '%' AND song.inLibrary IS NOT NULL
+        GROUP BY artist.id
+        HAVING songCount > 0
+        LIMIT :previewSize
+    """)
     fun searchArtists(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Artist>>
 
     @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE song_artist_map.artistId IN (SELECT id FROM artist WHERE name LIKE '%' || :query || '%') LIMIT :previewSize")
@@ -51,24 +73,25 @@ interface ArtistsDao {
     fun artistSongsPreview(artistId: String, previewSize: Int = 3): Flow<List<Song>>
 
     @Query("""
-        SELECT artist.*,
-               (SELECT COUNT(1)
-                FROM song_artist_map
-                         JOIN song ON song_artist_map.songId = song.id
-                WHERE artistId = artist.id
-                  AND song.inLibrary IS NOT NULL) AS songCount
+        SELECT 
+            artist.*,
+            COUNT(song.id) AS songCount,
+            SUM(CASE WHEN song.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
         FROM artist
-                 JOIN(SELECT artistId, SUM(songTotalPlayTime) AS totalPlayTime
-                      FROM song_artist_map
-                               JOIN (SELECT songId, SUM(playTime) AS songTotalPlayTime
-                                     FROM event
-                                     WHERE timestamp > :fromTimeStamp
-                                     GROUP BY songId) AS e
-                                    ON song_artist_map.songId = e.songId
-                      GROUP BY artistId
-                      ORDER BY totalPlayTime DESC
-                      LIMIT :limit)
-                     ON artist.id = artistId
+            INNER JOIN song_artist_map sam ON artist.id = sam.artistId
+            INNER JOIN song ON sam.songId = song.id
+            LEFT JOIN (
+                SELECT 
+                    songId, 
+                    SUM(playTime) AS songTotalPlayTime
+                FROM event
+                WHERE timestamp > :fromTimeStamp
+                GROUP BY songId
+            ) AS e ON sam.songId = e.songId
+        WHERE song.inLibrary IS NOT NULL
+        GROUP BY artist.id
+        ORDER BY SUM(e.songTotalPlayTime) DESC
+        LIMIT :limit
     """)
     fun mostPlayedArtists(fromTimeStamp: Long, limit: Int = 6): Flow<List<Artist>>
 
@@ -78,10 +101,13 @@ interface ArtistsDao {
     // region Artists Sort
     private fun queryArtists(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT artist.*, COUNT(song.id) AS songCount
+            SELECT 
+                artist.*,
+                COUNT(song.id) AS songCount,
+                SUM(CASE WHEN song.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM artist
-                INNER JOIN song_artist_map ON artist.id = song_artist_map.artistId
-                INNER JOIN song ON song_artist_map.songId = song.id
+                INNER JOIN song_artist_map sam ON artist.id = sam.artistId
+                INNER JOIN song ON sam.songId = song.id
             WHERE song.inLibrary IS NOT NULL
             GROUP BY artist.id
             HAVING songCount > 0
@@ -110,10 +136,13 @@ interface ArtistsDao {
     // region Bookmarked Artists Sort
     private fun queryArtistsBookmarked(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT artist.*, COUNT(song.id) AS songCount
+            SELECT 
+                artist.*, 
+                COUNT(song.id) AS songCount,
+                SUM(CASE WHEN song.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM artist
-                INNER JOIN song_artist_map ON artist.id = song_artist_map.artistId
-                INNER JOIN song ON song_artist_map.songId = song.id
+                INNER JOIN song_artist_map sam ON artist.id = sam.artistId
+                INNER JOIN song ON sam.songId = song.id
             WHERE artist.bookmarkedAt IS NOT NULL
             GROUP BY artist.id
             HAVING songCount > 0
@@ -142,13 +171,16 @@ interface ArtistsDao {
     // region Downloaded Artists Sort
     private fun queryArtistsWithDonwloads(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT artist.*, COUNT(song.id) AS songCount
+            SELECT 
+                artist.*, 
+                COUNT(song.id) AS songCount,
+                SUM(CASE WHEN song.dateDownload IS NOT NULL THEN 1 ELSE 0 END) AS downloadCount
             FROM artist
-                INNER JOIN song_artist_map ON artist.id = song_artist_map.artistId
-                INNER JOIN song ON song_artist_map.songId = song.id
-            WHERE song.dateDownload IS NOT NULL
+                INNER JOIN song_artist_map sam ON artist.id = sam.artistId
+                INNER JOIN song ON sam.songId = song.id
+            WHERE song.inLibrary IS NOT NULL
             GROUP BY artist.id
-            HAVING songCount > 0
+            HAVING downloadCount > 0
             ORDER BY $orderBy
         """)
     }

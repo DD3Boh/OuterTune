@@ -23,33 +23,45 @@ import kotlinx.coroutines.flow.map
 interface AlbumsDao {
 
     // region Gets
-    @Query("SELECT * FROM album WHERE id = :id")
+    @Query("""
+        SELECT album.*, count(song.dateDownload) downloadCount
+        FROM album
+            JOIN song ON song.albumId = album.id
+        WHERE album.id = :id
+        GROUP BY album.id
+    """)
     fun album(id: String): Flow<Album?>
 
-    @Query("SELECT * FROM album WHERE title LIKE '%' || :query || '%' AND EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL) LIMIT :previewSize")
+    @Query("""
+        SELECT album.*, count(song.dateDownload) downloadCount
+        FROM album
+            JOIN song ON song.albumId = album.id
+        WHERE album.title LIKE '%' || :query || '%' AND song.inLibrary IS NOT NULL
+        GROUP BY album.id
+        LIMIT :previewSize
+    """)
     fun searchAlbums(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Album>>
 
-    @Query("SELECT * FROM album WHERE id = :albumId")
+    @Query("""
+        SELECT album.*, count(song.dateDownload) downloadCount
+        FROM album
+            JOIN song ON song.albumId = album.id
+        WHERE album.id = :albumId
+    """)
     fun albumWithSongs(albumId: String): Flow<AlbumWithSongs?>
 
     @Query("SELECT song.* FROM song JOIN song_album_map ON song.id = song_album_map.songId WHERE song_album_map.albumId = :albumId")
     fun albumSongs(albumId: String): Flow<List<Song>>
 
     @Query("""
-        SELECT album.*
+        SELECT album.*, count(song.dateDownload) downloadCount
         FROM album
-                 JOIN(SELECT albumId
-                      FROM song
-                               JOIN (SELECT songId, SUM(playTime) AS songTotalPlayTime
-                                     FROM event
-                                     WHERE timestamp > :fromTimeStamp
-                                     GROUP BY songId) AS e
-                                    ON song.id = e.songId
-                      WHERE albumId IS NOT NULL
-                      GROUP BY albumId
-                      ORDER BY SUM(songTotalPlayTime) DESC
-                      LIMIT :limit)
-                     ON album.id = albumId
+            JOIN song ON album.id = song.albumId
+            JOIN event ON song.id = event.songId
+        WHERE event.timestamp > :fromTimeStamp
+        GROUP BY album.id
+        ORDER BY SUM(event.playTime) DESC
+        LIMIT :limit;
     """)
     fun mostPlayedAlbums(fromTimeStamp: Long, limit: Int = 6): Flow<List<Album>>
 
@@ -59,25 +71,28 @@ interface AlbumsDao {
     // region Albums Sort
     private fun queryAlbums(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT * FROM album 
-            WHERE EXISTS(
-                SELECT * 
-                FROM song 
-                WHERE song.albumId = album.id 
-                    AND song.inLibrary IS NOT NULL
-           ) ORDER BY $orderBy
+            SELECT album.*, count(song.dateDownload) downloadCount
+            FROM album
+                JOIN song ON song.albumId = album.id
+            WHERE song.inLibrary IS NOT NULL 
+            GROUP BY album.id
+            ORDER BY $orderBy
         """)
     }
 
-    fun albumsByCreateDateAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("rowId ASC"))
-    fun albumsByNameAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("title COLLATE NOCASE ASC"))
-    fun albumsByYearAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("year ASC"))
-    fun albumsBySongCountAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("songCount ASC"))
-    fun albumsByLengthAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("duration ASC"))
+    fun albumsByCreateDateAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("album.rowId ASC"))
+    fun albumsByNameAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("album.title COLLATE NOCASE ASC"))
+    fun albumsByYearAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("album.year ASC"))
+    fun albumsBySongCountAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("album.songCount ASC"))
+    fun albumsByLengthAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("album.duration ASC"))
+    fun albumsByPlayTimeAsc(): Flow<List<Album>> = _getAlbum(queryAlbums("SUM(song.totalPlayTime) ASC"))
 
     @Query("""
-        SELECT * FROM album
-        WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL)
+        SELECT album.*, count(song.dateDownload) downloadCount
+        FROM album
+            JOIN song ON song.albumId = album.id
+        WHERE song.inLibrary IS NOT NULL 
+        GROUP BY album.id
         ORDER BY (
             SELECT LOWER(GROUP_CONCAT(name, ''))
             FROM artist
@@ -86,16 +101,6 @@ interface AlbumsDao {
         ) COLLATE NOCASE
     """)
     fun albumByArtistAsc(): Flow<List<Album>>
-
-    @Query("""
-        SELECT album.*
-        FROM album
-            JOIN song ON song.albumId = album.id
-        WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.inLibrary IS NOT NULL)
-        GROUP BY album.id
-        ORDER BY SUM(song.totalPlayTime)
-    """)
-    fun albumsByPlayTimeAsc(): Flow<List<Album>>
 
     fun albums(sortType: AlbumSortType, descending: Boolean) =
         when (sortType) {
@@ -110,15 +115,29 @@ interface AlbumsDao {
     // endregion
 
     // region Liked Albums Sort
-    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY rowId")
-    fun albumsLikedByCreateDateAsc(): Flow<List<Album>>
+    private fun queryAlbumsLiked(orderBy: String): SimpleSQLiteQuery {
+        return SimpleSQLiteQuery("""
+            SELECT album.*, count(song.dateDownload) downloadCount
+            FROM album
+                INNER JOIN song ON song.albumId = album.id
+            WHERE bookmarkedAt IS NOT NULL
+            GROUP BY album.id
+            ORDER BY $orderBy
+        """)
+    }
 
-    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
-    fun albumsLikedByNameAsc(): Flow<List<Album>>
+    fun albumsLikedByCreateDateAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsLiked("album.rowId ASC"))
+    fun albumsLikedByNameAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsLiked("album.title COLLATE NOCASE ASC"))
+    fun albumsLikedByYearAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsLiked("album.year ASC"))
+    fun albumsLikedBySongCountAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsLiked("album.songCount ASC"))
+    fun albumsLikedByLengthAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsLiked("album.duration ASC"))
 
     @Query("""
-        SELECT * FROM album
+        SELECT album.*, count(song.dateDownload) downloadCount 
+        FROM album
+            INNER JOIN song ON song.albumId = album.id
         WHERE bookmarkedAt IS NOT NULL
+        GROUP BY album.id
         ORDER BY (
             SELECT LOWER(GROUP_CONCAT(name, ''))
             FROM artist
@@ -128,20 +147,10 @@ interface AlbumsDao {
     """)
     fun albumLikeByArtistAsc(): Flow<List<Album>>
 
-    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY year")
-    fun albumsLikedByYearAsc(): Flow<List<Album>>
-
-    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY songCount")
-    fun albumsLikedBySongCountAsc(): Flow<List<Album>>
-
-    @Query("SELECT * FROM album WHERE bookmarkedAt IS NOT NULL ORDER BY duration")
-    fun albumsLikedByLengthAsc(): Flow<List<Album>>
-
     @Query("""
-        SELECT album.*
+        SELECT album.*, count(song.dateDownload) downloadCount 
         FROM album
-                 JOIN song
-                      ON song.albumId = album.id
+            INNER JOIN song ON song.albumId = album.id
         WHERE bookmarkedAt IS NOT NULL
         GROUP BY album.id
         ORDER BY SUM(song.totalPlayTime)
@@ -163,25 +172,26 @@ interface AlbumsDao {
     // region Downloaded Albums Sort
     private fun queryAlbumsWithDonwloads(orderBy: String): SimpleSQLiteQuery {
         return SimpleSQLiteQuery("""
-            SELECT * FROM album 
-            WHERE EXISTS(
-                SELECT * 
-                FROM song 
-                WHERE song.albumId = album.id 
-                    AND song.dateDownload IS NOT NULL
-           ) ORDER BY $orderBy
+            SELECT album.*, count(song.dateDownload) downloadCount
+            FROM album
+                INNER JOIN song ON song.albumId = album.id AND song.dateDownload IS NOT NULL
+            GROUP BY album.id
+            ORDER BY $orderBy
         """)
     }
 
-    fun albumsWithDonwloadsByCreateDateAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("rowId ASC"))
-    fun albumsWithDonwloadsByNameAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("title COLLATE NOCASE ASC"))
-    fun albumsWithDonwloadsByYearAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("year ASC"))
-    fun albumsWithDonwloadsBySongCountAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("songCount ASC"))
-    fun albumsWithDonwloadsByLengthAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("duration ASC"))
+    fun albumsWithDonwloadsByCreateDateAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("album.rowId ASC"))
+    fun albumsWithDonwloadsByNameAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("album.title COLLATE NOCASE ASC"))
+    fun albumsWithDonwloadsByYearAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("album.year ASC"))
+    fun albumsWithDonwloadsBySongCountAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("album.songCount ASC"))
+    fun albumsWithDonwloadsByLengthAsc(): Flow<List<Album>> = _getAlbum(queryAlbumsWithDonwloads("album.duration ASC"))
 
     @Query("""
-        SELECT * FROM album
-        WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.dateDownload IS NOT NULL)
+        SELECT *, count(song.dateDownload) downloadCount
+        FROM album
+            INNER JOIN song ON song.albumId = album.id
+        WHERE song.dateDownload IS NOT NULL
+        GROUP BY album.id
         ORDER BY (
             SELECT LOWER(GROUP_CONCAT(name, ''))
             FROM artist
@@ -192,10 +202,10 @@ interface AlbumsDao {
     fun albumWithDonwloadsByArtistAsc(): Flow<List<Album>>
 
     @Query("""
-        SELECT album.*
+        SELECT album.*, count(song.dateDownload) downloadCount
         FROM album
-            JOIN song ON song.albumId = album.id
-        WHERE EXISTS(SELECT * FROM song WHERE song.albumId = album.id AND song.dateDownload IS NOT NULL)
+            INNER JOIN song ON song.albumId = album.id
+        WHERE song.dateDownload IS NOT NULL
         GROUP BY album.id
         ORDER BY SUM(song.totalPlayTime)
     """)
