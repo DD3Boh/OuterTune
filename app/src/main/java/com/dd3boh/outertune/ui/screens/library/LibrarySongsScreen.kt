@@ -59,7 +59,6 @@ import com.dd3boh.outertune.constants.SongFilterKey
 import com.dd3boh.outertune.constants.SongSortDescendingKey
 import com.dd3boh.outertune.constants.SongSortType
 import com.dd3boh.outertune.constants.SongSortTypeKey
-import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -75,6 +74,7 @@ import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibrarySongsViewModel
+import com.dd3boh.outertune.extensions.isSyncEnabled
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -96,9 +96,11 @@ fun LibrarySongsScreen(
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
-    val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
     val songs by viewModel.allSongs.collectAsState()
+    val isSyncingRemoteLikedSongs by viewModel.isSyncingRemoteLikedSongs.collectAsState()
+    val isSyncingRemoteSongs by viewModel.isSyncingRemoteSongs.collectAsState()
+
     val lazyListState = rememberLazyListState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
@@ -139,7 +141,7 @@ fun LibrarySongsScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (ytmSync) {
+        if (context.isSyncEnabled()){
             when (filter) {
                 SongFilter.LIKED -> viewModel.syncLikedSongs()
                 SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
@@ -158,10 +160,13 @@ fun LibrarySongsScreen(
             currentValue = filter,
             onValueUpdate = {
                 filter = it
-                if (ytmSync) {
+                if (context.isSyncEnabled()){
                     if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
                     else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
                 }
+            },
+            isLoading = { filter ->
+                (filter == SongFilter.LIKED && isSyncingRemoteLikedSongs) || (filter == SongFilter.LIBRARY && isSyncingRemoteSongs)
             }
         )
     }

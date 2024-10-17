@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryArtistsViewModel
+import com.dd3boh.outertune.extensions.isSyncEnabled
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -65,27 +67,29 @@ fun LibraryArtistsScreen(
     viewModel: LibraryArtistsViewModel = hiltViewModel(),
     libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val menuState = LocalMenuState.current
+    val coroutineScope = rememberCoroutineScope()
+
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
     libraryFilterContent?.let { filter = ArtistFilter.LIKED }
 
-    var viewTypeLocal by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
+    var artistViewType by rememberEnumPreference(ArtistViewTypeKey, LibraryViewType.GRID)
     val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
-
-    val viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+    val viewType = if (libraryFilterContent != null) libraryViewType else artistViewType
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSortDescendingKey, true)
 
-    LaunchedEffect(Unit) { viewModel.sync() }
-
     val artists by viewModel.allArtists.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
+    val isSyncingRemoteArtists by viewModel.isSyncingRemoteArtists.collectAsState()
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    LaunchedEffect(Unit) { if (context.isSyncEnabled()) viewModel.sync() }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
@@ -102,22 +106,24 @@ fun LibraryArtistsScreen(
             ChipsRow(
                 chips = listOf(
                     ArtistFilter.LIKED to stringResource(R.string.filter_liked),
-                    ArtistFilter.LIBRARY to stringResource(R.string.filter_library)
+                    ArtistFilter.LIBRARY to stringResource(R.string.filter_library),
+                    ArtistFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
                 ),
                 currentValue = filter,
                 onValueUpdate = { filter = it },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isLoading = { filter -> filter == ArtistFilter.LIBRARY && isSyncingRemoteArtists }
             )
 
             IconButton(
                 onClick = {
-                    viewTypeLocal = viewTypeLocal.toggle()
+                    artistViewType = artistViewType.toggle()
                 },
                 modifier = Modifier.padding(end = 6.dp)
             ) {
                 Icon(
                     imageVector =
-                    when (viewTypeLocal) {
+                    when (artistViewType) {
                         LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
                         LibraryViewType.GRID -> Icons.Rounded.GridView
                     },

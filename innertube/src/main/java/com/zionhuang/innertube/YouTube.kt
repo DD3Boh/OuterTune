@@ -465,15 +465,21 @@ object YouTube {
         )
     }
 
-    suspend fun library(browseId: String) = runCatching {
+    suspend fun library(browseId: String, tabIndex: Int = 0) = runCatching {
         val response = innerTube.browse(
             client = WEB_REMIX,
             browseId = browseId,
             setLogin = true
         ).body<BrowseResponse>()
 
-        val contents = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.
-        tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+        val tabs = response.contents?.singleColumnBrowseResultsRenderer?.tabs
+
+        val contents = if (tabs != null && tabs.size >= tabIndex) {
+                tabs[tabIndex].tabRenderer.content?.sectionListRenderer?.contents?.firstOrNull()
+            }
+            else {
+                null
+            }
 
         when {
             contents?.gridRenderer != null -> {

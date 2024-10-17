@@ -10,6 +10,7 @@ data class Playlist(
     @Embedded
     val playlist: PlaylistEntity,
     val songCount: Int,
+    val downloadCount: Int,
     @Relation(
         entity = SongEntity::class,
         entityColumn = "id",

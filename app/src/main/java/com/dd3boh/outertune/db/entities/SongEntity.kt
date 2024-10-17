@@ -41,6 +41,7 @@ data class SongEntity(
     @ColumnInfo(name = "isLocal", defaultValue = false.toString())
     val isLocal: Boolean = false,
     val localPath: String?,
+    val dateDownload: LocalDateTime? = null, // doubles as "isDownloaded"
 ) {
     val isLocalSong: Boolean
         get() = id.startsWith("LA")

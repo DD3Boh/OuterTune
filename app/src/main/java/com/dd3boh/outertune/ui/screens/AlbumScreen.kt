@@ -105,6 +105,8 @@ import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.AlbumMenu
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.ui.utils.getNSongsString
+import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.viewmodels.AlbumViewModel
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -217,19 +219,21 @@ fun AlbumScreen(
                                     }
                                 }
                             }
+
                             ClickableText(annotatedString) { offset ->
                                 annotatedString.getStringAnnotations(offset, offset).firstOrNull()?.let { range ->
                                     navController.navigate("artist/${range.tag}")
                                 }
                             }
 
-                            if (albumWithSongsLocal.album.year != null) {
-                                Text(
-                                    text = albumWithSongsLocal.album.year.toString(),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Normal
-                                )
-                            }
+                            Text(
+                                text = joinByBullet(
+                                    getNSongsString(albumWithSongsLocal.album.songCount, albumWithSongsLocal.downloadCount),
+                                    albumWithSongsLocal.album.year.toString()
+                                ),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Normal
+                            )
 
                             Row {
                                 IconButton(
@@ -316,7 +320,7 @@ fun AlbumScreen(
                                     onClick = {
                                         menuState.show {
                                             AlbumMenu(
-                                                originalAlbum = Album(albumWithSongsLocal.album, albumWithSongsLocal.artists),
+                                                originalAlbum = Album(albumWithSongsLocal.album, albumWithSongsLocal.downloadCount, albumWithSongsLocal.artists),
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss,
                                             )

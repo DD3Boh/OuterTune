@@ -6,7 +6,6 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.exoplayer.offline.Download
 import com.dd3boh.outertune.constants.AlbumFilter
 import com.dd3boh.outertune.constants.AlbumFilterKey
 import com.dd3boh.outertune.constants.AlbumSortDescendingKey
@@ -24,6 +23,8 @@ import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LibrarySortDescendingKey
 import com.dd3boh.outertune.constants.LibrarySortType
 import com.dd3boh.outertune.constants.LibrarySortTypeKey
+import com.dd3boh.outertune.constants.PlaylistFilter
+import com.dd3boh.outertune.constants.PlaylistFilterKey
 import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSortType
 import com.dd3boh.outertune.constants.PlaylistSortTypeKey
@@ -38,10 +39,8 @@ import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.Song
-import com.dd3boh.outertune.extensions.reversed
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.models.DirectoryTree
-import com.dd3boh.outertune.playback.DownloadUtil
 import com.dd3boh.outertune.ui.utils.DEFAULT_SCAN_PATH
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.getDirectoryTree
@@ -61,7 +60,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -73,24 +71,25 @@ import javax.inject.Inject
 class LibrarySongsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    downloadUtil: DownloadUtil,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
 
     val databaseLink = database
 
-    val allSongs = syncAllSongs(context, database, downloadUtil)
+    val allSongs = getSyncedSongs(context, database)
+    val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
+    val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
 
     private val scanPaths = context.dataStore[ScanPathsKey]?: DEFAULT_SCAN_PATH
     private val excludedScanPaths = context.dataStore[ExcludedScanPathsKey]?: ""
     val localSongDirectoryTree = refreshLocal(database, scanPaths.split('\n'), excludedScanPaths.split('\n'))
 
     fun syncLibrarySongs() {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLibrarySongs() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteSongs() }
     }
 
     fun syncLikedSongs() {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
+        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteLikedSongs() }
     }
 
 
@@ -113,8 +112,7 @@ class LibrarySongsViewModel @Inject constructor(
         }
     }
 
-
-    fun syncAllSongs(context: Context, database: MusicDatabase, downloadUtil: DownloadUtil): StateFlow<List<Song>> {
+    private fun getSyncedSongs(context: Context, database: MusicDatabase): StateFlow<List<Song>> {
 
         return context.dataStore.data
                 .map {
@@ -129,29 +127,7 @@ class LibrarySongsViewModel @Inject constructor(
                     when (filter) {
                         SongFilter.LIBRARY -> database.songs(sortType, descending)
                         SongFilter.LIKED -> database.likedSongs(sortType, descending)
-                        SongFilter.DOWNLOADED -> downloadUtil.downloads.flatMapLatest { downloads ->
-                            database.allSongs()
-                                    .flowOn(Dispatchers.IO)
-                                    .map { songs ->
-                                        songs.filter {
-                                            // show local songs as under downloaded for now
-                                            downloads[it.id]?.state == Download.STATE_COMPLETED || it.song.isLocal
-                                        }
-                                    }
-                                    .map { songs ->
-                                        when (sortType) {
-                                            SongSortType.CREATE_DATE -> songs.sortedBy { downloads[it.id]?.updateTimeMs ?: 0L }
-                                            SongSortType.MODIFIED_DATE -> songs.sortedBy { it.song.getDateModifiedLong() }
-                                            SongSortType.RELEASE_DATE -> songs.sortedBy { it.song.getDateLong() }
-                                            SongSortType.NAME -> songs.sortedBy { it.song.title.lowercase() }
-                                            SongSortType.ARTIST -> songs.sortedBy { song ->
-                                                song.artists.joinToString(separator = "") { it.name }.lowercase()
-                                            }
-
-                                            SongSortType.PLAY_TIME -> songs.sortedBy { it.song.totalPlayTime }
-                                        }.reversed(descending)
-                                    }
-                        }
+                        SongFilter.DOWNLOADED -> database.downloadSongs(sortType, descending)
                     }
                 }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
@@ -163,6 +139,8 @@ class LibraryArtistsViewModel @Inject constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val isSyncingRemoteArtists = syncUtils.isSyncingRemoteArtists
+
     val allArtists = context.dataStore.data
         .map {
             Triple(
@@ -176,11 +154,12 @@ class LibraryArtistsViewModel @Inject constructor(
             when (filter) {
                 ArtistFilter.LIBRARY -> database.artists(sortType, descending)
                 ArtistFilter.LIKED -> database.artistsBookmarked(sortType, descending)
+                ArtistFilter.DOWNLOADED -> database.artistsWithDonwloads(sortType, descending)
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteArtists() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -208,6 +187,8 @@ class LibraryAlbumsViewModel @Inject constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val isSyncingRemoteAlbums = syncUtils.isSyncingRemoteAlbums
+
     val allAlbums = context.dataStore.data
         .map {
             Triple(
@@ -221,11 +202,12 @@ class LibraryAlbumsViewModel @Inject constructor(
             when (filter) {
                 AlbumFilter.LIBRARY -> database.albums(sortType, descending)
                 AlbumFilter.LIKED -> database.albumsLiked(sortType, descending)
+                AlbumFilter.DOWNLOADED -> database.albumsWithDonwloads(sortType, descending)
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteAlbums() } }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -257,17 +239,26 @@ class LibraryPlaylistsViewModel @Inject constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val isSyncingRemotePlaylists = syncUtils.isSyncingRemotePlaylists
+
     val allPlaylists = context.dataStore.data
         .map {
-            it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE) to (it[PlaylistSortDescendingKey] ?: true)
+            Triple(
+                it[PlaylistFilterKey].toEnum(PlaylistFilter.LIBRARY),
+                it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE),
+                it[PlaylistSortDescendingKey] ?: true
+            )
         }
         .distinctUntilChanged()
-        .flatMapLatest { (sortType, descending) ->
-            database.playlists(sortType, descending)
+        .flatMapLatest { (filter, sortType, descending) ->
+            when (filter) {
+                PlaylistFilter.LIBRARY -> database.playlists(sortType, descending)
+                PlaylistFilter.DOWNLOADED -> database.playlistsWithDownloads(sortType, descending)
+            }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncSavedPlaylists() } }
+    fun sync() { viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemotePlaylists() } }
 }
 
 @HiltViewModel
@@ -275,7 +266,15 @@ class LibraryPlaylistsViewModel @Inject constructor(
 class LibraryViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
+    syncUtils: SyncUtils
 ) : ViewModel() {
+
+    val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
+    val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
+    val isSyncingRemoteAlbums = syncUtils.isSyncingRemoteAlbums
+    val isSyncingRemoteArtists = syncUtils.isSyncingRemoteArtists
+    val isSyncingRemotePlaylists = syncUtils.isSyncingRemotePlaylists
+
     var artists = database.artistsBookmarked(ArtistSortType.CREATE_DATE, true)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     var albums = database.albumsLiked(AlbumSortType.CREATE_DATE, true)

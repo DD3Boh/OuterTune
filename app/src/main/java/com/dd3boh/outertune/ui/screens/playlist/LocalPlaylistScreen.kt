@@ -67,7 +67,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -121,6 +120,7 @@ import com.dd3boh.outertune.ui.component.TextFieldDialog
 import com.dd3boh.outertune.ui.menu.SongMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
+import com.dd3boh.outertune.ui.utils.getNSongsString
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -161,7 +161,6 @@ fun LocalPlaylistScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSongSortDescendingKey, true)
     var locked by rememberPreference(PlaylistEditLockKey, defaultValue = false)
 
-    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
@@ -686,11 +685,23 @@ fun LocalPlaylistHeader(
                     fontSizeRange = FontSizeRange(16.sp, 22.sp)
                 )
 
-                Text(
-                    text = pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Normal
-                )
+                Row {
+                    if (playlist.downloadCount > 0){
+                        Icon(
+                            imageVector = Icons.Rounded.OfflinePin,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 2.dp)
+                        )
+                    }
+
+                    Text(
+                        text = getNSongsString(songs.size, playlist.downloadCount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
 
                 Text(
                     text = makeTimeString(playlistLength * 1000L),

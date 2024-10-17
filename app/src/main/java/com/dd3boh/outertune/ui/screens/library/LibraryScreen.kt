@@ -107,6 +107,12 @@ fun LibraryScreen(
 
     val allItems by viewModel.allItems.collectAsState()
 
+    val isSyncingRemotePlaylists by viewModel.isSyncingRemotePlaylists.collectAsState()
+    val isSyncingRemoteAlbums by viewModel.isSyncingRemoteAlbums.collectAsState()
+    val isSyncingRemoteArtists by viewModel.isSyncingRemoteArtists.collectAsState()
+    val isSyncingRemoteSongs by viewModel.isSyncingRemoteSongs.collectAsState()
+    val isSyncingRemoteLikedSongs by viewModel.isSyncingRemoteLikedSongs.collectAsState()
+
     val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
     val downloadedPlaylist = PlaylistEntity(id = "downloaded", name = stringResource(id = R.string.downloaded_songs))
 
@@ -203,7 +209,13 @@ fun LibraryScreen(
                         LibraryFilter.ALL
                 },
                 modifier = Modifier.weight(1f),
-                selected = { it == filterSelected }
+                selected = { it == filterSelected },
+                isLoading = { filter ->
+                    (filter == LibraryFilter.PLAYLISTS && isSyncingRemotePlaylists)
+                    || (filter == LibraryFilter.ALBUMS && isSyncingRemoteAlbums)
+                    || (filter == LibraryFilter.ARTISTS && isSyncingRemoteArtists)
+                    || (filter == LibraryFilter.SONGS && (isSyncingRemoteSongs || isSyncingRemoteLikedSongs))
+                }
             )
 
             if (filter != LibraryFilter.SONGS) {

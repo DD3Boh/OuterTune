@@ -1,5 +1,8 @@
 package com.dd3boh.outertune.ui.utils
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
+import com.dd3boh.outertune.R
 import kotlin.math.absoluteValue
 
 fun formatFileSize(sizeBytes: Long): String {
@@ -27,4 +30,12 @@ fun formatFileSize(sizeBytes: Long): String {
         result /= 1024
     }
     return "$prefix$result $suffix"
+}
+
+@Composable
+fun getNSongsString(songCount :Int, downloadCount: Int = 0): String {
+    return if (downloadCount > 0)
+        "$downloadCount / " + pluralStringResource(R.plurals.n_song, songCount, songCount)
+    else
+        pluralStringResource(R.plurals.n_song, songCount, songCount)
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -88,6 +89,7 @@ import com.dd3boh.outertune.constants.SongSortTypeKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
+import com.dd3boh.outertune.extensions.isSyncEnabled
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
@@ -103,12 +105,17 @@ import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.menu.SongMenu
+import com.dd3boh.outertune.ui.utils.getNSongsString
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+enum class PlaylistType {
+    LIKE, DOWNLOAD, OTHER
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -148,18 +155,25 @@ fun AutoPlaylistScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
 
     val playlistId = viewModel.playlistId
+    val playlistType = when (playlistId) {
+            "liked" -> PlaylistType.LIKE
+            "downloaded" -> PlaylistType.DOWNLOAD
+            else -> PlaylistType.OTHER
+    }
     val playlist = PlaylistEntity(
         id = playlistId,
-        name = when (playlistId) {
-            "liked" -> stringResource(id = R.string.liked_songs)
-            "downloaded" -> stringResource(id = R.string.downloaded_songs)
+        name = when (playlistType) {
+            PlaylistType.LIKE -> stringResource(id = R.string.liked_songs)
+            PlaylistType.DOWNLOAD -> stringResource(id = R.string.downloaded_songs)
             else -> ""
         },
-        browseId = when (playlistId) {
-            "liked" -> "LM"
+        browseId = when (playlistType) {
+            PlaylistType.LIKE -> "LM"
             else -> null
         },
     )
+
+    val isSyncingRemoteLikedSongs by syncUtils.isSyncingRemoteLikedSongs.collectAsState()
 
     val thumbnail by viewModel.thumbnail.collectAsState()
     val mutableSongs = remember { mutableStateListOf<Song>() }
@@ -169,6 +183,9 @@ fun AutoPlaylistScreen(
 
     val playlistLength = remember(songs) {
         songs.fastSumBy { it.song.duration }
+    }
+    val downloadCount = remember(songs) {
+        songs.count { it.song.dateDownload != null }
     }
 
     val downloadUtil = LocalDownloadUtil.current
@@ -199,7 +216,7 @@ fun AutoPlaylistScreen(
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            if (playlistId == "liked") syncUtils.syncLikedSongs()
+            if (playlistType == PlaylistType.LIKE && context.isSyncEnabled()) syncUtils.syncRemoteLikedSongs()
         }
     }
 
@@ -292,11 +309,34 @@ fun AutoPlaylistScreen(
                                 fontSizeRange = FontSizeRange(16.sp, 22.sp)
                             )
 
-                            Text(
-                                text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Normal
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (playlistType == PlaylistType.LIKE && isSyncingRemoteLikedSongs) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+
+                                if (playlistType == PlaylistType.LIKE && downloadCount > 0){
+                                    Icon(
+                                        imageVector = Icons.Rounded.OfflinePin,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .padding(end = 2.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = if (playlistType == PlaylistType.LIKE && downloadCount > 0)
+                                            getNSongsString(songs.size, downloadCount)
+                                        else
+                                            getNSongsString(songs.size),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Normal
+                                )
+                            }
 
                             Text(
                                 text = makeTimeString(playlistLength * 1000L),

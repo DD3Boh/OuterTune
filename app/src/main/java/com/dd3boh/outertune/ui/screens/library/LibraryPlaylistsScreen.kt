@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,8 @@ import com.dd3boh.outertune.constants.CONTENT_TYPE_PLAYLIST
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
 import com.dd3boh.outertune.constants.LibraryViewTypeKey
+import com.dd3boh.outertune.constants.PlaylistFilter
+import com.dd3boh.outertune.constants.PlaylistFilterKey
 import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSortType
 import com.dd3boh.outertune.constants.PlaylistSortTypeKey
@@ -65,6 +68,7 @@ import com.dd3boh.outertune.constants.ShowLikedAndDownloadedPlaylist
 import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.ui.component.AutoPlaylistGridItem
 import com.dd3boh.outertune.ui.component.AutoPlaylistListItem
+import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.HideOnScrollFAB
 import com.dd3boh.outertune.ui.component.LibraryPlaylistGridItem
 import com.dd3boh.outertune.ui.component.LibraryPlaylistListItem
@@ -75,6 +79,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LibraryPlaylistsViewModel
 import com.zionhuang.innertube.YouTube
+import com.dd3boh.outertune.extensions.isSyncEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -86,23 +91,24 @@ fun LibraryPlaylistsScreen(
     viewModel: LibraryPlaylistsViewModel = hiltViewModel(),
     libraryFilterContent: @Composable() (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
-
     val coroutineScope = rememberCoroutineScope()
 
-    var viewTypeLocal by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
-    val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+    var filter by rememberEnumPreference(PlaylistFilterKey, PlaylistFilter.LIBRARY)
+    libraryFilterContent?.let { filter = PlaylistFilter.LIBRARY }
 
-    val viewType = if (libraryFilterContent != null) libraryViewType else viewTypeLocal
+    var playlistViewType by rememberEnumPreference(PlaylistViewTypeKey, LibraryViewType.GRID)
+    val libraryViewType by rememberEnumPreference(LibraryViewTypeKey, LibraryViewType.GRID)
+    val viewType = if (libraryFilterContent != null) libraryViewType else playlistViewType
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(PlaylistSortTypeKey, PlaylistSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSortDescendingKey, true)
     val (showLikedAndDownloadedPlaylist) = rememberPreference(ShowLikedAndDownloadedPlaylist, true)
 
-    LaunchedEffect(Unit) { viewModel.sync() }
-
     val playlists by viewModel.allPlaylists.collectAsState()
+    val isSyncingRemotePlaylists by viewModel.isSyncingRemotePlaylists.collectAsState()
 
     val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
     val downloadedPlaylist = PlaylistEntity(id = "downloaded", name = stringResource(id = R.string.downloaded_songs))
@@ -112,12 +118,19 @@ fun LibraryPlaylistsScreen(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
 
-    var showAddPlaylistDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
+    var showAddPlaylistDialog by rememberSaveable { mutableStateOf(false) }
+    var syncedPlaylist: Boolean by remember { mutableStateOf(false) }
 
-    var syncedPlaylist: Boolean by remember {
-        mutableStateOf(false)
+    LaunchedEffect(Unit) { if (context.isSyncEnabled()) viewModel.sync() }
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            when (viewType) {
+                LibraryViewType.LIST -> lazyListState.animateScrollToItem(0)
+                LibraryViewType.GRID -> lazyGridState.animateScrollToItem(0)
+            }
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
     }
 
     if (showAddPlaylistDialog) {
@@ -176,6 +189,25 @@ fun LibraryPlaylistsScreen(
         )
     }
 
+    val filterContent = @Composable {
+        ChipsRow(
+            chips = listOf(
+                PlaylistFilter.LIBRARY to stringResource(R.string.filter_library),
+                PlaylistFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
+            ),
+            currentValue = filter,
+            onValueUpdate = {
+                filter = it
+                if (context.isSyncEnabled()){
+                    if (it == PlaylistFilter.LIBRARY) viewModel.sync()
+                }
+            },
+            isLoading = { filter ->
+                filter == PlaylistFilter.LIBRARY && isSyncingRemotePlaylists
+            }
+        )
+    }
+
     val headerContent = @Composable {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -206,13 +238,13 @@ fun LibraryPlaylistsScreen(
             if (libraryFilterContent == null) {
                 IconButton(
                     onClick = {
-                        viewTypeLocal = viewTypeLocal.toggle()
+                        playlistViewType = playlistViewType.toggle()
                     },
                     modifier = Modifier.padding(start = 6.dp, end = 6.dp)
                 ) {
                     Icon(
                         imageVector =
-                        when (viewTypeLocal) {
+                        when (playlistViewType) {
                             LibraryViewType.LIST -> Icons.AutoMirrored.Rounded.List
                             LibraryViewType.GRID -> Icons.Rounded.GridView
                         },
@@ -222,16 +254,6 @@ fun LibraryPlaylistsScreen(
             } else {
                 Spacer(Modifier.size(16.dp))
             }
-        }
-    }
-
-    LaunchedEffect(scrollToTop?.value) {
-        if (scrollToTop?.value == true) {
-            when (viewType) {
-                LibraryViewType.LIST -> lazyListState.animateScrollToItem(0)
-                LibraryViewType.GRID -> lazyGridState.animateScrollToItem(0)
-            }
-            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
         }
     }
 
@@ -248,7 +270,7 @@ fun LibraryPlaylistsScreen(
                         key = "filter",
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        libraryFilterContent?.let { it() }
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(
@@ -327,7 +349,7 @@ fun LibraryPlaylistsScreen(
                         span = { GridItemSpan(maxLineSpan) },
                         contentType = CONTENT_TYPE_HEADER
                     ) {
-                        libraryFilterContent?.let { it() }
+                        libraryFilterContent?.let { it() } ?: filterContent()
                     }
 
                     item(

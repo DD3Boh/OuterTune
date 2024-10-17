@@ -99,6 +99,7 @@ import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.Icon.FolderCopy
 import com.dd3boh.outertune.ui.menu.FolderMenu
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
+import com.dd3boh.outertune.ui.utils.getNSongsString
 import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.reportException
@@ -288,6 +289,10 @@ fun GridItem(
         )
     },
     subtitle = {
+        Row{
+            badges()
+        }
+
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
@@ -441,11 +446,21 @@ fun ArtistListItem(
                     .padding(end = 2.dp)
             )
         }
+
+        if (artist.downloadCount > 0) {
+            Icon(
+                imageVector = Icons.Rounded.OfflinePin,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
     },
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) = ListItem(
     title = artist.artist.name,
-    subtitle = pluralStringResource(R.plurals.n_song, artist.songCount, artist.songCount),
+    subtitle = getNSongsString(artist.songCount, artist.downloadCount),
     badges = badges,
     thumbnailContent = {
         AsyncImage(
@@ -480,11 +495,21 @@ fun ArtistGridItem(
                     .padding(end = 2.dp)
             )
         }
+
+        if (artist.downloadCount > 0) {
+            Icon(
+                imageVector = Icons.Rounded.OfflinePin,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
     },
     fillMaxWidth: Boolean = false,
 ) = GridItem(
     title = artist.artist.name,
-    subtitle = pluralStringResource(R.plurals.n_song, artist.songCount, artist.songCount),
+    subtitle = getNSongsString(artist.songCount, artist.downloadCount),
     badges = badges,
     thumbnailContent = {
         AsyncImage(
@@ -546,8 +571,8 @@ fun AlbumListItem(
     title = album.album.title,
     subtitle = joinByBullet(
         album.artists.joinToString { it.name },
-        album.album.songCount.takeIf { it != 0 }?.let { songCount ->
-            pluralStringResource(R.plurals.n_song, songCount, songCount)
+        album.takeIf { it.album.songCount != 0 }?.let { album ->
+            getNSongsString(album.album.songCount, album.downloadCount)
         },
         album.album.year?.toString()
     ),
@@ -715,9 +740,9 @@ fun PlaylistListItem(
     title = playlist.playlist.name,
     subtitle =
         if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
-            pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+            getNSongsString(playlist.playlist.remoteSongCount)
         else
-            pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
+            getNSongsString(playlist.songCount, playlist.downloadCount),
     badges = {
          Icon(
              imageVector = if (playlist.playlist.isEditable) Icons.Rounded.Edit else Icons.Rounded.EditOff,
@@ -730,6 +755,16 @@ fun PlaylistListItem(
         if (playlist.playlist.isLocal) {
             Icon(
                 imageVector = Icons.Rounded.CloudOff,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
+
+        if (playlist.downloadCount > 0) {
+            Icon(
+                imageVector = Icons.Rounded.OfflinePin,
                 contentDescription = null,
                 modifier = Modifier
                     .size(18.dp)
@@ -759,16 +794,25 @@ fun PlaylistListItem(
 fun PlaylistGridItem(
     playlist: Playlist,
     modifier: Modifier = Modifier,
-    badges: @Composable RowScope.() -> Unit = { },
     fillMaxWidth: Boolean = false,
 ) = GridItem(
     title = playlist.playlist.name,
     subtitle =
         if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null)
-            pluralStringResource(R.plurals.n_song, playlist.playlist.remoteSongCount, playlist.playlist.remoteSongCount)
+            getNSongsString(playlist.playlist.remoteSongCount)
         else
-            pluralStringResource(R.plurals.n_song, playlist.songCount, playlist.songCount),
-    badges = badges,
+            getNSongsString(playlist.songCount, playlist.downloadCount),
+    badges = {
+        if (playlist.downloadCount > 0) {
+            Icon(
+                imageVector = Icons.Rounded.OfflinePin,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 2.dp)
+            )
+        }
+    },
     thumbnailContent = {
         val width = maxWidth
         PlaylistThumbnail(
@@ -1069,10 +1113,13 @@ fun YouTubeCardItem(
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(8.dp).background(
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(ThumbnailCornerRadius)
-                ).size(20.dp)
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(ThumbnailCornerRadius)
+                    )
+                    .size(20.dp)
             ) {
                 PlayingIndicator(
                     color = MaterialTheme.colorScheme.primary,
