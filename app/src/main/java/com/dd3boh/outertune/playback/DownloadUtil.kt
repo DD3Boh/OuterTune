@@ -12,11 +12,14 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
+import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.DownloadService
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.FormatEntity
 import com.dd3boh.outertune.di.DownloadCache
+import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.utils.enumPreference
 import com.zionhuang.innertube.YouTube
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -117,6 +120,30 @@ class DownloadUtil @Inject constructor(
     val downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
 
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
+
+
+    fun download(songs: List<MediaMetadata>, context: Context) {
+        songs.forEach { song -> download(song, context) }
+    }
+
+    fun download(song: MediaMetadata, context: Context){
+        val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
+            .setCustomCacheKey(song.id)
+            .setData(song.title.toByteArray())
+            .build()
+        DownloadService.sendAddDownload(
+            context,
+            ExoDownloadService::class.java,
+            downloadRequest,
+            false)
+    }
+
+    fun ResumeDownloadsOnStart(context: Context){
+        DownloadService.sendResumeDownloads(
+            context,
+            ExoDownloadService::class.java,
+            false)
+    }
 
     init {
         val result = mutableMapOf<String, Download>()

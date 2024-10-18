@@ -44,8 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
-import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -84,6 +82,7 @@ fun YouTubeSongMenu(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val downloadUtil = LocalDownloadUtil.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val librarySong by database.song(song.id).collectAsState(initial = null)
@@ -259,16 +258,7 @@ fun YouTubeSongMenu(
                 database.transaction {
                     insert(song.toMediaMetadata())
                 }
-                val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
-                    .setCustomCacheKey(song.id)
-                    .setData(song.title.toByteArray())
-                    .build()
-                DownloadService.sendAddDownload(
-                    context,
-                    ExoDownloadService::class.java,
-                    downloadRequest,
-                    false
-                )
+                downloadUtil.download(song.toMediaMetadata(), context)
             },
             onRemoveDownload = {
                 DownloadService.sendRemoveDownload(

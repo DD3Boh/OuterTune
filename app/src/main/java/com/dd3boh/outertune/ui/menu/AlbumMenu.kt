@@ -50,12 +50,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
 import androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
 import androidx.media3.exoplayer.offline.Download.STATE_QUEUED
 import androidx.media3.exoplayer.offline.Download.STATE_STOPPED
-import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -305,18 +303,10 @@ fun AlbumMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songs.filterNot { it.song.isLocal }.forEach { song ->
-                    val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
-                        .setCustomCacheKey(song.id)
-                        .setData(song.song.title.toByteArray())
-                        .build()
-                    DownloadService.sendAddDownload(
-                        context,
-                        ExoDownloadService::class.java,
-                        downloadRequest,
-                        false
-                    )
-                }
+                val _songs = songs
+                    .filterNot { it.song.isLocal }
+                    .map{ it.toMediaMetadata() }
+                downloadUtil.download(_songs, context)
             },
             onRemoveDownload = {
                 songs.forEach { song ->
