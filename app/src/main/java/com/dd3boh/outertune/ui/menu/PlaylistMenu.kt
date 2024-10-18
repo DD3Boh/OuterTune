@@ -39,9 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -355,18 +353,8 @@ fun PlaylistMenu(
         DownloadGridMenu(
             state = downloadState,
             onDownload = {
-                songs.filterNot { it.song.isLocal }.forEach { song ->
-                    val downloadRequest = DownloadRequest.Builder(song.id, song.id.toUri())
-                        .setCustomCacheKey(song.id)
-                        .setData(song.song.title.toByteArray())
-                        .build()
-                    DownloadService.sendAddDownload(
-                        context,
-                        ExoDownloadService::class.java,
-                        downloadRequest,
-                        false
-                    )
-                }
+                val _songs = songs.filterNot { it.song.isLocal }.map{ it.toMediaMetadata() }
+                downloadUtil.download(_songs, context)
             },
             onRemoveDownload = {
                 showRemoveDownloadDialog = true
