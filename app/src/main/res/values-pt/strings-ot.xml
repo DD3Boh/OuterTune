@@ -196,7 +196,6 @@
     <string name="dl_size_used_cache">Interno: %s usados</string>
     <string name="dl_size_used_main">Externo: %s usados</string>
     <string name="dl_size_used_extra">Importação extra: %s usados</string>
-    <string name="dl_storage_tooltip"></string>
     <string name="restart_to_apply_changes">Reinicie a aplicação para aplicar as alterações</string>
     <string name="pause_remote_listen_history">Pausa na partilha do histórico de reprodução com YouTube Music</string>
     <string name="err_restore_incompatible_database">Não foi possível restaurar a base de dados incompatível</string>
