@@ -255,7 +255,7 @@ dependencies {
 
 afterEvaluate {
     dependencies {
-//        add("fullImplementation", "wah.mikooomich:ffmetadataex")
-        add("fullImplementation", files("../prebuilt/ffMetadataEx-release.aar"))
+        add("fullImplementation", "wah.mikooomich:ffmetadataex")
+//        add("fullImplementation", files("../prebuilt/ffMetadataEx-release.aar"))
     }
 }
