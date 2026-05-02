@@ -257,8 +257,7 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
 
             // check if this song is known to the library
             val songMatch = allLocalSongs.filter {
-                return@filter it.song.title.contains(song.song.title, true) &&
-                        compareSong(it, song.song, matchStrength, strictFileNames, strictFilePaths)
+                return@filter compareSong(it, song.song, matchStrength, strictFileNames, strictFilePaths)
             }
 
             if (SCANNER_DEBUG) {
