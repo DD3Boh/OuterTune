@@ -1,29 +1,29 @@
 [versions]
-aboutLibraries = "14.0.1"
+aboutLibraries = "15.0.4"
 adaptive = "1.2.0"
-agp = "9.2.0"
+agp = "9.3.1"
 annotation = "1.10.0"
-kotlin = "2.3.21"
-coil = "3.4.0"
-compose = "1.11.0"
+kotlin = "2.4.10"
+coil = "3.5.0"
+compose = "1.11.4"
 lazycolumnscrollbar = "2.2.0"
-lifecycle = "2.10.0"
+lifecycle = "2.11.0"
 material3 = "1.4.0"
-media3 = "1.8.0"
+media3 = "1.10.1"
 room = "2.8.4"
-hilt = "2.59.2"
+hilt = "2.60.1"
 ksp = "2.3.4"
 
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
-error-prone-core = { module = "com.google.errorprone:error_prone_core", version = "2.49.0" }
+error-prone-core = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
 guava = { group = "com.google.guava", name = "guava", version = "33.6.0-android" }
-coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version = "1.10.2" }
+coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version = "1.11.0" }
 concurrent-futures = { group = "androidx.concurrent", name = "concurrent-futures-ktx", version = "1.3.0" }
 
 gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 activity = { group = "androidx.activity", name = "activity-compose", version = "1.13.0" }
-hilt-navigation = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.3.0" }
+hilt-navigation = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.4.0" }
 datastore = { group = "androidx.datastore", name = "datastore-preferences", version = "1.2.1" }
 
 # compose
@@ -39,7 +39,7 @@ compose-icons-extended = { group = "androidx.compose.material", name = "material
 # ui
 coil = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 lazycolumnscrollbar = { group = "com.github.nanihadesuka", name = "LazyColumnScrollbar", version.ref = "lazycolumnscrollbar" }
-shimmer = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version = "1.4.0" }
+shimmer = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version = "1.5.0" }
 
 # material 3
 adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
@@ -63,6 +63,7 @@ hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 
 # misc
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.1.5" }
 

@@ -23,12 +23,12 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.dd3boh.outertune"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 71
         versionName = "0.11.0-a2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -246,6 +246,7 @@ dependencies {
     coreLibraryDesugaring(libs.desugaring)
 
     // misc
+    implementation(libs.aboutlibraries.core)
     implementation(libs.aboutlibraries.compose.m3)
 
     // modules
