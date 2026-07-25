@@ -65,7 +65,6 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", v
 # misc
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.1.5" }
 
 #junit = { group = "junit", name = "junit", version = "4.13.2" }
 

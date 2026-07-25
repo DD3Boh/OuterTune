@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 37
         versionCode = 71
         versionName = "0.11.0-a2"
@@ -118,7 +118,6 @@ android {
     }
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
@@ -242,8 +241,6 @@ dependencies {
 
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
-
-    coreLibraryDesugaring(libs.desugaring)
 
     // misc
     implementation(libs.aboutlibraries.core)
