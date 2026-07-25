@@ -791,7 +791,8 @@ fun BoxScope.QueueContent(
                                             contentDescription = null
                                         )
                                     }
-                                    if (!lockQueue && !detachedHead) {
+                                    // TODO: Reorder in queue is broken
+                                    if (false && !lockQueue && !detachedHead) {
                                         Icon(
                                             imageVector = Icons.Rounded.DragHandle,
                                             contentDescription = null,
