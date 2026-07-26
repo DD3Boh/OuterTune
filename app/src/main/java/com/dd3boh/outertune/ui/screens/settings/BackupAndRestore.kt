@@ -34,8 +34,10 @@ import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.dialog.InfoLabel
 import com.dd3boh.outertune.ui.screens.settings.fragments.BackupAndRestoreFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.ExportGramophoneFrag
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.viewmodels.BackupRestoreViewModel
+import com.dd3boh.outertune.viewmodels.GramophoneExportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +45,7 @@ fun BackupAndRestore(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
     viewModel: BackupRestoreViewModel = hiltViewModel(),
+//    viewModel2: GramophoneExportViewModel = hiltViewModel(),
 ) {
     ColumnWithContentPadding(
         modifier = Modifier.fillMaxHeight(),
@@ -55,6 +58,7 @@ fun BackupAndRestore(
         InfoLabel(stringResource(R.string.import_innertune_tooltip))
         Spacer(modifier = Modifier.height(8.dp))
         InfoLabel(stringResource(R.string.restore_lm_tooltip))
+//        ExportGramophoneFrag(viewModel2)
     }
 
     TopAppBar(

@@ -12,5 +12,5 @@ class PlayCountEntity(
     val song: String, // song id
     val year: Int = -1,
     val month: Int = -1,
-    val count: Int = -1,
+    var count: Int = -1,
 )

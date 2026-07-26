@@ -78,6 +78,7 @@ import com.dd3boh.outertune.utils.scanners.absoluteFilePathFromUri
 import com.dd3boh.outertune.utils.scanners.stringFromUriList
 import com.dd3boh.outertune.utils.scanners.uriListFromString
 import com.dd3boh.outertune.viewmodels.BackupRestoreViewModel
+import com.dd3boh.outertune.viewmodels.GramophoneExportViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -131,6 +132,35 @@ fun ColumnScope.BackupAndRestoreFrag(viewModel: BackupRestoreViewModel) {
         )
     }
 }
+
+@Composable
+fun ColumnScope.ExportGramophoneFrag(viewModel: GramophoneExportViewModel) {
+    val exportLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+            if (uri != null) {
+
+                viewModel.backup(uri, true)
+            }
+        }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        PreferenceEntry(
+            title = { Text("Export Gramophone database") },
+            icon = { Icon(Icons.Rounded.Backup, null) },
+            onClick = {
+                val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+                exportLauncher.launch(
+                    "Gramophone_${MusicDatabase.MUSIC_DATABASE_VERSION}_${
+                        LocalDateTime.now().format(formatter)
+                    }.backup"
+                )
+            }
+        )
+    }
+}
+
 
 @Composable
 fun ColumnScope.DownloadsFrag() {

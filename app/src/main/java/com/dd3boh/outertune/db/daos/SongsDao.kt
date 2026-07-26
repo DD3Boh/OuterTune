@@ -376,7 +376,7 @@ interface SongsDao {
      * Increment by one the play count with today's year and month.
      */
     fun incrementPlayCount(songId: String) {
-        val time = LocalDateTime.now().atOffset(ZoneOffset.UTC)
+        val time = LocalDateTime.now()
         var oldCount: Int
         runBlocking {
             oldCount = getPlayCountByMonth(songId, time.year, time.monthValue).first()

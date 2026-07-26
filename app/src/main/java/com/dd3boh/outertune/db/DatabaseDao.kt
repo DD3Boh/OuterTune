@@ -29,6 +29,7 @@ import com.dd3boh.outertune.db.entities.SongAlbumMap
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.db.entities.SongGenreMap
+import com.dd3boh.outertune.db.entities.SongWithPlaycount
 import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.MultiQueueObject
@@ -60,6 +61,10 @@ interface DatabaseDao : SongsDao, AlbumsDao, ArtistsDao, PlaylistsDao, QueueDao 
 
     @Query("DELETE FROM search_history")
     fun clearSearchHistory()
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE :localOnly = isLocal")
+    fun dumpPlayHistory(localOnly: Boolean): List<SongWithPlaycount>
 
     @Query("""
         SELECT * FROM genre
