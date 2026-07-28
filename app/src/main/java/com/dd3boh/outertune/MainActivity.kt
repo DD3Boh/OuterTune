@@ -608,6 +608,9 @@ class MainActivity : ComponentActivity() {
                                     composable("settings/experimental") {
                                         ExperimentalSettings(navController, scrollBehavior)
                                     }
+                                    composable("settings/shower_mode") {
+                                        com.dd3boh.outertune.ui.screens.showermode.ShowerModeScreen(navController)
+                                    }
                                     composable("settings/about") {
                                         AboutScreen(navController, scrollBehavior)
                                     }

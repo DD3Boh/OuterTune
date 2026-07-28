@@ -133,6 +133,11 @@ fun SettingsScreen(
                 icon = { Icon(Icons.Rounded.WarningAmber, null) },
                 onClick = { navController.navigate("settings/experimental") }
             )
+            PreferenceEntry(
+                title = { Text("Shower Mode") },
+                icon = { Icon(androidx.compose.material.icons.Icons.Rounded.Mic, null) },
+                onClick = { navController.navigate("settings/shower_mode") }
+            )
         }
         Spacer(modifier = Modifier.height(16.dp))
 
