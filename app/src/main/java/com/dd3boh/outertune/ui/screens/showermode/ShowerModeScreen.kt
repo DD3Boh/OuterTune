@@ -1,5 +1,4 @@
 package com.dd3boh.outertune.ui.screens.showermode
-
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
