@@ -900,7 +900,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            if (BuildConfig.DEBUG) {
+                            // Debug overlay removed
+                            if (false) {
                                 val debugColour = Color.Red
                                 Column(
                                     modifier = Modifier.padding(start = 50.dp, top = 100.dp)

@@ -28,6 +28,7 @@ import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.viewmodels.LocalSearchViewModel
+import com.dd3boh.outertune.models.toMediaMetadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
