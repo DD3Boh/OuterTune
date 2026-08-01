@@ -674,10 +674,6 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
         scannerProgressCurrent.value = 0
         scannerProgressProbe.value = 0
 
-        if (scanPaths.isEmpty()) {
-            return
-        }
-
         val projection = arrayListOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.DISPLAY_NAME,
@@ -719,7 +715,9 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
             selectionBuilder.append("${MediaStore.Audio.Media.DATA} LIKE ?")
             selectionArgs.add("$convertedPath%")
         }
-        selectionBuilder.append(")")
+        if (!scanPaths.isEmpty()) {
+            selectionBuilder.append(")")
+        }
         val selection = selectionBuilder.toString()
 
         // Query for audio files

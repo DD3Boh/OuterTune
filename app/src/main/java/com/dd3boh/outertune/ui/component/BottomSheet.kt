@@ -49,6 +49,7 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
@@ -162,7 +163,8 @@ fun BottomSheet(
                             colors = colors,
                             startY = startY,
                         )
-                    ),
+                    )
+                    .testTag("bottom_sheet"),
                 content = collapsedContent
             )
         }

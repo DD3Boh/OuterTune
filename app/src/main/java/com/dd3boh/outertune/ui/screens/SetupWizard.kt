@@ -74,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -476,7 +477,8 @@ fun SetupWizard(
                 FloatingActionButton(
                     modifier = Modifier
                         .padding(16.dp)
-                        .align(Alignment.BottomEnd),
+                        .align(Alignment.BottomEnd)
+                        .testTag("oobe_next_fab"),
                     onClick = {
                         if (oobeStatus == 0) {
                             oobeStatus += 1
