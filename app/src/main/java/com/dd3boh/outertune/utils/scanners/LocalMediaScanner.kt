@@ -674,6 +674,10 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
         scannerProgressCurrent.value = 0
         scannerProgressProbe.value = 0
 
+        if (scanPaths.isEmpty()) {
+            return
+        }
+
         val projection = arrayListOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.DISPLAY_NAME,
