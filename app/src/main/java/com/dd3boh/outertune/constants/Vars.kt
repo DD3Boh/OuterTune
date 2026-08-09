@@ -11,6 +11,8 @@ const val ENABLE_FFMETADATAEX = BuildConfig.FLAVOR == "full"
 
 const val M3U_EXPORT_RELATIVE_PATH = false
 
+const val GP_EXPORT = false
+
 /**
  * Extra configuration
  */

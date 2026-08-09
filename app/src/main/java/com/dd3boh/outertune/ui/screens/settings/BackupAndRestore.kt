@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.GP_EXPORT
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.button.IconButton
@@ -45,7 +46,6 @@ fun BackupAndRestore(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
     viewModel: BackupRestoreViewModel = hiltViewModel(),
-//    viewModel2: GramophoneExportViewModel = hiltViewModel(),
 ) {
     ColumnWithContentPadding(
         modifier = Modifier.fillMaxHeight(),
@@ -58,7 +58,10 @@ fun BackupAndRestore(
         InfoLabel(stringResource(R.string.import_innertune_tooltip))
         Spacer(modifier = Modifier.height(8.dp))
         InfoLabel(stringResource(R.string.restore_lm_tooltip))
-//        ExportGramophoneFrag(viewModel2)
+        if (GP_EXPORT) {
+            val viewModel2: GramophoneExportViewModel = hiltViewModel()
+            ExportGramophoneFrag(viewModel2)
+        }
     }
 
     TopAppBar(
