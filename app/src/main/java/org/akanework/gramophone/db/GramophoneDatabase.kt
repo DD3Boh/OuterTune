@@ -25,30 +25,32 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import org.akanework.gramophone.db.MusicDatabase2.Companion.MUSIC_DATABASE_VERSION
+import org.akanework.gramophone.db.GramophoneDatabase.Companion.MUSIC_DATABASE_VERSION
 import org.akanework.gramophone.db.entities.ChromaprintEntity
 import org.akanework.gramophone.db.entities.PlayEventEntity
 import org.akanework.gramophone.db.entities.PlayEventLegacyEntity
+import org.akanework.gramophone.db.entities.QueueEntity
+import org.akanework.gramophone.db.entities.QueueSongMap
 import org.akanework.gramophone.db.entities.SongEntity
 import org.akanework.gramophone.db.entities.SongTagEntity
 
 
-class MusicDatabase2(
-    private val delegate: InternalDatabase2,
+class GramophoneDatabase(
+    private val delegate: AppDatabase,
 ) : DatabaseDao by delegate.dao {
     val openHelper: SupportSQLiteOpenHelper
         get() = delegate.openHelper
 
-    fun query(block: MusicDatabase2.() -> Unit) = with(delegate) {
+    fun query(block: GramophoneDatabase.() -> Unit) = with(delegate) {
         queryExecutor.execute {
-            block(this@MusicDatabase2)
+            block(this@GramophoneDatabase)
         }
     }
 
-    fun transaction(block: MusicDatabase2.() -> Unit) = with(delegate) {
+    fun transaction(block: GramophoneDatabase.() -> Unit) = with(delegate) {
         transactionExecutor.execute {
             runInTransaction {
-                block(this@MusicDatabase2)
+                block(this@GramophoneDatabase)
             }
         }
     }
@@ -67,6 +69,8 @@ class MusicDatabase2(
         PlayEventEntity::class,
         PlayEventLegacyEntity::class,
         ChromaprintEntity::class,
+        QueueEntity::class,
+        QueueSongMap::class,
     ],
     version = MUSIC_DATABASE_VERSION,
     exportSchema = true,
@@ -74,31 +78,33 @@ class MusicDatabase2(
     ]
 )
 
-abstract class InternalDatabase2 : RoomDatabase() {
+abstract class AppDatabase : RoomDatabase() {
     abstract val dao: DatabaseDao
 
     companion object {
-        const val DB_NAME = "gramophone_song.db"
+        const val DB_NAME = "gramophone_data.db"
+        const val TEST_DB_NAME = "probe_song.db"
 
-        fun newInstance(context: Context): MusicDatabase2 =
-            MusicDatabase2(
-                delegate = Room.databaseBuilder(context, InternalDatabase2::class.java, DB_NAME)
+        fun newInstance(context: Context): GramophoneDatabase =
+            GramophoneDatabase(
+                delegate = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
                     .build()
             )
 
         // keep this separate in the rare case we come across concepts of a plan to support migrations from other forks
-        fun newTestInstance(context: Context, dbName: String): MusicDatabase2 =
-            MusicDatabase2(
-                delegate = Room.databaseBuilder(context, InternalDatabase2::class.java, dbName)
+        fun newTestInstance(context: Context, dbName: String): GramophoneDatabase =
+            GramophoneDatabase(
+                delegate = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
                     .build()
             )
 
-        fun newUnitTestInstance(context: Context): MusicDatabase2 =
-            MusicDatabase2(
-                delegate = Room.databaseBuilder(context, InternalDatabase2::class.java, "unit_test")
+        fun newUnitTestInstance(context: Context): GramophoneDatabase =
+            GramophoneDatabase(
+                delegate = Room.databaseBuilder(context, AppDatabase::class.java, "unit_test")
                     .allowMainThreadQueries()
                     .build()
             )
+
 
         fun genMediaItem(
             chromaprint: String?,

@@ -56,34 +56,32 @@ interface PlayCountDao : SongDao {
         val runPostmigrate = knownChromaprints.isEmpty() && chromaprint != null
 
         if (dbSong == null) {
-            val songId = SongEntity.generateSongIdForUnitTests()
             dbSong = Song(
                 song = SongEntity(
-                    id = songId,
-                    uri = mediaItem.localConfiguration?.uri?.path,
+                    uri = mediaItem.localConfiguration?.uri.toString(),
                     title = s.title.toString(),
                     artist = s.artist.toString(),
                     album = s.albumTitle.toString(),
                     year = s.recordingYear
                 ),
                 chromaprints = if (chromaprint != null) {
-                    listOf(ChromaprintEntity(chromaprint = chromaprint, songId = songId))
+                    listOf(ChromaprintEntity(chromaprint = chromaprint, songId = 0))
                 } else {
                     emptyList()
                 }
             )
         }
 
-        insert(dbSong, knownChromaprints)
+        val songId = insert(dbSong, knownChromaprints)
         _recordEvent(
             PlayEventEntity(
-                songId = dbSong.song.id,
+                songId = songId,
                 timestamp = timestamp,
                 duration = duration
             )
         )
         if (runPostmigrate) {
-            insert(ChromaprintEntity(chromaprint = chromaprint, songId = dbSong.song.id))
+            insert(ChromaprintEntity(chromaprint = chromaprint, songId = songId))
             mergeSongsByChromaprint()
         }
     }
@@ -108,10 +106,8 @@ interface PlayCountDao : SongDao {
         val runPostmigrate = knownChromaprints.isEmpty() && chromaprint != null
 
         if (dbSong == null) {
-            val songId = SongEntity.generateSongIdForUnitTests()
             dbSong = Song(
                 song = SongEntity(
-                    id = songId,
                     uri = mediaItem.localConfiguration?.uri?.path,
                     title = s.title.toString(),
                     artist = s.artist.toString(),
@@ -119,17 +115,17 @@ interface PlayCountDao : SongDao {
                     year = s.recordingYear
                 ),
                 chromaprints = if (chromaprint != null) {
-                    listOf(ChromaprintEntity(chromaprint = chromaprint, songId = songId))
+                    listOf(ChromaprintEntity(chromaprint = chromaprint, songId = 0))
                 } else {
                     emptyList()
                 }
             )
         }
 
-        insert(dbSong, knownChromaprints)
+        val songId = insert(dbSong, knownChromaprints)
         _recordEventLegacy(
             PlayEventLegacyEntity(
-                songId = dbSong.song.id,
+                songId = songId,
                 year = year,
                 month = month,
                 count = count
@@ -137,7 +133,7 @@ interface PlayCountDao : SongDao {
         )
 
         if (runPostmigrate) {
-            insert(ChromaprintEntity(chromaprint = chromaprint, songId = dbSong.song.id))
+            insert(ChromaprintEntity(chromaprint = chromaprint, songId = songId))
             mergeSongsByChromaprint()
         }
     }

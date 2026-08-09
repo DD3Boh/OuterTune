@@ -20,18 +20,25 @@ interface SongDao {
 
 
     @Transaction
-    fun insert(song: Song, knownChromaprints: List<ChromaprintEntity>) {
-        upsert(song.song)
+    fun insert(song: Song, knownChromaprints: List<ChromaprintEntity>): Long {
+        val songId = upsert(song.song).let {
+            if (it == -1L) {
+                song.song.id
+            } else {
+                it
+            }
+        }
         song.chromaprints
             .filter { c -> knownChromaprints.none { it.chromaprint == c.chromaprint } }
             .forEach {
-                insert(it)
+                insert(it.copy(songId = songId))
             }
+        return songId
     }
 
 
     @Upsert
-    fun upsert(songEntity: SongEntity)
+    fun upsert(songEntity: SongEntity): Long
 
     @Delete
     fun delete(songEntity: SongEntity)
@@ -39,6 +46,7 @@ interface SongDao {
 
     // Getters
 
+    @Transaction
     @Query(
         """
         SELECT song.* FROM song
@@ -51,6 +59,7 @@ interface SongDao {
     @Query("SELECT * FROM song WHERE id = :id")
     fun getSongById(id: Long): SongEntity?
 
+    @Transaction
     @Query(
         """
         SELECT * FROM song 
@@ -62,13 +71,13 @@ interface SongDao {
     fun getSongByChromaprint(chromaprint: String): Song?
 
     // TODO: do we care if all fallbacks are null
+    @Transaction
     @Query(
         """
         SELECT * FROM song
         WHERE uri IS NOT NULL AND uri = :filePath AND title = :title AND artist = :artist
     """
     )
-
     fun getSongByFallbacks(
         filePath: String?,
         title: String,

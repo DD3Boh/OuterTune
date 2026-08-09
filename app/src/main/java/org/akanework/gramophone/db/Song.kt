@@ -16,9 +16,12 @@
  */
 package org.akanework.gramophone.db
 
+import androidx.compose.ui.util.fastSumBy
 import androidx.room.Embedded
 import androidx.room.Relation
 import org.akanework.gramophone.db.entities.ChromaprintEntity
+import org.akanework.gramophone.db.entities.PlayEventEntity
+import org.akanework.gramophone.db.entities.PlayEventLegacyEntity
 import org.akanework.gramophone.db.entities.SongEntity
 
 data class Song(
@@ -32,12 +35,31 @@ data class Song(
 
 data class SongWithPlaycount(
     @Embedded val song: SongEntity,
-    val playCount: Int,
-    val playCountLegacy: Int,
     @Relation(
         parentColumn = "id",
         entityColumn = "songId"
     )
-    val chromaprints: List<ChromaprintEntity>
-)
+    val chromaprints: List<ChromaprintEntity>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "songId"
+    )
+    val playEvents: List<PlayEventEntity>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "songId"
+    )
+    val playEventsLegacy: List<PlayEventLegacyEntity>,
+) {
+    val playcount
+        get() = playEvents.size + playEventsLegacy.fastSumBy { it.count }
+}
 
+data class PlayEventWithSong(
+    @Embedded val event: PlayEventEntity,
+    @Relation(
+        parentColumn = "songId",
+        entityColumn = "id"
+    )
+    val song: SongEntity
+)

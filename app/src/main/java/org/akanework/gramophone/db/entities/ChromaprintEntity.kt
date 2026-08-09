@@ -17,8 +17,10 @@
 package org.akanework.gramophone.db.entities
 
 import androidx.compose.runtime.Immutable
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Immutable
@@ -31,7 +33,8 @@ import androidx.room.PrimaryKey
             childColumns = ["songId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["songId"])]
 )
 data class ChromaprintEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

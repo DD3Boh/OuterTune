@@ -1,12 +1,15 @@
 package com.dd3boh.outertune.viewmodels
 
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.db.InternalDatabase
@@ -19,8 +22,10 @@ import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.akanework.gramophone.db.InternalDatabase2
+import kotlinx.coroutines.withContext
+import org.akanework.gramophone.db.AppDatabase
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.LocalDateTime
@@ -152,114 +157,127 @@ class GramophoneExportViewModel @Inject constructor(
     val TAG = BackupRestoreViewModel::class.simpleName.toString()
 
 
-    val gramophoneDatabase = InternalDatabase2.newInstance(context)
+    val gramophoneDatabase = AppDatabase.newInstance(context)
 
     var gramophoneSongId = 0L
 
     fun backup(uri: Uri, localOnly: Boolean = true) {
-        runCatching {
-            val dbFile = context.getDatabasePath(InternalDatabase2.DB_NAME)
-            if (dbFile.exists()) {
-                dbFile.delete()
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val dbFile = context.getDatabasePath(AppDatabase.DB_NAME)
+                if (dbFile.exists()) {
+                    dbFile.delete()
+                }
 
 //            Looper.prepare()
-            val rawDb = database.dumpPlayHistory(localOnly).filter { !it.playCount.isEmpty() || !it.event.isEmpty() }
+                val rawDb =
+                    database.dumpPlayHistory(localOnly).filter { !it.playCount.isEmpty() || !it.event.isEmpty() }
 
-            // due to a very apparent skill issue, I tracked play counts and history simultaneously. Fsck.
-            // Subtract event from playCount
-            val history = rawDb.map { song ->
-                val s = song.song
-                val pc = song.playCount
-                val e = song.event
+                // due to a very apparent skill issue, I tracked play counts and history simultaneously. Fsck.
+                // Subtract event from playCount
+                val history = rawDb.map { song ->
+                    val s = song.song
+                    val pc = song.playCount
+                    val e = song.event
 
-                if (e.isEmpty() || pc.isEmpty()) {
-                    song
-                } else {
-                    e.forEach { event ->
-                        fun add1Month(year: Int, month: Int): Pair<Int, Int> {
-                            return if (month == 12) {
-                                Pair(year + 1, 1)
-                            } else {
-                                Pair(year, month + 1)
-                            }
-                        }
-                        for (playCount in pc) {
-                            val nextMonth = add1Month(playCount.year, playCount.month)
-                            val start = LocalDateTime.of(playCount.year, playCount.month, 1, 0, 0)
-
-                            val end = LocalDateTime.of(nextMonth.first, nextMonth.second, 1, 0, 0).minusSeconds(1)
-                            // subtract from a pc if the even is in range of this month to the next
-
-                            if (event.timestamp.atOffset(ZoneOffset.UTC).toLocalDateTime() in start..<end) {
-                                // this is possible ffs
-                                if (playCount.count > 0) {
-                                    playCount.count -= 1
+                    if (e.isEmpty() || pc.isEmpty()) {
+                        song
+                    } else {
+                        e.forEach { event ->
+                            fun add1Month(year: Int, month: Int): Pair<Int, Int> {
+                                return if (month == 12) {
+                                    Pair(year + 1, 1)
+                                } else {
+                                    Pair(year, month + 1)
                                 }
-//                                assert(playCount.count >= 0)
-                                return@forEach
                             }
+                            for (playCount in pc) {
+                                val nextMonth = add1Month(playCount.year, playCount.month)
+                                val start = LocalDateTime.of(playCount.year, playCount.month, 1, 0, 0)
+
+                                val end = LocalDateTime.of(nextMonth.first, nextMonth.second, 1, 0, 0).minusSeconds(1)
+                                // subtract from a pc if the even is in range of this month to the next
+
+                                if (event.timestamp.atOffset(ZoneOffset.UTC).toLocalDateTime() in start..<end) {
+                                    // this is possible ffs
+                                    if (playCount.count > 0) {
+                                        playCount.count -= 1
+                                    }
+//                                assert(playCount.count >= 0)
+                                    return@forEach
+                                }
+                            }
+
+
                         }
 
-
-                    }
-
-                    song.copy(playCount = pc.filter { it.count > 0 })
-                }
-            }
-
-            history.forEach { song ->
-                val s = song.song
-                val pc = song.playCount
-                val e = song.event
-
-                val mediaItem = InternalDatabase2.genMediaItem(
-                    chromaprint = s.acoustid,
-                    title = s.title,
-                    artist = song.artists.joinToString(";"),
-                    album = s.albumName,
-                    uri = s.localPath?.toUri(),
-                )
-
-                e.forEach {
-                    gramophoneDatabase.recordEvent(
-                        mediaItem,
-                        it.timestamp.toEpochSecond(ZoneOffset.UTC),
-                        it.playTime
-
-                    )
-                }
-                pc.forEach {
-                    assert(it.count > 0)
-                    gramophoneDatabase.recordEventLegacy(
-                        mediaItem,
-                        month = it.month,
-                        year = it.year,
-                        count = it.count
-                    )
-                }
-            }
-
-            context.applicationContext.contentResolver.openOutputStream(uri)?.use {
-                it.buffered().zipOutputStream().use { outputStream ->
-                    outputStream.setLevel(Deflater.BEST_COMPRESSION)
-//                    runBlocking(Dispatchers.IO) {
-//                        gramophoneDatabase.checkpoint()
-//                    }
-                    FileInputStream(gramophoneDatabase.openHelper.writableDatabase.path).use { inputStream ->
-                        outputStream.putNextEntry(ZipEntry(InternalDatabase2.DB_NAME))
-                        inputStream.copyTo(outputStream)
+                        song.copy(playCount = pc.filter { it.count > 0 })
                     }
                 }
-            }
-        }.onSuccess {
-            gramophoneDatabase.close()
-            Toast.makeText(context, "Successfully created export", Toast.LENGTH_SHORT).show()
-        }.onFailure {
 
-            reportException(it)
-            gramophoneDatabase.close()
-            Toast.makeText(context, "Failed to create export. See adb logcat", Toast.LENGTH_SHORT).show()
+                var nextProgress = 0
+                history.forEachIndexed { index, song ->
+                    val progress = ((index + 1) * 100) / history.size
+                    if (progress >= nextProgress) {
+                        viewModelScope.launch(Dispatchers.Main) {
+                            Toast.makeText(context, "Export progress: $progress%", Toast.LENGTH_SHORT).show()
+                        }
+                        nextProgress += 10
+                    }
+                    val s = song.song
+                    val pc = song.playCount
+                    val e = song.event
+
+                    val mediaItem = AppDatabase.genMediaItem(
+                        chromaprint = s.acoustid,
+                        title = s.title,
+                        artist = song.artists.map { it.name }.joinToString(";"),
+                        album = s.albumName,
+                        uri = s.localPath?.toUri(),
+                    )
+
+                    e.forEach {
+                        gramophoneDatabase.recordEvent(
+                            mediaItem,
+                            it.timestamp.toEpochSecond(ZoneOffset.UTC),
+                            it.playTime
+
+                        )
+                    }
+                    pc.forEach {
+                        assert(it.count > 0)
+                        gramophoneDatabase.recordEventLegacy(
+                            mediaItem,
+                            month = it.month,
+                            year = it.year,
+                            count = it.count
+                        )
+                    }
+                }
+
+                context.applicationContext.contentResolver.openOutputStream(uri)?.use {
+                    it.buffered().zipOutputStream().use { outputStream ->
+                        outputStream.setLevel(Deflater.BEST_COMPRESSION)
+                        gramophoneDatabase.checkpoint()
+                        FileInputStream(gramophoneDatabase.openHelper.writableDatabase.path).use { inputStream ->
+                            outputStream.putNextEntry(ZipEntry(AppDatabase.DB_NAME))
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                }
+            }.onSuccess {
+                gramophoneDatabase.close()
+                viewModelScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Successfully created export", Toast.LENGTH_SHORT).show()
+                }
+            }.onFailure {
+
+                reportException(it)
+                gramophoneDatabase.close()
+                viewModelScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Failed to create export. See adb logcat", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 }
