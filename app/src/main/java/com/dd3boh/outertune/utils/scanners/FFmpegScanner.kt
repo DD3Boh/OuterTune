@@ -156,7 +156,7 @@ class FFmpegScanner() : MetadataScanner {
                             }
                         }
                     }
-                    "ACOUSTID_ID" -> {
+                    "ACOUSTID_FINGERPRINT" -> {
                         acoustid = it.substringAfter(':').trim()
                     }
 
