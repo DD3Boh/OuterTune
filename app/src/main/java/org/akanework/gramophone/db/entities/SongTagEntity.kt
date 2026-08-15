@@ -7,6 +7,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+//import org.akanework.gramophone.logic.getFile
 import uk.akane.libphonograph.items.EXTRA_ADD_DATE
 import uk.akane.libphonograph.items.EXTRA_ALBUM_ID
 import uk.akane.libphonograph.items.EXTRA_ALBUM_YEAR
@@ -116,12 +117,13 @@ fun SongTagEntity.toMediaItem(): MediaItem {
         .build()
 }
 
+/*
 fun MediaItem.toSongTagEntity(): SongTagEntity {
     val md = mediaMetadata
     return SongTagEntity(
         mediaId = mediaId,
         uri = localConfiguration?.uri.toString(),
-        path = localConfiguration?.uri.toString(),
+        path = getFile()?.path,
         mimeType = localConfiguration?.mimeType,
         title = md.title?.toString(),
         artist = md.artist?.toString(),
@@ -151,3 +153,4 @@ fun MediaItem.toSongTagEntity(): SongTagEntity {
         albumId = md.albumId,
     )
 }
+*/

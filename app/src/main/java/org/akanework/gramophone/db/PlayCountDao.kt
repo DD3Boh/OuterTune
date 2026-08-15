@@ -26,6 +26,7 @@ import org.akanework.gramophone.db.entities.ChromaprintEntity
 import org.akanework.gramophone.db.entities.PlayEventEntity
 import org.akanework.gramophone.db.entities.PlayEventLegacyEntity
 import org.akanework.gramophone.db.entities.SongEntity
+import java.time.LocalDateTime
 
 @Dao
 interface PlayCountDao : SongDao {
@@ -37,8 +38,8 @@ interface PlayCountDao : SongDao {
     fun _recordEventLegacy(event: PlayEventLegacyEntity)
 
 
-    @Transaction
-    fun recordEvent(mediaItem: MediaItem, timestamp: Long, duration: Long) {
+//    @Transaction // outertune override
+    fun recordEvent(mediaItem: MediaItem, timestamp: LocalDateTime, duration: Long) {
         val s = mediaItem.mediaMetadata
         val chromaprint = s.extras?.getString("chromaprint")
 
@@ -86,7 +87,7 @@ interface PlayCountDao : SongDao {
         }
     }
 
-    @Transaction
+//    @Transaction // outertune override
     fun recordEventLegacy(mediaItem: MediaItem, month: Int, year: Int, count: Int) {
         if (month !in 0..12) throw IllegalArgumentException("Months must be a number from (inclusive) 1-12, or 0 to signify an unknown month")
         val s = mediaItem.mediaMetadata
@@ -177,8 +178,14 @@ interface PlayCountDao : SongDao {
         songs.groupBy { find(it.song.id) }.values
             .filter { it.size > 1 }
             .forEach { duplicates ->
+                val duplicates = ArrayList(duplicates)
                 // for all intents and purposes, the song we merge into doesnt matter
-                val adopter = duplicates.first()
+                val index = duplicates.indexOf(duplicates.firstOrNull { !it.song.mergeable })
+                val adopter = if (index == -1) {
+                    duplicates.first()
+                } else {
+                    duplicates.removeAt(index)
+                }
                 duplicates.subList(1, duplicates.size).forEach {
                     migrateSongEvents(it.song.id, adopter.song.id)
                     delete(it.song)

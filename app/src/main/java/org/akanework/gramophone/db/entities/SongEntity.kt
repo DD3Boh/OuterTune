@@ -29,6 +29,7 @@ data class SongEntity(
     val artist: String?,
     val album: String?,
     val year: Int?,
+    val mergeable: Boolean = true
 ) {
     companion object {
         var hax = 1L

@@ -22,10 +22,12 @@ import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.akanework.gramophone.db.AppDatabase
+import org.akanework.gramophone.db.genMediaItem
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.LocalDateTime
@@ -156,6 +158,8 @@ class GramophoneExportViewModel @Inject constructor(
 ) : ViewModel() {
     val TAG = BackupRestoreViewModel::class.simpleName.toString()
 
+    val backupProgressTotal = MutableStateFlow(0f)
+    val lock = MutableStateFlow(false)
 
     val gramophoneDatabase = AppDatabase.newInstance(context)
 
@@ -163,6 +167,7 @@ class GramophoneExportViewModel @Inject constructor(
 
     fun backup(uri: Uri, localOnly: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
+            lock.value = true
             runCatching {
                 val dbFile = context.getDatabasePath(AppDatabase.DB_NAME)
                 if (dbFile.exists()) {
@@ -215,20 +220,19 @@ class GramophoneExportViewModel @Inject constructor(
                     }
                 }
 
-                var nextProgress = 0
+                var nextProgress = 0f
+                backupProgressTotal.value = 0f
                 history.forEachIndexed { index, song ->
-                    val progress = ((index + 1) * 100) / history.size
+                    val progress = ((index + 1)) / history.size.toFloat()
                     if (progress >= nextProgress) {
-                        viewModelScope.launch(Dispatchers.Main) {
-                            Toast.makeText(context, "Export progress: $progress%", Toast.LENGTH_SHORT).show()
-                        }
-                        nextProgress += 10
+                        backupProgressTotal.value = progress
+                        nextProgress += 0.1f
                     }
                     val s = song.song
                     val pc = song.playCount
                     val e = song.event
 
-                    val mediaItem = AppDatabase.genMediaItem(
+                    val mediaItem = genMediaItem(
                         chromaprint = s.acoustid,
                         title = s.title,
                         artist = song.artists.map { it.name }.joinToString(";"),
@@ -236,24 +240,27 @@ class GramophoneExportViewModel @Inject constructor(
                         uri = s.localPath?.toUri(),
                     )
 
-                    e.forEach {
-                        gramophoneDatabase.recordEvent(
-                            mediaItem,
-                            it.timestamp.toEpochSecond(ZoneOffset.UTC),
-                            it.playTime
+                    gramophoneDatabase.transaction {
+                        e.forEach {
+                            recordEvent(
+                                mediaItem,
+                                it.timestamp,
+                                it.playTime
+                            )
+                        }
 
-                        )
-                    }
-                    pc.forEach {
-                        assert(it.count > 0)
-                        gramophoneDatabase.recordEventLegacy(
-                            mediaItem,
-                            month = it.month,
-                            year = it.year,
-                            count = it.count
-                        )
+                        pc.forEach {
+                            assert(it.count > 0)
+                            recordEventLegacy(
+                                mediaItem,
+                                month = it.month,
+                                year = it.year,
+                                count = it.count
+                            )
+                        }
                     }
                 }
+                backupProgressTotal.value = 1f
 
                 context.applicationContext.contentResolver.openOutputStream(uri)?.use {
                     it.buffered().zipOutputStream().use { outputStream ->
@@ -278,6 +285,7 @@ class GramophoneExportViewModel @Inject constructor(
                     Toast.makeText(context, "Failed to create export. See adb logcat", Toast.LENGTH_SHORT).show()
                 }
             }
+            lock.value = false
         }
     }
 }

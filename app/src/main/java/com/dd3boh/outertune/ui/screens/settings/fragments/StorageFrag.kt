@@ -143,6 +143,9 @@ fun ColumnScope.ExportGramophoneFrag(viewModel: GramophoneExportViewModel) {
             }
         }
 
+    val progress by viewModel.backupProgressTotal.collectAsState()
+    val lock by viewModel.lock.collectAsState()
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -158,6 +161,13 @@ fun ColumnScope.ExportGramophoneFrag(viewModel: GramophoneExportViewModel) {
                 )
             }
         )
+        if (lock || progress != 0f) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+        }
     }
 }
 

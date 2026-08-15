@@ -21,6 +21,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
+import java.time.LocalDateTime
 
 /**
  * Timestamp + duration record
@@ -40,7 +41,7 @@ import androidx.room.PrimaryKey
 data class PlayEventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(index = true) val songId: Long,
-    val timestamp: Long,
+    val timestamp: LocalDateTime,
     val duration: Long
 )
 

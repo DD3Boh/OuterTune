@@ -51,8 +51,12 @@ data class SongWithPlaycount(
     )
     val playEventsLegacy: List<PlayEventLegacyEntity>,
 ) {
-    val playcount
+    val totalPlaycount
         get() = playEvents.size + playEventsLegacy.fastSumBy { it.count }
+    val playcount
+        get() = playEvents.size
+    val playcountLegacy
+        get() = playEventsLegacy.fastSumBy { it.count }
 }
 
 data class PlayEventWithSong(

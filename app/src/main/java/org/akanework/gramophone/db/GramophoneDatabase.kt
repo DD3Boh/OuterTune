@@ -17,13 +17,11 @@
 package org.akanework.gramophone.db
 
 import android.content.Context
-import android.net.Uri
-import android.os.Bundle
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import org.akanework.gramophone.db.GramophoneDatabase.Companion.MUSIC_DATABASE_VERSION
 import org.akanework.gramophone.db.entities.ChromaprintEntity
@@ -33,6 +31,9 @@ import org.akanework.gramophone.db.entities.QueueEntity
 import org.akanework.gramophone.db.entities.QueueSongMap
 import org.akanework.gramophone.db.entities.SongEntity
 import org.akanework.gramophone.db.entities.SongTagEntity
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 
 class GramophoneDatabase(
@@ -48,10 +49,8 @@ class GramophoneDatabase(
     }
 
     fun transaction(block: GramophoneDatabase.() -> Unit) = with(delegate) {
-        transactionExecutor.execute {
-            runInTransaction {
-                block(this@GramophoneDatabase)
-            }
+        runInTransaction { // Outertune override
+            block(this@GramophoneDatabase)
         }
     }
 
@@ -78,6 +77,7 @@ class GramophoneDatabase(
     ]
 )
 
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract val dao: DatabaseDao
 
@@ -104,36 +104,16 @@ abstract class AppDatabase : RoomDatabase() {
                     .allowMainThreadQueries()
                     .build()
             )
-
-
-        fun genMediaItem(
-            chromaprint: String?,
-            title: String?,
-            artist: String?,
-            album: String?,
-
-            uri: Uri?,
-            id: String? = null,
-        ): MediaItem {
-            if (chromaprint == null && title == null) throw IllegalArgumentException("chromaprint or title must be defined")
-            val metadata = MediaMetadata.Builder()
-                .setTitle(title.takeIf { !it.isNullOrBlank() })
-                .setArtist(artist.takeIf { !it.isNullOrBlank() })
-                .setAlbumTitle(album.takeIf { !it.isNullOrBlank() })
-
-            if (chromaprint != null) {
-                metadata.setExtras(Bundle().apply { putString("chromaprint", chromaprint) })
-            }
-
-            val mediaItem =  MediaItem.Builder()
-                .setUri(uri)
-                .setMediaMetadata(metadata.build())
-
-            id?.let {
-                mediaItem.setMediaId(it)
-            }
-
-            return mediaItem.build()
-        }
     }
+}
+
+class Converters {
+    @TypeConverter
+    fun fromTimestamp(value: Long?): LocalDateTime? =
+        if (value != null) LocalDateTime.ofInstant(Instant.ofEpochMilli(value), ZoneOffset.UTC)
+        else null
+
+    @TypeConverter
+    fun dateToTimestamp(date: LocalDateTime?): Long? =
+        date?.atZone(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
 }
