@@ -70,7 +70,7 @@ class FFmpegScanner() : MetadataScanner {
                 throw RuntimeException("Fatal FFmpeg scanner extraction error. Status: ${data.status}")
             }
             if (EXTRACTOR_DEBUG && DEBUG_SAVE_OUTPUT) {
-                Log.v(EXTRACTOR_TAG, "Full output for: ${file.absolutePath} \n $data")
+                Log.v(EXTRACTOR_TAG, "Full output for: ${data.extrasRaw.joinToString { "$it\n" }}")
             }
 
             val songId = SongEntity.generateSongId()
@@ -156,7 +156,7 @@ class FFmpegScanner() : MetadataScanner {
                             }
                         }
                     }
-                    "ACOUSTID_FINGERPRINT" -> {
+                    "ACOUSTID_FINGERPRINT", "Acoustid Fingerprint" -> {
                         acoustid = it.substringAfter(':').trim()
                     }
 
