@@ -155,6 +155,7 @@ class MusicService : MediaLibraryService(),
     lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
 
     private val binder = MusicBinder()
+    private lateinit var connectivityManager: ConnectivityManager
 
     val qbInit = MutableStateFlow(false)
     var queueBoard = MutableStateFlow(QueueBoard(this, maxQueues = 1))
@@ -176,8 +177,6 @@ class MusicService : MediaLibraryService(),
     private val isNetworkConnected = MutableStateFlow(true)
 
     lateinit var sleepTimer: SleepTimer
-
-    private lateinit var playbackStatsListener: PlaybackStatsListener
 
     // Player vars
     val currentMediaMetadata = MutableStateFlow<MediaMetadata?>(null)
@@ -205,8 +204,6 @@ class MusicService : MediaLibraryService(),
         val isGaplessOffloadAllowed = dataStore.get(AudioGaplessOffloadKey, false)
         playerVolume = MutableStateFlow(dataStore.get(PlayerVolumeKey, 1f).coerceIn(0f, 1f))
 
-        playbackStatsListener = PlaybackStatsListener(false, this@MusicService)
-
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(createDataSourceFactory()))
             .setRenderersFactory(createRenderersFactory(isGaplessOffloadAllowed))
@@ -223,9 +220,10 @@ class MusicService : MediaLibraryService(),
             .build()
             .apply {
                 // listeners
+                addListener(this@MusicService)
                 sleepTimer = SleepTimer(scope, this)
                 addListener(sleepTimer)
-                addAnalyticsListener(playbackStatsListener)
+                addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
 
                 // misc
                 setOffloadEnabled(dataStore.get(AudioOffloadKey, false))
@@ -244,7 +242,7 @@ class MusicService : MediaLibraryService(),
                     this,
                     0,
                     Intent(this, MainActivity::class.java),
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                    PendingIntent.FLAG_IMMUTABLE
                 )
             )
             // TODO: do i even want to have smaller art for media notification
@@ -257,6 +255,8 @@ class MusicService : MediaLibraryService(),
         val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
         val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
         controllerFuture.addListener({ controllerFuture.get() }, MoreExecutors.directExecutor())
+
+        connectivityManager = getSystemService()!!
 
         currentSong.collect(scope) {
             updateNotification()
