@@ -167,4 +167,11 @@
     <string name="flat_subfolders_description">Kui soovid säilitada failipuu struktuuri kettal, siis lülita see valik välja</string>
     <string name="dl_migrate_title">Tõsta allalaaditu välisesse andmeruumi…</string>
     <string name="dl_migrate_description">Tõsta allalaaditu rakenduse sisemisest andmeruumist nutiseadme välisesse andmeruumi</string>
+    <string name="tab_arrangement_home_required">Avalehe vahekaart on nõutav.</string>
+    <string name="tablet_ui_title">Pruugi sundkorras tahvelarvuti kasutajaliidest</string>
+    <string name="tablet_ui_title_description">Pruugi sundkorras suure ekraani jaoks optimeeritud jagatud kasutajaliidest. Sellel seadistusel pole mõju, kui minimaalse laiusega seotud nõuded ei ole täidetud</string>
+    <string name="scan_paths_description">Seadista kohaliku andmeruumi kaustu, kust peaks lugusid otsima</string>
+    <string name="scan_paths_title">Seadista lugude skaneerimise kaustu…</string>
+    <string name="clear_song_cache_confirm">Kas oled kindel, et soovid lugude puhvri tühjendada?</string>
+    <string name="clear_image_cache_confirm">Kas oled kindel, et soovid piltide puhvri tühjendada? Kõik olemasolevad albumite pisipildid kustutatakse.</string>
 </resources>
