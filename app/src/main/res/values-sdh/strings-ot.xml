@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="android_auto">ئەندرۆید ئۆتۆ</string>
+    <string name="folders">فۆڵدەر</string>
+    <string name="library">کتێبخانە</string>
+    <string name="recent_activity">چالاکییەکانی ئەم دواییە</string>
+    <string name="local_history">ناوخۆیی</string>
+    <string name="queue_local_history">مێژوو (خۆجێیی)</string>
+    <string name="queue_remote_history">مێژوو (دوور)</string>
+    <string name="remote_history">دوور</string>
+    <string name="library_filter">فلتەری کتێبخانە</string>
+</resources>
