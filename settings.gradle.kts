@@ -36,8 +36,8 @@ include(":material-color-utilities")
 // To:
 //       add("fullImplementation", "wah.mikooomich:ffmetadataex")
 
-includeBuild("../ffMetadataEx") {
-    dependencySubstitution {
-        substitute(module("wah.mikooomich:ffmetadataex")).using(project(":ffMetadataEx"))
-    }
-}
+//includeBuild("../ffMetadataEx") {
+//    dependencySubstitution {
+//        substitute(module("wah.mikooomich:ffmetadataex")).using(project(":ffMetadataEx"))
+//    }
+//}
