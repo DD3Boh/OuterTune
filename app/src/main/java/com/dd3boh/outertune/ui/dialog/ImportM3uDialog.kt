@@ -341,7 +341,7 @@ suspend fun loadM3u(
                                 id = "",
                                 title = title,
                                 isLocal = true,
-                                localPath = if (source?.startsWith("http") == false) source.substringAfter(',') else null
+                                localPath = if (source?.startsWith("http") == false) source.substringAfter("#ot_id:").substringAfter("\n") else null
                             ),
                             artists = artists.map { ArtistEntity("", it) },
                         )
@@ -352,7 +352,7 @@ suspend fun loadM3u(
                             database.searchSongsInDb(title).first().toMutableList()
                         } else {
                             // local songs have a source format of "<id>, <path>", YTM songs have "<url>
-                            var id = source.substringBefore(',')
+                            var id = source.substringAfter("#ot_id:").substringAfter("\n")
                             if (id.isEmpty()) {
                                 id = source.substringAfter("watch?").substringAfter("=").substringBefore('?')
                             }

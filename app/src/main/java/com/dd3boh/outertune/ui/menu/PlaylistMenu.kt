@@ -102,7 +102,13 @@ fun PlaylistMenu(
                             val se = s.song
                             if (!M3U_EXPORT_RELATIVE_PATH) {
                                 result.append("#EXTINF:${se.duration},${s.artists.joinToString(";") { it.name }} - ${s.title}\n")
-                                result.append(if (se.isLocal) "${se.id}, ${se.localPath}" else "https://youtube.com/watch?v=${se.id}")
+                                if (se.isLocal) {
+                                    result.append(se.localPath)
+                                    result.append("\n")
+                                    result.append("#ot_id:${se.id}\n")
+                                } else {
+                                    result.append("https://youtube.com/watch?v=${se.id}\n")
+                                }
                                 result.append("\n")
                             } else if (se.localPath != null) {
                                 // write the song path as relative to M3U. YTM songs will be ignored
@@ -296,7 +302,7 @@ fun PlaylistMenu(
             icon = Icons.Rounded.Output,
             title = R.string.m3u_export
         ) {
-            m3uLauncher.launch("playlist.m3u")
+            m3uLauncher.launch("${playlist.title}.m3u")
         }
     }
 
