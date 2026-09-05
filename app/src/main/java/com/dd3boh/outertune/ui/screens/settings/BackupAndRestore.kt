@@ -29,9 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.GP_EXPORT
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
+import com.dd3boh.outertune.ui.component.SettingsClickToReveal
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.dialog.InfoLabel
 import com.dd3boh.outertune.ui.screens.settings.fragments.BackupAndRestoreFrag
@@ -58,7 +58,7 @@ fun BackupAndRestore(
         InfoLabel(stringResource(R.string.import_innertune_tooltip))
         Spacer(modifier = Modifier.height(8.dp))
         InfoLabel(stringResource(R.string.restore_lm_tooltip))
-        if (GP_EXPORT) {
+        SettingsClickToReveal(stringResource(R.string.prefs_advanced)) {
             val viewModel2: GramophoneExportViewModel = hiltViewModel()
             ExportGramophoneFrag(viewModel2)
         }
